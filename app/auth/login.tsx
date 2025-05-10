@@ -47,10 +47,8 @@ export default function Login() {
       const formData = new FormData();
       formData.append("type", "register_phone");
       formData.append("phone", `${countryCode.value}${cleanedNumber}`);
-      formData.append("user_type", "user");
-
+      formData.append("user_type", "company");
       const response = await apiCall(formData);
-
       if (response.result) {
         await AsyncStorage.setItem("user_id", response.user_id);
         await AsyncStorage.setItem("user_type", response.user_type);

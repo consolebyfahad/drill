@@ -1,9 +1,27 @@
-// NotificationScreen.tsx
 import React, { useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, View, Text } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  View,
+  Text,
+  Button,
+  Platform,
+  Alert,
+} from "react-native";
+import * as Notifications from "expo-notifications";
 import NotificationCard from "@/components/notification_card";
 import Header from "@/components/header";
 import AccountIcon from "@/assets/svgs/profileIcon.svg";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+// Notification permissions and handler setup (for local testing)
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
 
 type Notification = {
   id: string;
@@ -12,28 +30,54 @@ type Notification = {
   dateTime: string;
 };
 
-const dummyNotifications: Notification[] = [
-  {
-    id: "1",
-    title: "Welcome to the App!",
-    message: "Thanks for signing up. Let us know if you need anything.",
-    dateTime: "2025-05-08 10:30 AM",
-  },
-  {
-    id: "2",
-    title: "Update Available",
-    message: "A new version of the app is now available.",
-    dateTime: "2025-05-07 3:45 PM",
-  },
-];
-
 const NotificationScreen: React.FC = () => {
-  const [notifications] = useState<Notification[]>(dummyNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([
+    {
+      id: "1",
+      title: "Welcome to the App!",
+      message: "Thanks for signing up. Let us know if you need anything.",
+      dateTime: "2025-05-08 10:30 AM",
+    },
+    {
+      id: "2",
+      title: "Update Available",
+      message: "A new version of the app is now available.",
+      dateTime: "2025-05-07 3:45 PM",
+    },
+  ]);
+
+  const handleGetNotification = async () => {
+    const title = "Test Notification";
+    const message = "This is a test push notification.";
+    const dateTime = new Date().toLocaleString();
+
+    // Add to local state (UI list)
+    const newNotification: Notification = {
+      id: Date.now().toString(),
+      title,
+      message,
+      dateTime,
+    };
+    setNotifications((prev) => [newNotification, ...prev]);
+
+    // Show local push notification
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body: message,
+      },
+      trigger: null,
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Header backBtn={true} title="Notifications" />
+        <Header title="Notifications" />
+
+        <View style={styles.buttonContainer}>
+          <Button title="Get Notification" onPress={handleGetNotification} />
+        </View>
 
         <View style={styles.notificationList}>
           {notifications.map((notification) => (
@@ -59,6 +103,9 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     padding: 16,
+  },
+  buttonContainer: {
+    marginBottom: 16,
   },
   notificationList: {
     marginTop: 12,

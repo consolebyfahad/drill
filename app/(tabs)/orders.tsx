@@ -1,7 +1,6 @@
 import {
   View,
   Text,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Alert,
@@ -17,6 +16,7 @@ import { Colors } from "@/constants/Colors";
 import { router, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiCall } from "~/utils/api";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export type Order = {
   id: string;

@@ -13,7 +13,11 @@
       "googleServicesFile": "./GoogleService-Info.plist",
       "bundleIdentifier": "sa.com.drill.service",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "We need your location to show your position on the map."
+        "NSLocationWhenInUseUsageDescription": "We need your location to show your position on the map.",
+        "UIBackgroundModes": ["remote-notification"]
+      },
+      "entitlements": {
+        "aps-environment": "production"
       }
     },
     "android": {

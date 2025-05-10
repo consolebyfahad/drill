@@ -4,7 +4,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Image,
   Platform,
   StyleSheet,
@@ -16,7 +15,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "~/constants/Colors";
 import { apiCall } from "~/utils/api";
 import { getLocationPermission } from "~/utils/location";
-import fcmService from "~/utils/notification";
+import {
+  requestFCMPermission,
+  getFCMToken,
+  setupNotificationListeners,
+} from "~/utils/notification";
+import * as Device from "expo-device";
 
 export default function AccessLocation() {
   const router = useRouter();
@@ -24,6 +28,29 @@ export default function AccessLocation() {
 
   const handleBrowse = () => {
     router.push("/(tabs)");
+  };
+
+  const getDeviceInfo = async () => {
+    try {
+      // Get device model
+      let deviceModel = "unknown";
+      if (Device.modelName) {
+        deviceModel = Device.modelName;
+      }
+
+      return {
+        platform: Platform.OS || "",
+        model: deviceModel,
+      };
+    } catch (error) {
+      console.error("Error getting device info:", error);
+      return {
+        platform: Platform.OS || "",
+        model: "unknown",
+        brand: "unknown",
+        osVersion: "unknown",
+      };
+    }
   };
 
   useEffect(() => {
@@ -37,17 +64,16 @@ export default function AccessLocation() {
         }
 
         // FCM
-        const permissionGranted = await fcmService.requestPermissionIfNeeded();
+        const permissionGranted = await requestFCMPermission();
         if (permissionGranted) {
-          const token = await fcmService.getToken();
-          console.log("🚀 ~ FCM Token:", token);
-
+          const token = await getFCMToken();
+          const deviceInfo = await getDeviceInfo();
           const formData = new FormData();
+          formData.append("type", "update_noti");
           formData.append("user_id", userId);
-          formData.append("devicePlatform", Platform.OS || "");
-          formData.append("deviceRid", "user");
-          formData.append("deviceModel", "user");
-
+          formData.append("devicePlatform", deviceInfo.platform);
+          formData.append("deviceRid", token);
+          formData.append("deviceModel", deviceInfo.model);
           try {
             const response = await apiCall(formData);
             console.log("FCM registration response:", response);
@@ -62,7 +88,19 @@ export default function AccessLocation() {
       }
     };
 
+    const handleNotificationPress = (data: any) => {
+      console.log("🔔 Notification Pressed:", data);
+      // Navigate based on data, e.g.:
+      // if (data.screen) router.push(`/${data.screen}`);
+    };
+
     setupNotifications();
+
+    const unsubscribe = setupNotificationListeners(handleNotificationPress);
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const handleLocation = async () => {
@@ -71,20 +109,10 @@ export default function AccessLocation() {
       const location = await getLocationPermission();
       if (location) {
         console.log("📍 User location:", location.coords);
-
-        // Show success message before navigation
-        Alert.alert(
-          "Success",
-          "Location access granted. You can now discover services near you.",
-          [{ text: "Continue", onPress: () => router.push("/(tabs)") }]
-        );
+        router.push("/(tabs)");
       }
     } catch (error) {
       console.error("Location fetch failed", error);
-      Alert.alert(
-        "Location Access Failed",
-        "We couldn't access your location. You can try again or set it up later in settings."
-      );
     } finally {
       setLoading(false);
     }

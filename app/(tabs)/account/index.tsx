@@ -4,7 +4,6 @@ import {
   Image,
   TouchableOpacity,
   Switch,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Alert,
@@ -34,6 +33,7 @@ import Logout from "@/assets/svgs/Logout.svg";
 import { apiCall } from "~/utils/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import defaultProfile from "@/assets/images/default-profile.png";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type User = {
   id: string;
@@ -150,15 +150,15 @@ export default function Account() {
 
   const handleNavigation = (title: string) => {
     switch (title) {
-      case "Favourite Buyer":
-        router.push("/account/favourite_buyer");
-        break;
+      // case "Favourite Buyer":
+      //   router.push("/account/favourite_buyer");
+      //   break;
       case "Employees":
         router.push("/account/employee");
         break;
-      case "Change Password":
-        router.push("/account/change_password");
-        break;
+      // case "Change Password":
+      //   router.push("/account/change_password");
+      //   break;
       case "Rate Us":
         // Open rating modal or external link
         break;
@@ -219,10 +219,9 @@ export default function Account() {
   // Update the icon map to include the Employee icon
   const iconMap: { [key: string]: JSX.Element } = {
     Account: <AccountStatus />,
-    FavBuyer: <Favourite />,
+    // FavBuyer: <Favourite />,
     Employee: <Employee />,
     Notification: <Notification />,
-    "Change Password": <Password />,
     "Rate Us": <Rating />,
     "About App": <About />,
     Support: <Support />,
@@ -239,17 +238,13 @@ export default function Account() {
         rightColor: user.state === "1" ? Colors.success : Colors.danger,
       },
       // This item will be conditionally added based on account type
-      {
-        icon: accountType === "company" ? "Employee" : "FavBuyer",
-        title: accountType === "company" ? "Employees" : "Favourite Buyer",
-        extraRight: "chevron-forward",
-      },
+      // {
+      //   icon: accountType === "company" ? "Employee" : "FavBuyer",
+      //   title: accountType === "company" ? "Employees" : "Favourite Buyer",
+      //   extraRight: "chevron-forward",
+      // },
       { icon: "Notification", title: "Notification", right: "toggle" },
-      {
-        icon: "Change Password",
-        title: "Change Password",
-        extraRight: "chevron-forward",
-      },
+
       { icon: "Rate Us", title: "Rate Us", extraRight: "chevron-forward" },
       { icon: "About App", title: "About App", extraRight: "chevron-forward" },
       { icon: "Support", title: "Support", extraRight: "chevron-forward" },

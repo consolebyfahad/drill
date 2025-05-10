@@ -13,6 +13,7 @@ interface InputFieldProps {
   placeholder?: string;
   IconComponent?: React.ReactNode;
   value?: string;
+  required?: boolean;
   keyboardType?: KeyboardTypeOptions;
   onChangeText: (text: string) => void;
 }
@@ -24,6 +25,7 @@ const InputField: React.FC<InputFieldProps> = ({
   value,
   onChangeText,
   keyboardType,
+  required,
 }) => {
   return (
     <View style={styles.container}>

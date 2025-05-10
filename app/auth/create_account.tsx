@@ -6,14 +6,12 @@ import Phone from "@/assets/svgs/profile/Call.svg";
 import Email from "@/assets/svgs/profile/Sms.svg";
 import Profile from "@/assets/svgs/profileIcon.svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Alert,
   Image,
   LogBox,
-  Modal,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -22,10 +20,15 @@ import {
   View,
 } from "react-native";
 import Button from "~/components/button";
-import InputField from "~/components/inputfield";
 import RadioButton from "~/components/radio_button";
 import { Colors } from "~/constants/Colors";
 import { apiCall } from "~/utils/api";
+import CustomInputField from "~/components/CustomInputField";
+import {
+  pickImage,
+  showImagePickerAlert,
+  uploadImage,
+} from "~/utils/uploadData";
 
 // Suppress the specific warning about MediaTypeOptions
 LogBox.ignoreLogs(["[expo-image-picker] `ImagePicker.MediaTypeOptions`"]);
@@ -51,13 +54,16 @@ type User = {
   verified?: boolean;
 };
 
+type FieldError = {
+  [key: string]: string;
+};
+
 export default function CreateAccount() {
   const [activeTab, setActiveTab] = useState<string>("Individual");
   const [individualScreen, setIndividualScreen] = useState(true);
-  const [imagePickerVisible, setImagePickerVisible] = useState(false);
-  const [currentField, setCurrentField] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errors, setErrors] = useState<FieldError>({});
 
   // For storing uploaded file names
   const [uploadedFiles, setUploadedFiles] = useState({
@@ -91,8 +97,12 @@ export default function CreateAccount() {
     const fetchUserId = async () => {
       try {
         const userId = await AsyncStorage.getItem("user_id");
+        const userPhone = await AsyncStorage.getItem("user_phone");
         if (userId) {
           setUserId(userId);
+        }
+        if (userPhone) {
+          setUser((prev) => ({ ...prev, phone: userPhone }));
         }
       } catch (error) {
         console.error("Error fetching user_id:", error);
@@ -103,6 +113,14 @@ export default function CreateAccount() {
 
   const handleInputChange = (field: keyof User, value: string) => {
     setUser((prevUser) => ({ ...prevUser, [field]: value }));
+    // Clear error when user types
+    if (errors[field]) {
+      setErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[field];
+        return updated;
+      });
+    }
   };
 
   const handleActiveCompany = () => {
@@ -115,166 +133,145 @@ export default function CreateAccount() {
     setIndividualScreen(true);
   };
 
+  // Function to handle image selection from uploadData util
+  const handleImageSelected = async (field: string, uri: string) => {
+    // Update UI immediately
+    setUser((prev) => ({ ...prev, [field]: uri }));
+
+    // Upload the image
+    const result = await uploadImage(uri, field, userId, setIsLoading);
+
+    if (result.success && result.fileName) {
+      // Store the server filename
+      setUploadedFiles((prev) => ({
+        ...prev,
+        [field]: result.fileName || "",
+      }));
+    } else {
+      // If upload failed, reset the UI and show error
+      setUser((prev) => ({ ...prev, [field]: null }));
+      Alert.alert(
+        "Upload Failed",
+        result.error || "Failed to upload image. Please try again."
+      );
+    }
+  };
+
+  // Function to handle image picking from camera or gallery
+  const handlePickImage = (source: "camera" | "gallery", field: string) => {
+    pickImage(source, field, handleImageSelected, (errorMessage) =>
+      Alert.alert("Error", errorMessage)
+    );
+  };
+
+  // Function to open image picker dialog
   const openImagePicker = (field: string) => {
-    setCurrentField(field);
-    setImagePickerVisible(true);
+    showImagePickerAlert(field, handlePickImage);
   };
 
-  // Upload the image to server and get filename
-  const uploadImage = async (uri: string, fieldName: string) => {
-    if (!uri) return null;
-
-    try {
-      setIsLoading(true);
-
-      // Prepare file info
-      const uriParts = uri.split(".");
-      const fileType = uriParts[uriParts.length - 1];
-      const fileName = `${fieldName}_${Date.now()}.${fileType}`;
-
-      const formData = new FormData();
-      formData.append("type", "upload_data");
-      formData.append("user_id", userId || "");
-      formData.append("file", {
-        uri: uri,
-        name: fileName,
-        type: `image/${fileType}`,
-      } as any);
-
-      // Call your API endpoint for file upload
-      const response = await apiCall(formData);
-
-      if (response.result && response.file_name) {
-        // Store the filename returned by the server
-        setUploadedFiles((prev) => ({
-          ...prev,
-          [fieldName]: response.file_name,
-        }));
-        return response.file_name;
-      } else {
-        throw new Error(response.message || "Failed to upload image");
-      }
-    } catch (error) {
-      console.error("Upload error:", error);
-      Alert.alert("Upload Error", "Failed to upload image");
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
-  // Using the same approach as EditProfile
-  const pickImage = async (source: "camera" | "gallery", field: string) => {
-    let result;
-
-    try {
-      const permissionStatus =
-        source === "camera"
-          ? await ImagePicker.requestCameraPermissionsAsync()
-          : await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (permissionStatus.status !== "granted") {
-        Alert.alert(
-          "Permission Denied",
-          "Camera or Gallery access is required."
-        );
-        return;
-      }
-
-      result =
-        source === "camera"
-          ? await ImagePicker.launchCameraAsync({
-              mediaTypes: ImagePicker.MediaTypeOptions.Images,
-              quality: 0.8,
-              allowsEditing: true,
-              aspect: [1, 1],
-            })
-          : await ImagePicker.launchImageLibraryAsync({
-              mediaTypes: ImagePicker.MediaTypeOptions.Images,
-              quality: 0.8,
-              allowsEditing: true,
-              aspect: field === "image" ? [1, 1] : [3, 2],
-            });
-
-      if (!result.canceled) {
-        const selectedUri = result.assets[0].uri;
-
-        // Update the UI immediately with the selected image
-        setUser((prev) => ({ ...prev, [field]: selectedUri }));
-
-        // Upload the image in the background and get the filename
-        await uploadImage(selectedUri, field);
-      }
-    } catch (error) {
-      console.error("Image picker error:", error);
-      Alert.alert("Error", "Failed to pick image");
-    }
+  const validatePhoneNumber = (phone: string) => {
+    // Basic phone validation - adjust based on your requirements
+    return phone.length >= 9 && phone.length <= 15;
   };
 
-  const pickImageFromGallery = () => {
-    if (!currentField) return;
-    setImagePickerVisible(false);
-    pickImage("gallery", currentField);
-  };
-
-  const pickImageFromCamera = () => {
-    if (!currentField) return;
-    setImagePickerVisible(false);
-    pickImage("camera", currentField);
+  const validateZipCode = (zip: string) => {
+    // Adjust based on your zip code requirements
+    return zip.length >= 4 && zip.length <= 10;
   };
 
   const validateForm = () => {
-    // Basic validation
+    const newErrors: FieldError = {};
+    let isValid = true;
+
+    // Common validation for both individual and company
     if (!user.name.trim()) {
-      Alert.alert("Error", "Please enter your full name");
-      return false;
+      newErrors.name = "Full name is required";
+      isValid = false;
     }
 
     if (!user.email.trim()) {
-      Alert.alert("Error", "Please enter your email");
-      return false;
+      newErrors.email = "Email is required";
+      isValid = false;
+    } else if (!validateEmail(user.email)) {
+      newErrors.email = "Please enter a valid email address";
+      isValid = false;
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(user.email)) {
-      Alert.alert("Error", "Please enter a valid email address");
-      return false;
-    }
-
-    // Phone validation
     if (!user.phone.trim()) {
-      Alert.alert("Error", "Please enter your phone number");
-      return false;
+      newErrors.phone = "Phone number is required";
+      isValid = false;
+    } else if (!validatePhoneNumber(user.phone)) {
+      newErrors.phone = "Please enter a valid phone number";
+      isValid = false;
+    }
+
+    if (!user.address.trim()) {
+      newErrors.address = "Address is required";
+      isValid = false;
+    }
+
+    if (!user.city.trim()) {
+      newErrors.city = "City is required";
+      isValid = false;
+    }
+
+    if (!user.zip.trim()) {
+      newErrors.zip = "Zip code is required";
+      isValid = false;
+    } else if (!validateZipCode(user.zip)) {
+      newErrors.zip = "Please enter a valid zip code";
+      isValid = false;
     }
 
     // Individual specific validation
     if (individualScreen) {
+      if (!user.dob.trim()) {
+        newErrors.dob = "Date of birth is required";
+        isValid = false;
+      }
+
       if (!user.iqamaId?.trim()) {
-        Alert.alert("Error", "Please enter your Iqama ID");
-        return false;
+        newErrors.iqamaId = "Iqama ID is required";
+        isValid = false;
       }
     } else {
       // Company specific validation
       if (!user.companyNumber?.trim()) {
-        Alert.alert("Error", "Please enter company number");
-        return false;
+        newErrors.companyNumber = "Company number is required";
+        isValid = false;
+      }
+
+      if (!user.companyCategory?.trim()) {
+        newErrors.companyCategory = "Company category is required";
+        isValid = false;
+      }
+
+      if (user.secondaryEmail && !validateEmail(user.secondaryEmail)) {
+        newErrors.secondaryEmail = "Please enter a valid email address";
+        isValid = false;
       }
     }
 
     // Document validation
     if (!user.documentFront) {
-      Alert.alert("Error", "Please upload front side of your document");
-      return false;
+      newErrors.documentFront = "Front side of document is required";
+      isValid = false;
     }
 
     if (!user.documentBack) {
-      Alert.alert("Error", "Please upload back side of your document");
-      return false;
+      newErrors.documentBack = "Back side of document is required";
+      isValid = false;
     }
 
-    return true;
+    setErrors(newErrors);
+    return isValid;
   };
+
   const handleFormSubmit = async () => {
     if (!validateForm()) return;
 
@@ -337,7 +334,6 @@ export default function CreateAccount() {
         formData.append("secondary_email", user.secondaryEmail || "");
         formData.append("tax_number", user.taxNumber || "");
       }
-      console.log(JSON.stringify(formData));
 
       // Send the data to the API
       const response = await apiCall(formData);
@@ -441,14 +437,16 @@ export default function CreateAccount() {
         {/* Company fields */}
         {!individualScreen && (
           <>
-            <InputField
+            <CustomInputField
               label="Company Number"
               placeholder="Enter company number"
               IconComponent={<Profile />}
               value={user.companyNumber}
               onChangeText={(text) => handleInputChange("companyNumber", text)}
+              fieldName="companyNumber"
+              error={errors.companyNumber}
             />
-            <InputField
+            <CustomInputField
               label="Company Category"
               placeholder="Enter company category"
               IconComponent={<Profile />}
@@ -456,77 +454,102 @@ export default function CreateAccount() {
               onChangeText={(text) =>
                 handleInputChange("companyCategory", text)
               }
+              fieldName="companyCategory"
+              error={errors.companyCategory}
             />
-            <InputField
+            <CustomInputField
               label="Secondary Email"
               placeholder="Enter secondary email"
               IconComponent={<Email />}
               value={user.secondaryEmail}
               keyboardType="email-address"
               onChangeText={(text) => handleInputChange("secondaryEmail", text)}
+              fieldName="secondaryEmail"
+              required={false}
+              error={errors.secondaryEmail}
             />
-            <InputField
+            <CustomInputField
               label="Tax Number"
               placeholder="Enter tax number"
               IconComponent={<Profile />}
               value={user.taxNumber}
               onChangeText={(text) => handleInputChange("taxNumber", text)}
+              fieldName="taxNumber"
+              required={false}
+              error={errors.taxNumber}
+              numbersOnly
             />
           </>
         )}
 
         {/* Common User Details Fields */}
-        <InputField
+        <CustomInputField
           label="Full Name"
           placeholder="Enter your name"
           IconComponent={<Profile />}
           value={user.name}
           onChangeText={(text) => handleInputChange("name", text)}
+          fieldName="name"
+          error={errors.name}
         />
 
-        <InputField
+        <CustomInputField
           label="Email Address"
           placeholder="Enter your email"
           IconComponent={<Email />}
           value={user.email}
           keyboardType="email-address"
           onChangeText={(text) => handleInputChange("email", text)}
+          fieldName="email"
+          error={errors.email}
         />
 
-        <InputField
+        <CustomInputField
           label="Phone Number"
           placeholder="Enter your phone number"
           IconComponent={<Phone />}
           value={user.phone}
           keyboardType="phone-pad"
           onChangeText={(text) => handleInputChange("phone", text)}
+          fieldName="phone"
+          error={errors.phone}
+          numbersOnly
+          maxLength={15}
         />
 
-        <InputField
+        <CustomInputField
           label="Address"
           placeholder="Enter your address"
           IconComponent={<Profile />}
           value={user.address}
           onChangeText={(text) => handleInputChange("address", text)}
+          fieldName="address"
+          error={errors.address}
         />
 
         <View style={styles.rowContainer}>
           <View style={styles.flexItem}>
-            <InputField
+            <CustomInputField
               label="City"
               placeholder="Enter city"
               IconComponent={<Profile />}
               value={user.city}
               onChangeText={(text) => handleInputChange("city", text)}
+              fieldName="city"
+              error={errors.city}
             />
           </View>
           <View style={styles.flexItem}>
-            <InputField
+            <CustomInputField
               label="Zip Code"
               placeholder="Enter zip code"
               IconComponent={<Profile />}
               value={user.zip}
               onChangeText={(text) => handleInputChange("zip", text)}
+              fieldName="zip"
+              error={errors.zip}
+              numbersOnly
+              maxLength={10}
             />
           </View>
         </View>
@@ -534,19 +557,24 @@ export default function CreateAccount() {
         {/* Individual-specific fields */}
         {individualScreen && (
           <>
-            <InputField
+            <CustomInputField
               label="Date of Birth"
               placeholder="YYYY-MM-DD"
               IconComponent={<DOB />}
               value={user.dob}
               onChangeText={(text) => handleInputChange("dob", text)}
+              fieldName="dob"
+              error={errors.dob}
             />
-            <InputField
+            <CustomInputField
               label="Iqama ID"
               placeholder="Enter your KSA iqama ID /number"
               IconComponent={<Profile />}
               value={user.iqamaId}
               onChangeText={(text) => handleInputChange("iqamaId", text)}
+              fieldName="iqamaId"
+              error={errors.iqamaId}
+              numbersOnly
             />
           </>
         )}
@@ -570,7 +598,10 @@ export default function CreateAccount() {
             Front Side of Card<Text style={{ color: "red" }}>*</Text>
           </Text>
           <TouchableOpacity
-            style={styles.uploadBox}
+            style={[
+              styles.uploadBox,
+              errors.documentFront ? styles.uploadBoxError : null,
+            ]}
             onPress={() => openImagePicker("documentFront")}
           >
             {user.documentFront ? (
@@ -598,12 +629,18 @@ export default function CreateAccount() {
               </View>
             )}
           </TouchableOpacity>
+          {errors.documentFront && (
+            <Text style={styles.errorText}>{errors.documentFront}</Text>
+          )}
 
           <Text style={styles.sectionLabel}>
             Back Side of Card<Text style={{ color: "red" }}>*</Text>
           </Text>
           <TouchableOpacity
-            style={styles.uploadBox}
+            style={[
+              styles.uploadBox,
+              errors.documentBack ? styles.uploadBoxError : null,
+            ]}
             onPress={() => openImagePicker("documentBack")}
           >
             {user.documentBack ? (
@@ -631,6 +668,9 @@ export default function CreateAccount() {
               </View>
             )}
           </TouchableOpacity>
+          {errors.documentBack && (
+            <Text style={styles.errorText}>{errors.documentBack}</Text>
+          )}
         </View>
 
         <View style={{ height: 80 }} />
@@ -644,41 +684,6 @@ export default function CreateAccount() {
           disabled={isLoading}
         />
       </View>
-
-      {/* Image Picker Modal */}
-      <Modal
-        visible={imagePickerVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setImagePickerVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Choose an option</Text>
-
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={pickImageFromCamera}
-            >
-              <Text style={styles.modalOptionText}>Take Photo</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.modalOption}
-              onPress={pickImageFromGallery}
-            >
-              <Text style={styles.modalOptionText}>Choose from Gallery</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.modalOption, styles.cancelButton]}
-              onPress={() => setImagePickerVisible(false)}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -826,8 +831,11 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 16,
+    marginBottom: 4, // Reduced to make room for error text
     overflow: "hidden",
+  },
+  uploadBoxError: {
+    borderColor: "red",
   },
   uploadContent: {
     alignItems: "center",
@@ -856,49 +864,10 @@ const styles = StyleSheet.create({
   flexItem: {
     flex: 1,
   },
-  // Modal Styles
-  modalContainer: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalContent: {
-    backgroundColor: Colors.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: Colors.secondary,
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  modalOption: {
-    padding: 16,
-    borderRadius: 10,
-    backgroundColor: Colors.primary300,
-    marginBottom: 12,
-    alignItems: "center",
-  },
-  modalOptionText: {
-    fontSize: 16,
-    color: Colors.secondary,
-    fontWeight: "500",
-  },
-  cancelButton: {
-    backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.secondary300,
-  },
-  cancelButtonText: {
-    color: Colors.secondary,
-    fontWeight: "500",
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
 });

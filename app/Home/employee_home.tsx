@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { firebase } from "@react-native-firebase/messaging";
 import * as Location from "expo-location";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
@@ -6,6 +7,11 @@ import MapView, { Marker } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import JobRequestCard from "~/components/jobrequest_card";
 import ToggleJob from "~/components/toggle_job";
+import {
+  getFCMToken,
+  requestFCMPermission,
+  setupNotificationListeners,
+} from "~/utils/notification";
 
 const EmployeeHome = () => {
   const [greeting, setGreeting] = useState("Good Afternoon!");
@@ -28,6 +34,29 @@ const EmployeeHome = () => {
     } else {
       setGreeting("Good Evening!");
     }
+  }, []);
+
+  useEffect(() => {
+    const initFCM = async () => {
+      await requestFCMPermission();
+      const token = await getFCMToken();
+      console.log("📲 User FCM Token:", token);
+      console.log("Firebase App Config:", firebase.app().options);
+    };
+
+    const handleNotificationPress = (data: any) => {
+      console.log(
+        "🚨 Notification received (foreground/background/quit):",
+        data
+      );
+      if (data?.type === "job_request") {
+        setJobRequest(data); // Assuming your card uses this to show job info
+      }
+    };
+
+    initFCM();
+    const unsubscribe = setupNotificationListeners(handleNotificationPress);
+    return () => unsubscribe(); // Clean up listeners
   }, []);
 
   // Get current location and address

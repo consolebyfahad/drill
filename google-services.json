@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "641692984557",
-    "project_id": "drill-app-73819",
-    "storage_bucket": "drill-app-73819.firebasestorage.app"
+    "project_number": "891074350960",
+    "project_id": "drill-app-3a0c1",
+    "storage_bucket": "drill-app-3a0c1.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:641692984557:android:96cab409ac121e987918e4",
+        "mobilesdk_app_id": "1:891074350960:android:ef66fdce6a68e3240d89b5",
         "android_client_info": {
           "package_name": "sa.com.drill.app"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBayQYqKRHZ8qGWNH5luysFL-fh1Pvo8Mk"
+          "current_key": "AIzaSyAEs9s81RDwHK2LETpCCwIO60862jYWXXY"
         }
       ],
       "services": {
@@ -26,7 +26,7 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:641692984557:android:17ea086015856ab77918e4",
+        "mobilesdk_app_id": "1:891074350960:android:950bdf2b4f12aef50d89b5",
         "android_client_info": {
           "package_name": "sa.com.drill.service"
         }
@@ -34,7 +34,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBayQYqKRHZ8qGWNH5luysFL-fh1Pvo8Mk"
+          "current_key": "AIzaSyAEs9s81RDwHK2LETpCCwIO60862jYWXXY"
         }
       ],
       "services": {
