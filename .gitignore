@@ -1,0 +1,65 @@
+# macOS
+.DS_Store
+
+# node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# expo
+.expo/
+.expo-shared/
+
+# environment files
+.env
+.env.*
+
+# build directories
+/dist/
+.build/
+web-build/
+android/
+ios/
+
+# vscode
+.vscode/
+
+# Metro / React Native
+*.log
+*.tmp
+*.swp
+*.lock
+
+# react-native packager
+.packager/
+
+# watchman
+.watchmanconfig
+
+# bundler cache
+.buckd/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+
+# IDEs
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# miscellaneous
+coverage/
+*.keystore
+*.jks
+*.p8
+*.p12
+*.key
+*.crt
+*.pem
+*.zip
+
+# TypeScript
+*.tsbuildinfo

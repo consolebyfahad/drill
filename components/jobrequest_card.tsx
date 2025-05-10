@@ -1,0 +1,267 @@
+import React from "react";
+import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { Colors } from "~/constants/Colors";
+import Button from "./button";
+
+const JobRequestCard = ({
+  userName = "Daud",
+  serviceTitle = "Detection Service",
+  packageTitle = "Express Service Package",
+  distance = "3.1km",
+  duration = "60min",
+  jobLocation = "2972 Westheimer Rd...",
+  currentLocation = "2972 Westheimer Rd...",
+  onAccept = () => {
+    router.push("/order/order_place");
+  },
+  onDecline = () => {},
+}) => {
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <Text style={styles.header}>
+        Hello! {userName} you have the job request
+      </Text>
+
+      {/* Service and Map Row */}
+      <View style={styles.infoRow}>
+        {/* Service Details */}
+        <View style={styles.serviceCard}>
+          <View style={styles.serviceIconContainer}>
+            <Image
+              source={require("@/assets/images/default-profile.png")}
+              style={styles.serviceIcon}
+              defaultSource={require("@/assets/images/default-profile.png")}
+            />
+          </View>
+          <View style={styles.serviceDetails}>
+            <Text style={styles.serviceTitle}>{serviceTitle}</Text>
+            <Text style={styles.packageTitle}>{packageTitle}</Text>
+          </View>
+        </View>
+
+        {/* Map and Distance Info */}
+        <View style={styles.mapContainer}>
+          <Image
+            source={require("@/assets/images/miniMap.png")}
+            style={styles.mapImage}
+            defaultSource={require("@/assets/images/miniMap.png")}
+          />
+          <View style={styles.mapInfoRow}>
+            <View style={styles.infoChip}>
+              <Text style={styles.infoText}>{distance}</Text>
+            </View>
+            <View style={styles.infoChip}>
+              <Text style={styles.infoText}>{duration}</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Location Information */}
+      <View style={styles.locationContainer}>
+        {/* Job Location */}
+        <View style={styles.locationRow}>
+          <View style={styles.markerContainer}>
+            <Ionicons name="location" size={24} color="#4169E1" />
+          </View>
+          <View style={styles.locationDetails}>
+            <Text style={styles.locationLabel}>Job Location</Text>
+            <Text style={styles.locationAddress}>{jobLocation}</Text>
+          </View>
+        </View>
+
+        <View style={styles.divider} />
+
+        {/* Current Location */}
+        <View style={styles.locationRow}>
+          <View style={styles.markerContainer}>
+            <Ionicons name="navigate-circle" size={24} color="#4169E1" />
+          </View>
+          <View style={styles.locationDetails}>
+            <Text style={styles.locationLabel}>Your Current Location</Text>
+            <Text style={styles.locationAddress}>{currentLocation}</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Action Buttons */}
+      <View style={styles.actionRow}>
+        <Button
+          title="Decline"
+          onPress={onDecline}
+          variant="secondary"
+          bgColor="white"
+          fullWidth={false}
+          width="38%"
+        />
+        <Button
+          title="Accept"
+          onPress={onAccept}
+          fullWidth={false}
+          width="58%"
+        />
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    borderRadius: 16,
+    padding: 16,
+    backgroundColor: "#F0F8FF",
+    borderWidth: 1,
+    borderColor: "#4169E1",
+    margin: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  header: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#333",
+    marginBottom: 16,
+    textAlign: "left",
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  serviceCard: {
+    backgroundColor: "#4169E1",
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: 8,
+  },
+  serviceIconContainer: {
+    width: 48,
+    height: 68,
+    borderRadius: 8,
+    backgroundColor: Colors.white,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  serviceIcon: {
+    width: 36,
+    height: 36,
+  },
+  serviceDetails: {
+    flex: 1,
+  },
+  serviceTitle: {
+    color: Colors.white,
+    fontWeight: "500",
+    fontSize: 13,
+    marginBottom: 4,
+  },
+  packageTitle: {
+    color: Colors.white,
+    fontSize: 11,
+  },
+  mapContainer: {
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 12,
+    overflow: "hidden",
+    width: 120,
+  },
+  mapImage: {
+    width: "100%",
+    height: 80,
+  },
+  mapInfoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 4,
+  },
+  infoChip: {
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#DDD",
+    borderRadius: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  infoText: {
+    fontSize: 12,
+    color: "#333",
+  },
+  locationContainer: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  locationRow: {
+    flexDirection: "row",
+    marginVertical: 8,
+  },
+  markerContainer: {
+    marginRight: 12,
+  },
+  locationDetails: {
+    flex: 1,
+  },
+  locationLabel: {
+    color: Colors.secondary300,
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  locationAddress: {
+    color: Colors.secondary,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#EEE",
+    marginVertical: 8,
+  },
+  actionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  declineButton: {
+    flex: 1,
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    marginRight: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#DDD",
+  },
+  acceptButton: {
+    flex: 1,
+    backgroundColor: "#4169E1",
+    borderRadius: 12,
+    padding: 16,
+    marginLeft: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  declineText: {
+    fontWeight: "bold",
+    fontSize: 16,
+    color: "#333",
+  },
+  acceptText: {
+    fontWeight: "bold",
+    fontSize: 16,
+    color: "white",
+  },
+});
+
+export default JobRequestCard;

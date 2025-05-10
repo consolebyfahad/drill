@@ -1,0 +1,31 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": "./",
+    "paths": {
+      "~/*": ["./*"],
+      "@/app/*": ["app/*"],
+      "@/assets/*": ["assets/*"],
+      "@/components/*": ["components/*"],
+      "@/sections/*": ["sections/*"],
+      "@/constants/*": ["constants/*"]
+    },
+    "jsx": "react-jsx",
+    "types": ["expo-router/types"],
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "app",
+    "assets",
+    "components",
+    "sections",
+    "constants",
+    "types",
+    "expo-env.d.ts",
+    ".expo/types/**/*.ts"
+  ]
+}
