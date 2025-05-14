@@ -1,42 +1,112 @@
-import { View, Text, Image, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet, Linking } from "react-native";
 import React from "react";
 import DashedSeparator from "./dashed_seprator";
 import Button from "./button";
-import Call from "@/assets/svgs/Calling.svg";
-import Message from "@/assets/svgs/Chat.svg";
-import Track from "@/assets/svgs/routing.svg";
-import { Colors } from "~/constants/Colors";
+import { Colors } from "../constants/Colors";
 import { router } from "expo-router";
 
-export default function ProviderCard() {
+// Define the provider type based on what we've seen in the OrderType
+type ProviderType = {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  image?: string;
+  email?: string;
+  gender?: string;
+  // Add other properties as needed
+};
+
+type ProviderCardProps = {
+  provider: ProviderType;
+  image_url?: string;
+};
+
+export default function ProviderCard({
+  provider,
+  image_url,
+}: ProviderCardProps) {
   const handleCall = () => {
-    router.push("/order/add_extra");
+    if (provider.phone) {
+      const phoneNumber = `tel:${provider.phone}`;
+      Linking.openURL(phoneNumber);
+    } else {
+      console.warn("No phone number available for provider.");
+    }
   };
-  const handleChat = () => {};
+
+  const handleChat = () => {
+    router.push("/order/order_place");
+  };
+
   const handleTrack = () => {
-    router.push("/order/track");
+    const providerJson = JSON.stringify(provider);
+    router.push({
+      pathname: "/order/track",
+      params: {
+        provider: providerJson,
+        image_url: image_url || "",
+      },
+    });
   };
+
+  // Get provider initials for fallback avatar
+  const getInitials = () => {
+    if (!provider.name) return "P";
+    return provider.name.charAt(0).toUpperCase();
+  };
+
+  // Get provider image or use fallback
+  const getProviderImage = () => {
+    if (provider.image && image_url && provider.image !== "undefined") {
+      return { uri: `${image_url}${provider.image}` };
+    }
+    return require("../assets/images/user.png"); // Make sure this path is correct
+  };
+
+  // Calculate rating - this would normally come from the API
+  // For now, we'll just provide a placeholder
+  const rating = "4.9";
+  const reviewCount = "120+";
+
   return (
     <View style={styles.providerContainer}>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-        }}
-      >
-        <Image
-          source={require("@/assets/images/user.png")}
-          style={styles.providerImage}
-        />
+      <View style={styles.providerHeader}>
+        {/* Provider image */}
+        {provider.image && image_url && provider.image !== "undefined" ? (
+          <Image source={getProviderImage()} style={styles.providerImage} />
+        ) : (
+          <View
+            style={[styles.providerImage, styles.providerInitialsContainer]}
+          >
+            <Text style={styles.providerInitials}>{getInitials()}</Text>
+          </View>
+        )}
+
+        {/* Provider info */}
         <View style={styles.providerInfo}>
-          <Text style={styles.providerName}>Oleg Chapchay</Text>
-          <Text style={styles.grayText}>⭐ 4.9 (120+ reviews) | Provider</Text>
+          <Text style={styles.providerName}>
+            {provider.name || "Unknown Provider"}
+          </Text>
+          <Text style={styles.grayText}>
+            ⭐ {rating} ({reviewCount} reviews) | Provider
+          </Text>
+          {provider.phone && (
+            <Text style={styles.providerContact}>{provider.phone}</Text>
+          )}
         </View>
       </View>
+
       <DashedSeparator />
+
+      {/* Action buttons */}
       <View style={styles.buttonRow}>
         <Button
-          Icon={<Call height={16} width={16} />}
+          Icon={
+            <View style={styles.iconContainer}>
+              <Text style={styles.iconText}>📞</Text>
+            </View>
+          }
           fullWidth={false}
           width={"30%"}
           title="Call"
@@ -47,7 +117,11 @@ export default function ProviderCard() {
           onPress={handleCall}
         />
         <Button
-          Icon={<Message height={16} width={16} />}
+          Icon={
+            <View style={styles.iconContainer}>
+              <Text style={styles.iconText}>💬</Text>
+            </View>
+          }
           fullWidth={false}
           width={"30%"}
           title="Chat"
@@ -57,7 +131,11 @@ export default function ProviderCard() {
           onPress={handleChat}
         />
         <Button
-          Icon={<Track height={16} width={16} />}
+          Icon={
+            <View style={styles.iconContainer}>
+              <Text style={styles.iconText}>🗺️</Text>
+            </View>
+          }
           fullWidth={false}
           width={"30%"}
           title="Directions"
@@ -71,114 +149,65 @@ export default function ProviderCard() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
-  tabContainer: {
-    flexDirection: "row",
-    backgroundColor: Colors.primary300,
-    borderRadius: 25,
-    marginHorizontal: 16,
-  },
-  orderHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  orderDetailsContainer: {
-    backgroundColor: Colors.primary300,
-    marginTop: 24,
-    borderRadius: 25,
-    padding: 16,
-    marginBottom: 24,
-  },
-  activeTab: {
-    fontSize: 18,
-    fontWeight: "bold",
-    padding: 16,
-    backgroundColor: Colors.secondary,
-    color: Colors.white,
-    borderRadius: 25,
-    width: "50%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  activeTabText: { color: Colors.white, fontSize: 18, fontWeight: "500" },
-  inactiveTabText: {
-    color: Colors.secondary300,
-    fontSize: 18,
-    fontWeight: "500",
-  },
-  inactiveTab: {
-    fontSize: 18,
-    color: "gray",
-    padding: 16,
-    borderRadius: 25,
-    width: "50%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  sectionTitle: { fontSize: 18, fontWeight: "500", color: Colors.secondary },
-  orderDetails: {
-    marginTop: 8,
-    padding: 16,
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-  },
-  rowBetween: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  boldText: { fontWeight: "500", color: Colors.secondary300 },
-  blueText: { fontWeight: "bold", color: Colors.secondary },
-  grayText: { color: Colors.secondary },
-  problemImage: { width: 64, height: 64, borderRadius: 8 },
-  separator: {
-    marginVertical: 8,
-    borderBottomWidth: 1,
-    borderStyle: "dashed",
-    borderColor: "gray",
-  },
   providerContainer: {
     padding: 16,
-    backgroundColor: Colors.gray400,
+    backgroundColor: Colors.primary300,
     borderRadius: 12,
     marginTop: 8,
+    marginBottom: 24,
   },
-  providerImage: { width: 48, height: 48, borderRadius: 24 },
-  providerInfo: { marginLeft: 16 },
-  buttonRow: {
+  providerHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
   },
-  chatContainer: { flex: 1, padding: 16 },
-  userMessage: {
-    alignSelf: "flex-end",
-    backgroundColor: "blue",
-    padding: 8,
-    borderRadius: 8,
-    marginBottom: 4,
+  providerImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
   },
-  providerMessage: {
-    alignSelf: "flex-start",
-    backgroundColor: "lightgray",
-    padding: 8,
-    borderRadius: 8,
-    marginBottom: 4,
+  providerInitialsContainer: {
+    backgroundColor: Colors.secondary,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  whiteText: { color: "white" },
-  chatInputContainer: { flexDirection: "row", borderTopWidth: 1, padding: 8 },
-  chatInput: { flex: 1, borderWidth: 1, padding: 8, borderRadius: 8 },
-  footerButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderTopWidth: 1,
-    gap: 4,
+  providerInitials: {
+    color: Colors.white,
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+  providerInfo: {
+    marginLeft: 16,
+    flex: 1,
   },
   providerName: {
     fontWeight: "600",
     color: Colors.secondary,
     fontSize: 18,
     marginBottom: 4,
+  },
+  providerContact: {
+    color: Colors.secondary300,
+    fontSize: 14,
+    marginTop: 2,
+  },
+  grayText: {
+    color: Colors.secondary,
+    fontSize: 14,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 12,
+  },
+  iconContainer: {
+    width: 16,
+    height: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  iconText: {
+    fontSize: 12,
   },
 });

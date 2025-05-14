@@ -7,12 +7,78 @@ import {
   StyleSheet,
 } from "react-native";
 import React, { useState } from "react";
-import ServiceDetailsCard from "~/components/service_details_card";
-import { Colors } from "~/constants/Colors";
+import ServiceDetailsCard from "../../components/service_details_card";
+import { Colors } from "../../constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
-import DashedSeparator from "~/components/dashed_seprator";
-import ProviderCard from "~/components/provider_card";
-import { OrderType } from "./order_place"; // Import the type from order_place
+import DashedSeparator from "../../components/dashed_seprator";
+import ProviderCard from "../../components/provider_card";
+
+// Define the complete OrderType
+export type OrderType = {
+  id: string;
+  order_no: string;
+  user_id: string;
+  cat_id: string;
+  package_id: string;
+  to_id: string;
+  description: string;
+  date: string;
+  lat: string;
+  lng: string;
+  address: string;
+  images: string;
+  status: string;
+  created_at: string;
+  timestamp: string;
+  promo_code: string;
+  distance: number;
+  image_url: string;
+  payment_method: string;
+  method_details: string;
+  paymentStatus?: string;
+  amount?: string;
+  category?: {
+    id: string;
+    name: string;
+    image: string;
+    status: string;
+    timestamp: string;
+    translations: string;
+  };
+  provider?: {
+    id: string;
+    email: string;
+    password: string;
+    name: string;
+    dob: string;
+    user_type: string;
+    address: string;
+    postal: string;
+    image: string;
+    phone: string;
+    gender: string;
+    lat: string;
+    lng: string;
+    country: string;
+    state: string;
+    city: string;
+    status: string;
+    company_number: string;
+    secondary_email: string;
+    tax_number: string;
+    company_category: string;
+    company_code: string;
+    iqama_id: string;
+    documents: string;
+    online_status: string;
+    company_verified: string;
+    platform_status: string;
+    balance: string;
+    social_token: string;
+    company_id: string;
+    timestamp: string;
+  };
+};
 
 interface OrderDetailsProps {
   order: OrderType;
@@ -45,7 +111,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
         new Date(order.created_at).getTime() + 30 * 60000
       ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     : "Not yet accepted";
-  console.log("order", order);
+
   return (
     <ScrollView
       style={styles.contentContainer}
@@ -58,21 +124,11 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
           onPress={() => setShowOrderDetails(!showOrderDetails)}
         >
           <Text style={styles.sectionTitle}>Order Details</Text>
-          <Text style={styles.grayText}>
-            {showOrderDetails ? (
-              <Ionicons
-                name="chevron-down"
-                size={20}
-                color={Colors.secondary300}
-              />
-            ) : (
-              <Ionicons
-                name="chevron-up"
-                size={20}
-                color={Colors.secondary300}
-              />
-            )}
-          </Text>
+          <Ionicons
+            name={showOrderDetails ? "chevron-down" : "chevron-up"}
+            size={20}
+            color={Colors.secondary300}
+          />
         </TouchableOpacity>
         {showOrderDetails && (
           <View style={styles.orderDetails}>
@@ -87,7 +143,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
             <DashedSeparator />
             <View style={styles.rowBetween}>
               <Text style={styles.boldText}>Problem Image</Text>
-              {order.images ? (
+              {order.images && order.images !== "undefined" ? (
                 <Image
                   source={{ uri: `${order.image_url}${order.images}` }}
                   style={styles.problemImage}
@@ -132,11 +188,11 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
         )}
       </View>
       <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>
-        About Customer
+        About Provider
       </Text>
 
       {order.provider ? (
-        <ProviderCard provider={order.provider} />
+        <ProviderCard provider={order.provider} image_url={order.image_url} />
       ) : (
         <View style={styles.noProviderContainer}>
           <Text style={styles.noProviderText}>
@@ -165,7 +221,11 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 24,
   },
-  sectionTitle: { fontSize: 18, fontWeight: "500", color: Colors.secondary },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "500",
+    color: Colors.secondary,
+  },
   orderDetails: {
     marginTop: 8,
     padding: 16,
@@ -178,10 +238,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: 4,
   },
-  boldText: { fontWeight: "500", color: Colors.secondary300 },
-  blueText: { fontWeight: "bold", color: Colors.secondary },
-  grayText: { color: Colors.secondary },
-  problemImage: { width: 64, height: 64, borderRadius: 8 },
+  boldText: {
+    fontWeight: "500",
+    color: Colors.secondary300,
+  },
+  blueText: {
+    fontWeight: "bold",
+    color: Colors.secondary,
+  },
+  grayText: {
+    color: Colors.secondary,
+  },
+  problemImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+  },
   noImage: {
     backgroundColor: Colors.primary300,
     justifyContent: "center",

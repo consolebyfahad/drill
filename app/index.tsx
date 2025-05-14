@@ -1,77 +1,50 @@
-import Button from "@/components/button";
+import { useEffect } from "react";
 import { useRouter } from "expo-router";
-// import { useTranslation } from "react-i18next";
-import { Image, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Colors } from "~/constants/Colors";
-export default function Onboarding() {
+import { View, Image, StyleSheet } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+export default function Splash() {
   const router = useRouter();
-  const handleGetStarted = () => {
-    router.push("/auth/login");
-  };
-  // const { t, i18n } = useTranslation();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const userId = await AsyncStorage.getItem("user_id");
+        setTimeout(() => {
+          if (userId) {
+            router.replace("/(tabs)");
+          } else {
+            router.replace("/welcome");
+          }
+        }, 2000);
+      } catch (error) {
+        console.error("Error checking user data:", error);
+        router.replace("/welcome");
+      }
+    };
+
+    checkUser();
+  }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Image
-          source={require("../assets/images/onboarding.png")}
-          style={styles.image}
-          resizeMode="cover"
-        />
-        <View style={styles.textContainer}>
-          <Text style={styles.title}>Welcome!</Text>
-          <Text style={styles.subtitle}>The Service Provider App</Text>
-          <Text style={styles.description}>
-            Application for easily finding a services Jobs!
-          </Text>
-        </View>
-      </View>
-      <View style={styles.buttonContainer}>
-        <Button title="Get Started" onPress={handleGetStarted} />
-      </View>
-    </SafeAreaView>
+    <View style={styles.container}>
+      <Image
+        style={styles.image}
+        source={require("../assets/images/splash.png")}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "space-between",
-    backgroundColor: Colors.white,
-  },
-  content: {
-    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   image: {
     width: "100%",
-    marginBottom: 8,
-  },
-  textContainer: {
-    alignItems: "center",
-    width: "80%",
-    marginHorizontal: "auto",
-    paddingHorizontal: 12,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    marginBottom: 8,
-    color: Colors.secondary,
-  },
-  subtitle: {
-    fontSize: 24,
-    fontWeight: "600",
-    marginBottom: 12,
-    color: Colors.secondary,
-  },
-  description: {
-    textAlign: "center",
-    fontSize: 18,
-    color: Colors.secondary100,
-  },
-  buttonContainer: {
-    paddingHorizontal: 12,
-    paddingBottom: 16,
+    height: "100%",
+    resizeMode: "cover",
   },
 });

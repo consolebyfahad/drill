@@ -11,7 +11,7 @@ const Home: React.FC = () => {
   useEffect(() => {
     const fetchAccountType = async () => {
       try {
-        const account = await AsyncStorage.getItem("account_type");
+        const account = await AsyncStorage.getItem("user_type");
         if (account) {
           setAccountType(account);
           console.log("Account type:", account);

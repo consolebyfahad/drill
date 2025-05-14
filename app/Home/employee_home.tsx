@@ -3,8 +3,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { firebase } from "@react-native-firebase/messaging";
 import * as Location from "expo-location";
 import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ImageSourcePropType,
+} from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import JobRequestCard from "~/components/jobrequest_card";
@@ -16,7 +25,34 @@ import {
   setupNotificationListeners,
 } from "~/utils/notification";
 
-// Define the order type
+// Define provider type
+interface Provider {
+  id: string;
+  email: string;
+  name: string;
+  address: string;
+  postal: string;
+  image: string;
+  phone: string;
+  gender: string;
+  lat: string;
+  lng: string;
+  country: string;
+  state: string;
+  city: string;
+  [key: string]: any; // For other properties that might be in the response
+}
+
+// Define category type
+interface Category {
+  id: string;
+  image: string;
+  name: string;
+  status: string;
+  [key: string]: any;
+}
+
+// Define order type
 interface OrderDetails {
   id: string;
   order_no: string;
@@ -38,6 +74,9 @@ interface OrderDetails {
   created_at: string;
   distance: number;
   image_url: string;
+  provider: Provider;
+  category: Category;
+  estimatedDuration?: string;
 }
 
 // Define notification data type
@@ -46,19 +85,29 @@ interface NotificationData {
   status?: string;
 }
 
+// Define location type
+interface LocationState {
+  latitude: number;
+  longitude: number;
+  address: string;
+}
+
 const EmployeeHome = () => {
+  // Refs
+  const mapRef = useRef<MapView | null>(null);
+
+  // State variables
   const [greeting, setGreeting] = useState("Good Afternoon!");
-  const [address, setAddress] = useState("Loading address...");
-  const [location, setLocation] = useState<Location.LocationObject | null>(
-    null
-  );
-  const [isOn, setIsOn] = useState(false);
-  const [jobRequest, setJobRequest] = useState<number | null>(0);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isOn, setIsOn] = useState(false);
+  const [location, setLocation] = useState<LocationState>({
+    latitude: 37.7749,
+    longitude: -122.4194,
+    address: "Loading address...",
+  });
+  const [jobRequests, setJobRequests] = useState<OrderDetails[]>([]);
   const [mapReady, setMapReady] = useState(false);
-  const [map, setMap] = useState<MapView | null>(null);
-  const [order, setOrder] = useState<OrderDetails | null>(null);
 
   // Set greeting based on time of day
   useEffect(() => {
@@ -72,58 +121,132 @@ const EmployeeHome = () => {
     }
   }, []);
 
-  // Get order details function
-  const getOrderDetails = async (orderId: string) => {
-    setIsLoading(true);
+  // Calculate distance between two coordinates
+  const calculateDistance = useCallback(
+    (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+      if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
 
-    const formData = new FormData();
-    formData.append("type", "get_data");
-    formData.append("table_name", "orders");
-    formData.append("id", orderId);
-    console.log(formData);
+      const R = 6371; // Earth's radius in km
+      const dLat = (lat2 - lat1) * (Math.PI / 180);
+      const dLon = (lon2 - lon1) * (Math.PI / 180);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) *
+          Math.cos(lat2 * (Math.PI / 180)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c; // Distance in km
+      return parseFloat(distance.toFixed(1));
+    },
+    []
+  );
 
-    try {
-      const response = await apiCall(formData);
-      if (response && response.data && response.data.length > 0) {
-        const orderDetails = response.data[0];
-        console.log(response);
-        setOrder(orderDetails);
-      } else {
-        Alert.alert("Error", "No order details found");
-      }
-    } catch (error) {
-      console.error("Failed to fetch order details", error);
-      Alert.alert("Error", "Failed to fetch order details");
-    } finally {
-      setIsLoading(false);
+  // Calculate estimated duration based on distance
+  const calculateDuration = useCallback((distanceKm: number): string => {
+    if (!distanceKm) return "N/A";
+
+    // Assuming average speed of 30 km/h in city traffic
+    const avgSpeedKmH = 30;
+    const timeHours = distanceKm / avgSpeedKmH;
+    const timeMinutes = timeHours * 60;
+
+    if (timeMinutes < 1) {
+      return "1min"; // Minimum time
+    } else if (timeMinutes < 60) {
+      return `${Math.ceil(timeMinutes)}min`;
+    } else {
+      const hours = Math.floor(timeHours);
+      const minutes = Math.ceil((timeHours - hours) * 60);
+      return minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
     }
-  };
+  }, []);
 
+  // Get order details function
+  const getOrderDetails = useCallback(
+    async (orderId: string) => {
+      const formData = new FormData();
+      formData.append("type", "get_data");
+      formData.append("table_name", "orders");
+      formData.append("id", orderId);
+
+      try {
+        const response = await apiCall(formData);
+        if (response && response.data && response.data.length > 0) {
+          const orderDetails = response.data[0];
+
+          // Get current user location from AsyncStorage
+          const userLat = await AsyncStorage.getItem("user_lat");
+          const userLng = await AsyncStorage.getItem("user_lng");
+
+          // Check if provider has coordinates
+          const providerLat = orderDetails?.provider?.lat;
+          const providerLng = orderDetails?.provider?.lng;
+
+          // Calculate distance if coordinates are available
+          let distance = 0;
+          if (userLat && userLng && providerLat && providerLng) {
+            distance = calculateDistance(
+              parseFloat(userLat),
+              parseFloat(userLng),
+              parseFloat(providerLat),
+              parseFloat(providerLng)
+            );
+            orderDetails.distance = distance;
+          }
+
+          // Calculate estimated duration
+          orderDetails.estimatedDuration = calculateDuration(distance);
+
+          // Add to job requests instead of replacing
+          setJobRequests((prevRequests) => {
+            // Check if this order is already in the list
+            const exists = prevRequests.some(
+              (req) => req.id === orderDetails.id
+            );
+            if (exists) return prevRequests;
+            return [...prevRequests, orderDetails];
+          });
+
+          return orderDetails;
+        } else {
+          console.log("No order details found");
+          return null;
+        }
+      } catch (error) {
+        console.error("Failed to fetch order details", error);
+        return null;
+      }
+    },
+    [calculateDistance, calculateDuration]
+  );
+
+  // Initialize FCM
   useEffect(() => {
     const initFCM = async () => {
-      const userId = await AsyncStorage.getItem("user_id");
-      await requestFCMPermission();
-      const token = await getFCMToken();
-      console.log("📲 User FCM Token:", token);
-      console.log("Firebase App Config:", firebase.app().options);
+      try {
+        await requestFCMPermission();
+        const token = await getFCMToken();
+        console.log("📲 User FCM Token:", token);
+      } catch (error) {
+        console.error("Error initializing FCM:", error);
+      }
     };
 
-    const handleNotificationPress = (data: NotificationData) => {
-      console.log(
-        "🚨 Notification received (foreground/background/quit):",
-        data
-      );
-      if (data?.status === "pending" && data?.order_id) {
-        setJobRequest(1);
+    const handleNotificationPress = async (data: NotificationData) => {
+      console.log("🚨 Notification received:", data);
+
+      // Only process notifications if the toggle is on
+      if (isOn && data?.status === "pending" && data?.order_id) {
         const orderId = data.order_id;
-        getOrderDetails(orderId);
+        await getOrderDetails(orderId);
       }
     };
 
     initFCM();
     const unsubscribe = setupNotificationListeners(handleNotificationPress);
     return () => unsubscribe(); // Clean up listeners
-  }, []);
+  }, [getOrderDetails, isOn]);
 
   // Get current location and address
   useEffect(() => {
@@ -139,7 +262,10 @@ const EmployeeHome = () => {
         if (status !== "granted") {
           if (isMounted) {
             setErrorMsg("Permission to access location was denied");
-            setAddress("Permission to access location was denied");
+            setLocation((prev) => ({
+              ...prev,
+              address: "Permission to access location was denied",
+            }));
             setIsLoading(false);
           }
           return;
@@ -147,39 +273,71 @@ const EmployeeHome = () => {
 
         // Get current position with high accuracy
         const currentLocation = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced, // Use balanced for better performance
+          accuracy: Location.Accuracy.Balanced,
         });
 
         if (!isMounted) return;
 
-        setLocation(currentLocation);
+        const { latitude, longitude } = currentLocation.coords;
+
+        // Save location to AsyncStorage
+        await AsyncStorage.setItem("user_lat", latitude.toString());
+        await AsyncStorage.setItem("user_lng", longitude.toString());
+
+        setLocation((prev) => ({
+          ...prev,
+          latitude,
+          longitude,
+        }));
 
         // Get address from coordinates
         try {
           const geocode = await Location.reverseGeocodeAsync({
-            latitude: currentLocation.coords.latitude,
-            longitude: currentLocation.coords.longitude,
+            latitude,
+            longitude,
           });
 
           if (!isMounted) return;
 
           if (geocode && geocode.length > 0) {
-            const { street, streetNumber, city, region, postalCode } =
-              geocode[0];
-            const formattedAddress = `${streetNumber || ""} ${street || ""}, ${
-              city || ""
-            }, ${region || ""} ${postalCode || ""}`.trim();
+            const {
+              name,
+              street,
+              streetNumber,
+              city,
+              region,
+              postalCode,
+              country,
+            } = geocode[0];
+            const formattedAddress = [
+              streetNumber || "",
+              street || "",
+              city || "",
+              region || "",
+              postalCode || "",
+              country || "",
+            ]
+              .filter(Boolean)
+              .join(", ");
 
-            setAddress(
-              formattedAddress || "Address found but details unavailable"
-            );
+            setLocation((prev) => ({
+              ...prev,
+              address:
+                formattedAddress || "Address found but details unavailable",
+            }));
           } else {
-            setAddress("Address unavailable");
+            setLocation((prev) => ({
+              ...prev,
+              address: "Address unavailable",
+            }));
           }
         } catch (error) {
           console.error("Geocoding error:", error);
           if (isMounted) {
-            setAddress("Could not retrieve address");
+            setLocation((prev) => ({
+              ...prev,
+              address: "Could not retrieve address",
+            }));
           }
         }
       } catch (error) {
@@ -209,13 +367,13 @@ const EmployeeHome = () => {
     };
   }, []);
 
-  // Function to center map on user's location - using useCallback for performance
+  // Center map on user's location
   const centerMapOnUser = useCallback(() => {
-    if (location && map && mapReady) {
+    if (mapRef.current && mapReady && location.latitude && location.longitude) {
       try {
-        map.animateToRegion({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
+        mapRef.current.animateToRegion({
+          latitude: location.latitude,
+          longitude: location.longitude,
           latitudeDelta: 0.005,
           longitudeDelta: 0.005,
         });
@@ -223,9 +381,10 @@ const EmployeeHome = () => {
         console.log("Error animating map:", error);
       }
     }
-  }, [location, map, mapReady]);
+  }, [location, mapReady]);
 
-  const handleAcceptJob = async () => {
+  // Handle job acceptance
+  const handleAcceptJob = async (order: OrderDetails) => {
     if (!order?.id) {
       Alert.alert("Error", "Cannot accept job: order details not available");
       return;
@@ -234,8 +393,9 @@ const EmployeeHome = () => {
     setIsLoading(true);
 
     try {
-      // Get user ID from AsyncStorage
       const userId = await AsyncStorage.getItem("user_id");
+      const userLat = await AsyncStorage.getItem("user_lat");
+      const userLng = await AsyncStorage.getItem("user_lng");
 
       if (!userId) {
         Alert.alert("Error", "User information not found");
@@ -248,6 +408,8 @@ const EmployeeHome = () => {
       formData.append("table_name", "order_history");
       formData.append("order_id", order.id);
       formData.append("user_id", userId);
+      formData.append("lat", userLat || "");
+      formData.append("lng", userLng || "");
       formData.append("status", "accepted");
 
       console.log("Accepting order:", formData);
@@ -255,9 +417,10 @@ const EmployeeHome = () => {
       const response = await apiCall(formData);
 
       if (response && response.result === true) {
-        await AsyncStorage.setItem("order_id", JSON.stringify(order.id));
-        // Hide the job request card
-        setJobRequest(null);
+        await AsyncStorage.setItem("order_id", order.id);
+
+        // Remove this job from the list
+        setJobRequests((prev) => prev.filter((req) => req.id !== order.id));
 
         // Navigate to orders screen
         router.push("/order/order_place");
@@ -272,44 +435,35 @@ const EmployeeHome = () => {
     }
   };
 
-  const handleHideJob = () => {
-    setJobRequest(null);
+  // Hide/decline a specific job
+  const handleHideJob = (orderId: string) => {
+    setJobRequests((prev) => prev.filter((job) => job.id !== orderId));
   };
 
+  // Handle map events
   const handleMapReady = () => {
     setMapReady(true);
   };
 
-  const handleMapRef = useCallback((ref: MapView | null) => {
-    setMap(ref);
-  }, []);
+  // Handle toggle change
+  const handleToggleChange = (value: boolean) => {
+    setIsOn(value);
 
-  // Center map when location changes and map is ready
+    // Clear job requests when turning off
+    if (!value) {
+      setJobRequests([]);
+    }
+  };
+
+  // Center map on user when map is ready
   useEffect(() => {
-    if (location && map && mapReady) {
-      // Slight delay to ensure map is fully initialized
+    if (mapReady && location.latitude && location.longitude) {
       const timer = setTimeout(() => {
         centerMapOnUser();
       }, 500);
-
       return () => clearTimeout(timer);
     }
-  }, [location, map, mapReady, centerMapOnUser]);
-
-  // Determine service and package titles based on order
-  const getServiceTitle = () => {
-    if (order?.cat_id === "2") {
-      return "Detection Service";
-    }
-    return "Service";
-  };
-
-  const getPackageTitle = () => {
-    if (order?.package_id === "1") {
-      return "Express Service Package";
-    }
-    return "Standard Package";
-  };
+  }, [location, mapReady, centerMapOnUser]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -323,13 +477,13 @@ const EmployeeHome = () => {
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{errorMsg}</Text>
         </View>
-      ) : location ? (
+      ) : (
         <MapView
-          ref={handleMapRef}
+          ref={mapRef}
           style={styles.map}
           initialRegion={{
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
+            latitude: location.latitude,
+            longitude: location.longitude,
             latitudeDelta: 0.005,
             longitudeDelta: 0.005,
           }}
@@ -337,23 +491,18 @@ const EmployeeHome = () => {
           showsMyLocationButton={false}
           followsUserLocation={false}
           onMapReady={handleMapReady}
-          onLayout={() => {}}
         >
           {mapReady && (
             <Marker
               coordinate={{
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
+                latitude: location.latitude,
+                longitude: location.longitude,
               }}
               title="You are here"
               description="Your current location"
             />
           )}
         </MapView>
-      ) : (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Unable to load map</Text>
-        </View>
       )}
 
       {/* Overlay with location information */}
@@ -361,43 +510,58 @@ const EmployeeHome = () => {
         <Text style={styles.greeting}>{greeting}</Text>
         <View style={styles.addressContainer}>
           <Ionicons name="location" size={18} color="#000" />
-          <Text style={styles.address}>{address}</Text>
+          <Text style={styles.address}>{location.address}</Text>
         </View>
         <View style={styles.toggleContainer}>
-          <ToggleJob
-            initialValue={false}
-            onToggle={(value) => {
-              setIsOn(value);
-            }}
-          />
+          <ToggleJob initialValue={isOn} onToggle={handleToggleChange} />
         </View>
-        {jobRequest && location && (
-          <JobRequestCard
-            userName="Daud"
-            serviceTitle={getServiceTitle()}
-            packageTitle={getPackageTitle()}
-            distance="3.1km"
-            duration="60min"
-            jobLocation={order?.address || "Address unavailable"}
-            currentLocation={address}
-            onDecline={handleHideJob}
-            onAccept={handleAcceptJob}
+
+        {/* Job Requests List */}
+        {jobRequests.length > 0 && (
+          <FlatList
+            data={jobRequests}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              // Get image URL for the service
+              const serviceImageUrl =
+                item?.category?.image && item?.image_url
+                  ? { uri: `${item.image_url}${item.category.image}` }
+                  : require("@/assets/images/default-profile.png");
+
+              return (
+                <JobRequestCard
+                  userName={item.provider?.name || "Client"}
+                  serviceTitle={item.category?.name || "Service"}
+                  packageTitle={item.package_id}
+                  distance={`${item.distance || "N/A"}km`}
+                  duration={item.estimatedDuration || "N/A"}
+                  jobLocation={item.provider?.address || "Address unavailable"}
+                  currentLocation={location.address}
+                  onDecline={() => handleHideJob(item.id)}
+                  onAccept={() => handleAcceptJob(item)}
+                  serviceImage={serviceImageUrl}
+                />
+              );
+            }}
+            style={styles.requestsList}
+            contentContainerStyle={styles.requestsContent}
+            showsVerticalScrollIndicator={false}
           />
         )}
       </View>
 
       {/* Center on user button */}
-      {location && (
-        <View style={styles.centerButtonContainer}>
-          <Ionicons
-            name="locate"
-            size={24}
-            color="#000080"
-            style={styles.centerButton}
-            onPress={centerMapOnUser}
-          />
-        </View>
-      )}
+      <TouchableOpacity
+        style={styles.centerButtonContainer}
+        onPress={centerMapOnUser}
+      >
+        <Ionicons
+          name="locate"
+          size={24}
+          color="#000080"
+          style={styles.centerButton}
+        />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -439,6 +603,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 15,
+    maxHeight: "100%",
   },
   greeting: {
     fontSize: 24,
@@ -448,8 +613,8 @@ const styles = StyleSheet.create({
   },
   addressContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    alignItems: "flex-start",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     padding: 10,
     borderRadius: 8,
     marginBottom: 15,
@@ -457,17 +622,19 @@ const styles = StyleSheet.create({
   address: {
     fontSize: 14,
     marginLeft: 5,
-    flex: 1, // Allow text to wrap
+    flex: 1,
     flexWrap: "wrap",
   },
   toggleContainer: {
     alignItems: "center",
     marginTop: 10,
+    marginBottom: 10,
   },
   centerButtonContainer: {
     position: "absolute",
     bottom: 20,
     right: 20,
+    zIndex: 10,
   },
   centerButton: {
     backgroundColor: "white",
@@ -478,6 +645,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+  },
+  requestsList: {
+    maxHeight: "100%",
+  },
+  requestsContent: {
+    paddingVertical: 10,
   },
 });
 

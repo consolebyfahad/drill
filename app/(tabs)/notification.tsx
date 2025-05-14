@@ -1,20 +1,11 @@
 import React, { useState } from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  View,
-  Text,
-  Button,
-  Platform,
-  Alert,
-} from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import * as Notifications from "expo-notifications";
 import NotificationCard from "@/components/notification_card";
 import Header from "@/components/header";
 import AccountIcon from "@/assets/svgs/profileIcon.svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// Notification permissions and handler setup (for local testing)
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -74,10 +65,6 @@ const NotificationScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Header title="Notifications" />
-
-        <View style={styles.buttonContainer}>
-          <Button title="Get Notification" onPress={handleGetNotification} />
-        </View>
 
         <View style={styles.notificationList}>
           {notifications.map((notification) => (

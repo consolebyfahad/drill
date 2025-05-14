@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  SafeAreaView,
   ScrollView,
   ImageBackground,
   TextInput,
@@ -15,7 +14,7 @@ import Header from "@/components/header";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "~/components/button";
 import { Colors } from "~/constants/Colors";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 const { width } = Dimensions.get("window");
 
 const cardData = [

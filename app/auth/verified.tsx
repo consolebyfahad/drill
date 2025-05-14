@@ -21,8 +21,8 @@ type VerifiedScreenProps = {
 };
 
 export default function VerifiedScreen({
-  status = "partial",
-  verifiedBy = { platform: false, company: true },
+  status = "verified",
+  verifiedBy = { platform: true, company: true },
 }: VerifiedScreenProps) {
   const router = useRouter();
 
@@ -39,8 +39,6 @@ export default function VerifiedScreen({
           title: "Pending...",
           message:
             "Your verification is still pending. You will not be able to use the app until your verification is fully completed.",
-          // buttonText: "Check Again Later",
-          // imageSrc: require("@/assets/svgs/pending.png"),
         };
       case "partial":
         return {
@@ -48,8 +46,6 @@ export default function VerifiedScreen({
           title: "Pending...",
           message:
             "Your verification is still pending. You will not be able to use the app until your verification is fully completed.",
-          // buttonText: "Check Again Later",
-          // imageSrc: require("@/assets/svgs/pending1.png"),
         };
       case "verified":
       default:
@@ -58,8 +54,6 @@ export default function VerifiedScreen({
           title: "Verified!",
           message:
             "Congratulations! Your verification is now complete, and you can proceed to use the app.",
-          // buttonText: "Browse Home",
-          // imageSrc: require("@/assets/svgs/verified.png"),
         };
     }
   };
@@ -71,11 +65,6 @@ export default function VerifiedScreen({
       {/* Image & Content */}
       <View style={styles.content}>
         <View>{content.icon}</View>
-        {/* <Image
-          source={content.imageSrc}
-          style={styles.image}
-          resizeMode="contain"
-        /> */}
 
         <View style={styles.textContainer}>
           <Text style={styles.title}>{content.title}</Text>

@@ -1,27 +1,37 @@
 import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import React from "react";
 import DashedSeprator from "./dashed_seprator";
-import Star from "@/assets/svgs/Star.svg";
-import { Colors } from "@/constants/Colors";
+import { Colors } from "../constants/Colors";
 
+// Updated Order type to match the actual data structure
 type Order = {
   id?: string;
-  title?: string;
+  order_no?: string;
+  category?: {
+    name: string;
+    image: string;
+  };
   status?: string;
   amount?: string;
   discount?: string;
-  date?: string;
-  provider?: string;
+  timestamp?: string;
+  created_at?: string;
+  provider?: {
+    name: string;
+    image: string;
+  };
+  payment_method?: string;
   paymentStatus?: string;
   rating?: string;
   tip?: string;
-  image?: any;
+  image_url?: string;
+  images?: string;
 };
 
 type ServiceDetailsCardProps = {
   order: Order;
   orderScreen?: boolean;
-  onPress?: any;
+  onPress?: () => void;
 };
 
 export default function ServiceDetailsCard({
@@ -29,22 +39,43 @@ export default function ServiceDetailsCard({
   orderScreen,
   onPress,
 }: ServiceDetailsCardProps) {
+  // Function to get the image source
+  const getImageSource = () => {
+    if (order.images && order.image_url) {
+      return { uri: `${order.image_url}${order.images}` };
+    } else if (order.category?.image) {
+      return { uri: `${order.image_url}${order.category.image}` };
+    } else {
+      return require("../assets/images/default-profile.png");
+    }
+  };
+
   return (
     <TouchableOpacity onPress={onPress} style={styles.card}>
       {/* Order Top Section */}
       <View style={styles.orderTopSection}>
-        <Image source={order.image} style={styles.image} resizeMode="cover" />
+        <Image
+          source={getImageSource()}
+          style={styles.image}
+          resizeMode="cover"
+        />
         <View style={styles.orderInfo}>
           <View style={styles.orderHeader}>
-            <Text style={styles.title}>{order.title}</Text>
-            <Text style={styles.status}>{order.status}</Text>
+            <Text style={styles.title}>
+              {order.category?.name || "Service Order"}
+            </Text>
+            <Text style={[styles.status, getStatusStyle(order.status)]}>
+              {order.status}
+            </Text>
           </View>
           <Text style={styles.orderId}>
-            Order ID: <Text style={styles.orderIdValue}>{order.id}</Text>
+            Order ID: <Text style={styles.orderIdValue}>{order.order_no}</Text>
           </Text>
           <Text style={styles.amount}>
-            SAR {order.amount}{" "}
-            <Text style={styles.discount}>({order.discount}%)</Text>
+            SAR {order.amount || "0.00"}{" "}
+            {order.discount && (
+              <Text style={styles.discount}>({order.discount}%)</Text>
+            )}
           </Text>
         </View>
       </View>
@@ -53,35 +84,42 @@ export default function ServiceDetailsCard({
       <View style={styles.detailsContainer}>
         <View style={styles.detailsRow}>
           <Text style={styles.label}>Date & Time</Text>
-          <Text style={styles.value}>{order.date}</Text>
+          <Text style={styles.value}>
+            {order.timestamp || order.created_at || "N/A"}
+          </Text>
         </View>
         <DashedSeprator />
 
         <View style={styles.detailsRow}>
           <Text style={styles.label}>Provider</Text>
-          <Text style={styles.value}>{order.provider}</Text>
+          <Text style={styles.value}>
+            {order.provider?.name || "Not assigned yet"}
+          </Text>
         </View>
         <DashedSeprator />
 
         <View style={styles.detailsRow}>
           <Text style={styles.label}>Payment Status</Text>
-          <Text style={styles.paymentStatus}>{order.paymentStatus}</Text>
+          <Text style={styles.paymentStatus}>
+            {order.paymentStatus || "Pending"}
+          </Text>
         </View>
 
-        {order.status === "Completed" && orderScreen && (
+        {order.status === "completed" && orderScreen && (
           <>
             <DashedSeprator />
             <View style={styles.detailsRow}>
               <Text style={styles.label}>Rating</Text>
               <View style={styles.ratingContainer}>
-                <Star />
-                <Text style={styles.value}>{order.rating}</Text>
+                {/* Use icon component or image for star */}
+                <Text style={styles.starIcon}>★</Text>
+                <Text style={styles.value}>{order.rating || "0"}</Text>
               </View>
             </View>
             <DashedSeprator />
             <View style={styles.detailsRow}>
               <Text style={styles.label}>Tipped</Text>
-              <Text style={styles.tip}>SAR {order.tip}</Text>
+              <Text style={styles.tip}>SAR {order.tip || "0.00"}</Text>
             </View>
           </>
         )}
@@ -89,6 +127,22 @@ export default function ServiceDetailsCard({
     </TouchableOpacity>
   );
 }
+
+// Function to get different status styles
+const getStatusStyle = (status) => {
+  switch (status?.toLowerCase()) {
+    case "accepted":
+      return { backgroundColor: Colors.success100, color: Colors.success };
+    case "pending":
+      return { backgroundColor: "#FFF3CD", color: "#856404" };
+    case "completed":
+      return { backgroundColor: "#D4EDDA", color: "#155724" };
+    case "cancelled":
+      return { backgroundColor: "#F8D7DA", color: "#721C24" };
+    default:
+      return { backgroundColor: Colors.primary100, color: Colors.secondary };
+  }
+};
 
 const styles = StyleSheet.create({
   card: {
@@ -124,8 +178,6 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
   },
   status: {
-    backgroundColor: Colors.success100,
-    color: Colors.success,
     padding: 8,
     fontSize: 14,
     fontWeight: "500",
@@ -174,6 +226,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+  },
+  starIcon: {
+    color: "#FFD700",
+    fontSize: 16,
   },
   tip: {
     color: Colors.success,

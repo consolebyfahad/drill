@@ -12,13 +12,13 @@ import {
   Alert,
   Image,
   LogBox,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Button from "~/components/button";
 import RadioButton from "~/components/radio_button";
 import { Colors } from "~/constants/Colors";

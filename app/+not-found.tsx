@@ -12,7 +12,7 @@ export default function NotFoundScreen() {
       <Ionicons name="alert-circle-outline" size={100} color="#FF3B30" />
       <Text style={styles.errorText}>404</Text>
       <Text style={styles.messageText}>Oops! Page not found.</Text>
-      <Button title="Go Home" onPress={() => router.push("/splash")} />
+      <Button title="Go Home" onPress={() => router.push("/")} />
     </SafeAreaView>
   );
 }

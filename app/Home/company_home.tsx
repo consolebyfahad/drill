@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  FlatList,
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,13 +14,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "~/constants/Colors";
 import { apiCall } from "~/utils/api";
-
-// Type definitions
-type DocumentItem = {
-  type: string;
-  side: string;
-  file: string;
-};
 
 type User = {
   id: string;
@@ -33,11 +25,7 @@ type User = {
   city: string;
   zip: string;
   iqamaId: string;
-  documentType: string;
-  documentFront: string;
-  documentBack: string;
   image: string;
-  documents: DocumentItem[];
   verified: boolean;
   company_number: string;
   company_code: string;
@@ -133,35 +121,13 @@ const CompanyHome = () => {
 
       setUserId(storedUserId);
       const formData = new FormData();
-      formData.append("type", "profile");
+      formData.append("type", "company_dashboard");
       formData.append("user_id", storedUserId);
-
+      console.log(formData);
       const response = await apiCall(formData);
 
       if (response.profile || response.user) {
         const profileData = response.profile || response.user;
-
-        // Parse documents if they exist
-        let parsedDocuments: DocumentItem[] = [];
-
-        if (
-          profileData.documents &&
-          typeof profileData.documents === "string"
-        ) {
-          try {
-            // Clean up the escaped string
-            const cleaned = profileData.documents
-              .replace(/\\"/g, '"')
-              .replace(/^"|"$/g, "");
-
-            parsedDocuments = JSON.parse(cleaned);
-          } catch (e) {
-            console.error("Failed to parse documents:", e);
-          }
-        }
-
-        let frontDoc = parsedDocuments.find((doc) => doc.side === "front");
-        let backDoc = parsedDocuments.find((doc) => doc.side === "back");
 
         setUser({
           id: profileData.id || "",
@@ -173,12 +139,7 @@ const CompanyHome = () => {
           city: profileData.city || "",
           zip: profileData.postal || "",
           iqamaId: profileData.iqama_id || "",
-          documentType:
-            parsedDocuments.length > 0 ? parsedDocuments[0].type : "Passport",
-          documentFront: frontDoc ? frontDoc.file : "",
-          documentBack: backDoc ? backDoc.file : "",
           image: profileData.image || "",
-          documents: parsedDocuments,
           verified: profileData.company_verified === "1",
           company_number: profileData.company_number || "",
           company_code: profileData.company_code || "",

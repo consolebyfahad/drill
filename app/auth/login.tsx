@@ -1,5 +1,3 @@
-// app/auth/login.tsx
-
 import Button from "@/components/button";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";

@@ -4,7 +4,6 @@ import {
   Text,
   View,
   ScrollView,
-  SafeAreaView,
   Image,
   TouchableOpacity,
   FlatList,
@@ -16,7 +15,7 @@ import DropDownPicker from "react-native-dropdown-picker";
 import Header from "~/components/header";
 import { Colors } from "~/constants/Colors";
 import defaultAvatar from "~/assets/images/default-profile.png";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 // Employee type definition
 type Employee = {
   id: string;

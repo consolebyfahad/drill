@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import { Colors } from "~/constants/Colors";
 import Button from "./button";
 
@@ -13,18 +12,20 @@ interface JobRequestCardProps {
   duration?: string;
   jobLocation?: string;
   currentLocation?: string;
+  serviceImage?: any;
   onAccept?: () => void;
   onDecline?: () => void;
 }
 
 const JobRequestCard: React.FC<JobRequestCardProps> = ({
-  userName = "Daud",
-  serviceTitle = "Detection Service",
-  packageTitle = "Express Service Package",
-  distance = "3.1km",
-  duration = "60min",
-  jobLocation = "2972 Westheimer Rd...",
-  currentLocation = "2972 Westheimer Rd...",
+  userName,
+  serviceTitle,
+  packageTitle,
+  distance,
+  duration,
+  jobLocation,
+  currentLocation,
+  serviceImage,
   onAccept = () => {},
   onDecline = () => {},
 }) => {
@@ -40,15 +41,19 @@ const JobRequestCard: React.FC<JobRequestCardProps> = ({
         {/* Service Details */}
         <View style={styles.serviceCard}>
           <View style={styles.serviceIconContainer}>
-            <Image
-              source={require("@/assets/images/default-profile.png")}
-              style={styles.serviceIcon}
-              defaultSource={require("@/assets/images/default-profile.png")}
-            />
+            <Image source={serviceImage} style={styles.serviceIcon} />
           </View>
           <View style={styles.serviceDetails}>
             <Text style={styles.serviceTitle}>{serviceTitle}</Text>
-            <Text style={styles.packageTitle}>{packageTitle}</Text>
+            <Text style={styles.packageTitle}>
+              {packageTitle === "1"
+                ? "Basic"
+                : packageTitle === "2"
+                ? "Standard"
+                : packageTitle === "3"
+                ? "Premium"
+                : ""}
+            </Text>
           </View>
         </View>
 

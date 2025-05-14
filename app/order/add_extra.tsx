@@ -6,9 +6,9 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Camera from "@/assets/svgs/camera.svg";
 import { Colors } from "~/constants/Colors";

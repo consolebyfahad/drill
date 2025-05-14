@@ -1,7 +1,6 @@
 import {
   View,
   Text,
-  SafeAreaView,
   ScrollView,
   Image,
   StyleSheet,
@@ -29,6 +28,7 @@ import { apiCall } from "~/utils/api";
 import Button from "~/components/button";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type User = {
   name: string;

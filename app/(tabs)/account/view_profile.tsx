@@ -3,7 +3,6 @@ import {
   Text,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Alert,
@@ -21,6 +20,7 @@ import Star from "@/assets/svgs/Star.svg";
 import LocationIcon from "@/assets/svgs/locationIcon.svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiCall } from "~/utils/api";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type Order = {
   id: string;

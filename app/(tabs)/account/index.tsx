@@ -7,10 +7,8 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
-  Linking,
-  Platform,
 } from "react-native";
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import Header from "@/components/header";
@@ -20,14 +18,12 @@ import { Colors } from "@/constants/Colors";
 import AccountStatus from "@/assets/svgs/profile/security.svg";
 import Wallet from "@/assets/svgs/profile/Wallet.svg";
 import Notification from "@/assets/svgs/Notification.svg";
-import Password from "@/assets/svgs/Lock.svg";
 import Card from "@/assets/svgs/profile/Card.svg";
 import Rating from "@/assets/svgs/emptyStar.svg";
 import About from "@/assets/svgs/info.svg";
 import Support from "@/assets/svgs/profile/support.svg";
 import Language from "@/assets/svgs/language.svg";
 import Verify from "@/assets/svgs/verify.svg";
-import Favourite from "@/assets/svgs/Heart.svg";
 import Employee from "@/assets/svgs/profile/Card.svg"; // Using Card icon for Employee, replace with actual Employee icon
 import Logout from "@/assets/svgs/Logout.svg";
 import { apiCall } from "~/utils/api";
@@ -192,7 +188,7 @@ export default function Account() {
           try {
             await AsyncStorage.clear();
             // Navigate to login screen
-            router.replace("/splash");
+            router.replace("/welcome");
           } catch (error) {
             console.error("Error during logout:", error);
             Alert.alert("Error", "Failed to logout. Please try again.");
