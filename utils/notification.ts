@@ -1,28 +1,43 @@
+// src/utils/notifications.ts
 import messaging from "@react-native-firebase/messaging";
 import { PermissionsAndroid, Platform } from "react-native";
 
-export const requestFCMPermission = async () => {
+export const requestFCMPermission = async (): Promise<boolean> => {
   try {
-    const hasPermission = await messaging().hasPermission();
+    if (Platform.OS === "ios") {
+      const authStatus = await messaging().hasPermission();
 
-    if (hasPermission === -1) {
-      const requested = await messaging().requestPermission();
-      console.log(`🆕 Permission requested, status: ${requested}`);
-      return requested;
-    } else if (Platform.OS === "android") {
-      const androidPermission = await PermissionsAndroid.request(
+      if (authStatus === messaging.AuthorizationStatus.NOT_DETERMINED) {
+        const requestStatus = await messaging().requestPermission();
+        console.log(`🍎 iOS permission requested: ${requestStatus}`);
+        return (
+          requestStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+          requestStatus === messaging.AuthorizationStatus.PROVISIONAL
+        );
+      }
+
+      return (
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL
+      );
+    }
+
+    if (Platform.OS === "android") {
+      const result = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
       );
-      console.log(`🤖 Android notification permission: ${androidPermission}`);
+      console.log(`🤖 Android notification permission: ${result}`);
+      return result === PermissionsAndroid.RESULTS.GRANTED;
     }
-    return true;
+
+    return false;
   } catch (error) {
-    console.error("❌ Permission request failed:", error);
+    console.error("❌ FCM permission request failed:", error);
     return false;
   }
 };
 
-export const getFCMToken = async () => {
+export const getFCMToken = async (): Promise<string | null> => {
   try {
     const token = await messaging().getToken();
     console.log("🔑 FCM Token:", token);
@@ -36,7 +51,6 @@ export const getFCMToken = async () => {
 export const setupNotificationListeners = (
   handleNotificationPress: (data: any) => void
 ) => {
-  // Foreground
   const unsubscribeOnMessage = messaging().onMessage(async (remoteMessage) => {
     console.log("📩 Foreground notification received:", remoteMessage);
     if (remoteMessage?.data) {
@@ -44,7 +58,6 @@ export const setupNotificationListeners = (
     }
   });
 
-  // Background
   const unsubscribeOnOpenedApp = messaging().onNotificationOpenedApp(
     (remoteMessage) => {
       if (remoteMessage?.data) {
@@ -57,7 +70,6 @@ export const setupNotificationListeners = (
     }
   );
 
-  // Quit state
   messaging()
     .getInitialNotification()
     .then((remoteMessage) => {
@@ -70,7 +82,6 @@ export const setupNotificationListeners = (
       }
     });
 
-  // Clean-up function
   return () => {
     unsubscribeOnMessage();
     unsubscribeOnOpenedApp();

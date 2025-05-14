@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
-  SafeAreaView,
   TouchableOpacity,
   StyleSheet,
   Modal,
@@ -17,6 +16,7 @@ import Popup from "~/components/popup";
 import { useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiCall } from "~/utils/api";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Define the interface for order data
 export interface OrderType {
@@ -123,7 +123,7 @@ const OrderPlace: React.FC = () => {
     formData.append("type", "get_data");
     formData.append("table_name", "orders");
     formData.append("user_id", userId);
-    formData.append("id", orderId);
+    formData.append("id", 12);
     console.log(formData);
     try {
       const response = await apiCall(formData);
@@ -272,17 +272,10 @@ const OrderPlace: React.FC = () => {
         <View style={styles.footerButtons}>
           <Button
             title="Cancel"
-            variant="secondary"
-            fullWidth={false}
-            width="32%"
-            onPress={handleCancel}
-          />
-          <Button
-            title="Pay Now"
             variant="primary"
             fullWidth={false}
-            width="65%"
-            onPress={handlePay}
+            width="100%"
+            onPress={handleCancel}
           />
         </View>
       )}

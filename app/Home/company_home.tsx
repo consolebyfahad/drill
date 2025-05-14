@@ -67,7 +67,7 @@ const sampleOrders: Order[] = [
     employee_name: "Shazad Khan",
     package_type: "Express",
     status: "active",
-    image: require("~/assets/images/icon.png"),
+    image: require("~/assets/images/logo.png"),
   },
   {
     id: "2",
@@ -75,7 +75,7 @@ const sampleOrders: Order[] = [
     employee_name: "Abdul Malik",
     package_type: "Standard",
     status: "completed",
-    image: require("~/assets/images/icon.png"), // Update path as needed
+    image: require("~/assets/images/logo.png"), // Update path as needed
   },
   {
     id: "3",
@@ -83,7 +83,7 @@ const sampleOrders: Order[] = [
     employee_name: "Shazad Khan",
     package_type: "Express",
     status: "active",
-    image: require("~/assets/images/icon.png"), // Update path as needed
+    image: require("~/assets/images/logo.png"), // Update path as needed
   },
   {
     id: "4",
@@ -91,7 +91,7 @@ const sampleOrders: Order[] = [
     employee_name: "Shazad Khan",
     package_type: "Express",
     status: "active",
-    image: require("~/assets/images/icon.png"), // Update path as needed
+    image: require("~/assets/images/logo.png"), // Update path as needed
   },
   {
     id: "5",
@@ -99,7 +99,7 @@ const sampleOrders: Order[] = [
     employee_name: "Shazad Khan",
     package_type: "Express",
     status: "active",
-    image: require("~/assets/images/icon.png"), // Update path as needed
+    image: require("~/assets/images/logo.png"), // Update path as needed
   },
 ];
 

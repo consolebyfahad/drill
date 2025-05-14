@@ -132,7 +132,7 @@ export default function OrderDetails({ order }: OrderDetailsProps) {
         )}
       </View>
       <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>
-        About Service Provider
+        About Customer
       </Text>
 
       {order.provider ? (

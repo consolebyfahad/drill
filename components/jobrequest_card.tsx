@@ -1,11 +1,23 @@
 import React from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Colors } from "~/constants/Colors";
 import Button from "./button";
 
-const JobRequestCard = ({
+interface JobRequestCardProps {
+  userName?: string;
+  serviceTitle?: string;
+  packageTitle?: string;
+  distance?: string;
+  duration?: string;
+  jobLocation?: string;
+  currentLocation?: string;
+  onAccept?: () => void;
+  onDecline?: () => void;
+}
+
+const JobRequestCard: React.FC<JobRequestCardProps> = ({
   userName = "Daud",
   serviceTitle = "Detection Service",
   packageTitle = "Express Service Package",
@@ -13,9 +25,7 @@ const JobRequestCard = ({
   duration = "60min",
   jobLocation = "2972 Westheimer Rd...",
   currentLocation = "2972 Westheimer Rd...",
-  onAccept = () => {
-    router.push("/order/order_place");
-  },
+  onAccept = () => {},
   onDecline = () => {},
 }) => {
   return (
@@ -231,36 +241,6 @@ const styles = StyleSheet.create({
   actionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-  },
-  declineButton: {
-    flex: 1,
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    marginRight: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#DDD",
-  },
-  acceptButton: {
-    flex: 1,
-    backgroundColor: "#4169E1",
-    borderRadius: 12,
-    padding: 16,
-    marginLeft: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  declineText: {
-    fontWeight: "bold",
-    fontSize: 16,
-    color: "#333",
-  },
-  acceptText: {
-    fontWeight: "bold",
-    fontSize: 16,
-    color: "white",
   },
 });
 
