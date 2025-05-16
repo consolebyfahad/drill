@@ -72,7 +72,7 @@ export default function AccessLocation() {
           formData.append("type", "update_noti");
           formData.append("user_id", userId);
           formData.append("devicePlatform", deviceInfo.platform);
-          formData.append("deviceRid", token);
+          formData.append("deviceRid", token ?? "");
           formData.append("deviceModel", deviceInfo.model);
           try {
             const response = await apiCall(formData);

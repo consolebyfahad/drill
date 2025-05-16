@@ -16,9 +16,7 @@ import Button from "@/components/button";
 import Seprator from "@/components/seprator";
 import { Colors } from "@/constants/Colors";
 import AccountStatus from "@/assets/svgs/profile/security.svg";
-import Wallet from "@/assets/svgs/profile/Wallet.svg";
 import Notification from "@/assets/svgs/Notification.svg";
-import Card from "@/assets/svgs/profile/Card.svg";
 import Rating from "@/assets/svgs/emptyStar.svg";
 import About from "@/assets/svgs/info.svg";
 import Support from "@/assets/svgs/profile/support.svg";
@@ -234,11 +232,11 @@ export default function Account() {
         rightColor: user.state === "1" ? Colors.success : Colors.danger,
       },
       // This item will be conditionally added based on account type
-      // {
-      //   icon: accountType === "company" ? "Employee" : "FavBuyer",
-      //   title: accountType === "company" ? "Employees" : "Favourite Buyer",
-      //   extraRight: "chevron-forward",
-      // },
+      {
+        icon: "Employee",
+        title: "Employees",
+        extraRight: "chevron-forward",
+      },
       { icon: "Notification", title: "Notification", right: "toggle" },
 
       { icon: "Rate Us", title: "Rate Us", extraRight: "chevron-forward" },
@@ -259,7 +257,7 @@ export default function Account() {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
-        <Header title="Account" homeScreen={false} />
+        <Header title="Account" homeScreen={false} icon={false} />
         {/* Profile Section */}
         <View style={styles.profileContainer}>
           <View style={styles.imageWrapper}>

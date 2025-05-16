@@ -118,7 +118,7 @@ export default function Orders() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.innerContainer}>
-        <Header title="Orders" icon={true} />
+        <Header title="Orders" />
 
         {/* Dropdown Picker */}
         <View style={styles.dropdownContainer}>

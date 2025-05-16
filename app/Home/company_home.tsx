@@ -8,12 +8,17 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "~/constants/Colors";
 import { apiCall } from "~/utils/api";
+import { useRouter } from "expo-router";
+
+// Get screen dimensions
+const { width, height } = Dimensions.get("window");
 
 type User = {
   id: string;
@@ -33,12 +38,15 @@ type User = {
 };
 
 type Order = {
-  id: string;
-  order_number: string;
-  employee_name: string;
-  package_type: "Express" | "Standard";
-  status: "active" | "completed" | "cancelled";
-  image?: string;
+  id?: string;
+  orderNo: string;
+  amount: string;
+  discount: string;
+  paymentStatus: string;
+  provider: string;
+  image: any;
+  packageName?: string;
+  status?: "active" | "completed" | "cancelled";
 };
 
 type OrderStats = {
@@ -47,83 +55,41 @@ type OrderStats = {
   cancelled: number;
 };
 
-// Sample order data (replace with API data later)
-const sampleOrders: Order[] = [
-  {
-    id: "1",
-    order_number: "123KH567091",
-    employee_name: "Shazad Khan",
-    package_type: "Express",
-    status: "active",
-    image: require("~/assets/images/logo.png"),
-  },
-  {
-    id: "2",
-    order_number: "123KH567091",
-    employee_name: "Abdul Malik",
-    package_type: "Standard",
-    status: "completed",
-    image: require("~/assets/images/logo.png"), // Update path as needed
-  },
-  {
-    id: "3",
-    order_number: "123KH567091",
-    employee_name: "Shazad Khan",
-    package_type: "Express",
-    status: "active",
-    image: require("~/assets/images/logo.png"), // Update path as needed
-  },
-  {
-    id: "4",
-    order_number: "123KH567091",
-    employee_name: "Shazad Khan",
-    package_type: "Express",
-    status: "active",
-    image: require("~/assets/images/logo.png"), // Update path as needed
-  },
-  {
-    id: "5",
-    order_number: "123KH567091",
-    employee_name: "Shazad Khan",
-    package_type: "Express",
-    status: "active",
-    image: require("~/assets/images/logo.png"), // Update path as needed
-  },
-];
-
-// Sample order stats (replace with API data later)
-const sampleStats: OrderStats = {
-  active: 10,
-  completed: 804,
-  cancelled: 21,
-};
-
 const CompanyHome = () => {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [orders, setOrders] = useState<Order[]>(sampleOrders);
-  const [orderStats, setOrderStats] = useState<OrderStats>(sampleStats);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [orderStats, setOrderStats] = useState<OrderStats>({
+    active: 0,
+    completed: 0,
+    cancelled: 0,
+  });
   const [imageBaseUrl, setImageBaseUrl] = useState<string>(
     "https://7tracking.com/saudiservices/images/"
   );
 
   useEffect(() => {
-    fetchUserProfile();
+    const loadData = async () => {
+      try {
+        await Promise.all([fetchUserProfile(), fetchOrders()]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   const fetchUserProfile = async () => {
     try {
-      setLoading(true);
       const storedUserId = await AsyncStorage.getItem("user_id");
       if (!storedUserId) throw new Error("User ID not found");
 
-      setUserId(storedUserId);
       const formData = new FormData();
-      formData.append("type", "company_dashboard");
+      formData.append("type", "company");
       formData.append("user_id", storedUserId);
-      console.log(formData);
+
       const response = await apiCall(formData);
 
       if (response.profile || response.user) {
@@ -145,26 +111,71 @@ const CompanyHome = () => {
           company_code: profileData.company_code || "",
           user_type: profileData.user_type || "",
         });
-
-        // Here you would also fetch orders and stats
-      } else {
-        throw new Error(response.message || "Failed to load profile.");
       }
     } catch (err: any) {
       console.error("Error fetching profile:", err);
-      setError(err.message || "Something went wrong.");
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchOrders = async () => {
+    const userId = await AsyncStorage.getItem("user_id");
+    if (!userId) return;
+
+    const formData = new FormData();
+    formData.append("type", "get_data");
+    formData.append("table_name", "orders");
+    formData.append("company_id", userId);
+
+    try {
+      const response = await apiCall(formData);
+      if (response && response.data && response.data.length > 0) {
+        let activeCount = 0;
+        let completedCount = 0;
+        let cancelledCount = 0;
+
+        const transformedOrders = response.data.map((order: any) => {
+          // Count orders by status
+          if (order.status === "pending") activeCount++;
+          else if (order.status === "completed") completedCount++;
+          else if (order.status === "cancelled") cancelledCount++;
+
+          // Get image from category if available
+          const categoryImage =
+            order.category && order.category.image
+              ? { uri: imageBaseUrl + order.category.image }
+              : require("@/assets/images/cleaning_service.png");
+
+          return {
+            id: order.id || "",
+            orderNo: order.cat_name || "Service",
+            amount: order.order_price || "0",
+            discount: order.discount || "0",
+            paymentStatus: order.payment_method || "Unknown",
+            provider:
+              order.provider && order.provider.name
+                ? order.provider.name
+                : "Waiting for provider",
+            packageName: order.package_name || "Standard",
+            status: order.status === "pending" ? "active" : order.status,
+            image: categoryImage,
+          };
+        });
+
+        setOrderStats({
+          active: activeCount,
+          completed: completedCount,
+          cancelled: cancelledCount,
+        });
+        setOrders(transformedOrders);
+      }
+    } catch (error) {
+      console.error("Failed to fetch orders", error);
     }
   };
 
   const getImageUrl = (imagePath: string) => {
     if (!imagePath) return null;
-
-    if (imagePath.startsWith("http")) {
-      return imagePath;
-    }
-
+    if (imagePath.startsWith("http")) return imagePath;
     return imageBaseUrl + imagePath;
   };
 
@@ -173,6 +184,14 @@ const CompanyHome = () => {
       // In a real app, you'd use Clipboard.setString(user.company_code);
       Alert.alert("Copied", "Company number copied to clipboard");
     }
+  };
+
+  const handleOrderPress = (order: Order) => {
+    // Navigate to order details screen
+    router.push({
+      pathname: "/order_place",
+      params: { orderId: order.id },
+    });
   };
 
   // Component for the order breakdown stats
@@ -204,7 +223,10 @@ const CompanyHome = () => {
 
   // Component for each order item
   const OrderItem = ({ order }: { order: Order }) => (
-    <View style={styles.orderItemContainer}>
+    <TouchableOpacity
+      style={styles.orderItemContainer}
+      onPress={() => handleOrderPress(order)}
+    >
       <View style={styles.orderImageContainer}>
         {order.image ? (
           <Image source={order.image} style={styles.orderImage} />
@@ -214,8 +236,8 @@ const CompanyHome = () => {
       </View>
 
       <View style={styles.orderDetails}>
-        <Text style={styles.orderNumber}>Order# {order.order_number}</Text>
-        <Text style={styles.employeeName}>Employee: {order.employee_name}</Text>
+        <Text style={styles.orderNumber}>Order# {order.orderNo}</Text>
+        <Text style={styles.employeeName}>Provider: {order.provider}</Text>
       </View>
 
       <View style={styles.packageContainer}>
@@ -224,101 +246,93 @@ const CompanyHome = () => {
             styles.packageType,
             {
               color:
-                order.package_type === "Express"
+                order.packageName === "Express"
                   ? Colors.primary
                   : Colors.secondary,
             },
           ]}
         >
-          {order.package_type}
+          {order.packageName || "Standard"}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchUserProfile}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
-      >
-        {/* Top Profile Header */}
-        <View style={styles.profileHeaderContainer}>
-          <View style={styles.profileHeader}>
-            <View style={styles.profileImageContainer}>
-              {user?.image ? (
-                <Image
-                  source={{ uri: getImageUrl(user.image) }}
-                  style={styles.profileImage}
-                />
-              ) : (
-                <View style={styles.profileImagePlaceholder}>
-                  <Text style={styles.profileImagePlaceholderText}>
-                    {user?.name ? user.name.charAt(0).toUpperCase() : "C"}
-                  </Text>
-                </View>
-              )}
-            </View>
+    <View style={styles.container}>
+      {loading ? (
+        <ActivityIndicator size="large" color={Colors.primary} />
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContainer}
+        >
+          {/* Top Profile Header */}
+          <View style={styles.profileHeaderContainer}>
+            <View style={styles.profileHeader}>
+              <View style={styles.profileImageContainer}>
+                {user?.image ? (
+                  <Image
+                    source={{ uri: getImageUrl(user.image) }}
+                    style={styles.profileImage}
+                  />
+                ) : (
+                  <View style={styles.profileImagePlaceholder}>
+                    <Text style={styles.profileImagePlaceholderText}>
+                      {user?.name ? user.name.charAt(0).toUpperCase() : "C"}
+                    </Text>
+                  </View>
+                )}
+              </View>
 
-            <View style={styles.profileInfo}>
-              <Text style={styles.companyName}>
-                {user?.name || "Your Servo"}
-              </Text>
-
-              <View style={styles.companyNumberContainer}>
-                <Text style={styles.companyNumberLabel}>
-                  Company# {user?.company_code || "23FR54672342IOU3"}
+              <View style={styles.profileInfo}>
+                <Text style={styles.companyName}>
+                  {user?.name || "Your Company"}
                 </Text>
 
-                <TouchableOpacity onPress={copyCompanyNumber}>
-                  <Ionicons name="copy-outline" size={20} color="#FFFFFF" />
-                </TouchableOpacity>
+                <View style={styles.companyNumberContainer}>
+                  <Text style={styles.companyNumberLabel}>
+                    Company# {user?.company_number || "N/A"}
+                  </Text>
+
+                  <TouchableOpacity onPress={copyCompanyNumber}>
+                    <Ionicons name="copy-outline" size={20} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </View>
               </View>
+            </View>
+
+            {/* Ratings */}
+            <View style={styles.ratingsContainer}>
+              <Ionicons name="star" size={24} color="#FFC107" />
+              <Text style={styles.ratingsText}>4.9 (120+ review)</Text>
             </View>
           </View>
 
-          {/* Ratings */}
-          <View style={styles.ratingsContainer}>
-            <Ionicons name="star" size={24} color="#FFC107" />
-            <Text style={styles.ratingsText}>4.9 (120+ review)</Text>
+          {/* Order Breakdown */}
+          <OrderBreakdown stats={orderStats} />
+
+          {/* Recent Orders */}
+          <View style={styles.recentOrdersHeader}>
+            <Text style={styles.recentOrdersTitle}>Recent Orders</Text>
+            <TouchableOpacity style={styles.viewAllButton}>
+              <Ionicons name="arrow-forward" size={22} color={Colors.primary} />
+            </TouchableOpacity>
           </View>
-        </View>
-        {/* Order Breakdown */}
-        <OrderBreakdown stats={orderStats} />
 
-        {/* Recent Orders */}
-        <View style={styles.recentOrdersHeader}>
-          <Text style={styles.recentOrdersTitle}>Recent Orders</Text>
-          <TouchableOpacity style={styles.viewAllButton}>
-            <Ionicons name="arrow-forward" size={22} color={Colors.primary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Order List */}
-        {orders.map((order) => (
-          <OrderItem key={order.id} order={order} />
-        ))}
-      </ScrollView>
-    </SafeAreaView>
+          {/* Order List */}
+          {orders.length > 0 ? (
+            orders.map((order, index) => (
+              <OrderItem key={`order-${index}`} order={order} />
+            ))
+          ) : (
+            <View style={styles.noOrdersContainer}>
+              <Text style={styles.noOrdersText}>No recent orders found</Text>
+            </View>
+          )}
+        </ScrollView>
+      )}
+    </View>
   );
 };
 
@@ -328,36 +342,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   scrollContainer: {
-    flexGrow: 1,
-  },
-  loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: "red",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  retryButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
+    paddingBottom: 20,
   },
   profileHeaderContainer: {
     backgroundColor: Colors.primary,
@@ -365,6 +351,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 0,
     padding: 16,
     paddingBottom: 60,
+    width: "100%",
   },
   profileHeader: {
     backgroundColor: "#1c3d87", // Darker blue
@@ -504,6 +491,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     resizeMode: "contain",
+    borderRadius: 8,
   },
   orderImagePlaceholder: {
     width: 40,
@@ -530,6 +518,15 @@ const styles = StyleSheet.create({
   packageType: {
     fontSize: 14,
     fontWeight: "bold",
+  },
+  noOrdersContainer: {
+    paddingVertical: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  noOrdersText: {
+    fontSize: 16,
+    color: "#666",
   },
 });
 

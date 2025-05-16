@@ -1,9 +1,9 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
-import React from "react";
-import { useRouter, useNavigation } from "expo-router";
+import { useNavigation } from "expo-router";
 import BackArrow from "@/assets/svgs/Arrow.svg";
 import ChatSupport from "@/assets/svgs/chatSupport.svg";
 import { Colors } from "~/constants/Colors";
+import Add from "@/assets/svgs/add.svg";
 
 type HeaderProps = {
   userName?: string;
@@ -12,22 +12,22 @@ type HeaderProps = {
   icon?: boolean;
   support?: boolean;
   backBtn?: boolean;
+  onpress?: any;
 };
 
 export default function Header({
   userName,
   title,
   homeScreen,
-  icon,
-  support,
+  icon = false,
+  support = false,
   backBtn,
-}: HeaderProps): JSX.Element {
+  onpress,
+}: HeaderProps) {
   const navigation = useNavigation();
-  const router = useRouter();
 
   return (
     <View style={styles.container}>
-      {/* Left Section (Back Button or Title) */}
       <View style={styles.leftSection}>
         {backBtn && (
           <TouchableOpacity
@@ -53,11 +53,16 @@ export default function Header({
         )}
       </View>
 
-      {icon && support && (
-        <TouchableOpacity>
-          <ChatSupport />
-        </TouchableOpacity>
-      )}
+      {icon === true &&
+        (support ? (
+          <TouchableOpacity>
+            <ChatSupport />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity onPress={onpress}>
+            <Add />
+          </TouchableOpacity>
+        ))}
     </View>
   );
 }

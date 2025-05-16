@@ -4,6 +4,8 @@ import Arrow from "@/assets/svgs/backarrow.svg";
 import DOB from "@/assets/svgs/profile/Calendar.svg";
 import Phone from "@/assets/svgs/profile/Call.svg";
 import Email from "@/assets/svgs/profile/Sms.svg";
+import Building from "@/assets/svgs/buliding.svg";
+import Tax from "@/assets/svgs/tax.svg";
 import Profile from "@/assets/svgs/profileIcon.svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
@@ -41,12 +43,14 @@ type User = {
   address: string;
   city: string;
   zip: string;
-  image: any;
-  documentFront: any;
-  documentBack: any;
+  image: string | null;
+  documentFront: string | null;
+  documentBack: string | null;
   documentType: string;
   iqamaId?: string;
+  companyName?: string;
   companyNumber?: string;
+  commercialRegistrationNumber?: string;
   secondaryEmail?: string;
   taxNumber?: string;
   companyCategory?: string;
@@ -58,6 +62,12 @@ type FieldError = {
   [key: string]: string;
 };
 
+type UploadedFiles = {
+  image: string;
+  documentFront: string;
+  documentBack: string;
+};
+
 export default function CreateAccount() {
   const [activeTab, setActiveTab] = useState<string>("Individual");
   const [individualScreen, setIndividualScreen] = useState(true);
@@ -66,7 +76,7 @@ export default function CreateAccount() {
   const [errors, setErrors] = useState<FieldError>({});
 
   // For storing uploaded file names
-  const [uploadedFiles, setUploadedFiles] = useState({
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFiles>({
     image: "",
     documentFront: "",
     documentBack: "",
@@ -85,7 +95,9 @@ export default function CreateAccount() {
     documentBack: null,
     documentType: "Passport",
     iqamaId: "",
+    companyName: "",
     companyNumber: "",
+    commercialRegistrationNumber: "",
     secondaryEmail: "",
     taxNumber: "",
     companyCategory: "",
@@ -190,7 +202,9 @@ export default function CreateAccount() {
 
     // Common validation for both individual and company
     if (!user.name.trim()) {
-      newErrors.name = "Full name is required";
+      newErrors.name = individualScreen
+        ? "Full name is required"
+        : "Company name is required";
       isValid = false;
     }
 
@@ -239,8 +253,24 @@ export default function CreateAccount() {
         newErrors.iqamaId = "Iqama ID is required";
         isValid = false;
       }
+      // Document validation
+      if (!user.documentFront) {
+        newErrors.documentFront = "Front side of document is required";
+        isValid = false;
+      }
+
+      if (!user.documentBack) {
+        newErrors.documentBack = "Back side of document is required";
+        isValid = false;
+      }
     } else {
       // Company specific validation
+      if (!user.commercialRegistrationNumber?.trim()) {
+        newErrors.commercialRegistrationNumber =
+          "Commercial registration number is required";
+        isValid = false;
+      }
+
       if (!user.companyNumber?.trim()) {
         newErrors.companyNumber = "Company number is required";
         isValid = false;
@@ -255,17 +285,6 @@ export default function CreateAccount() {
         newErrors.secondaryEmail = "Please enter a valid email address";
         isValid = false;
       }
-    }
-
-    // Document validation
-    if (!user.documentFront) {
-      newErrors.documentFront = "Front side of document is required";
-      isValid = false;
-    }
-
-    if (!user.documentBack) {
-      newErrors.documentBack = "Back side of document is required";
-      isValid = false;
     }
 
     setErrors(newErrors);
@@ -294,6 +313,7 @@ export default function CreateAccount() {
       formData.append("postal", user.zip);
       formData.append("city", user.city);
       formData.append("user_type", userType);
+      formData.append("company_number", user.companyNumber || "");
 
       // Add image if uploaded
       if (uploadedFiles.image) {
@@ -326,22 +346,37 @@ export default function CreateAccount() {
       if (individualScreen) {
         formData.append("iqama_id", user.iqamaId || "");
         formData.append("dob", user.dob || "");
+        // Set empty values for company-specific fields
+        formData.append("secondary_email", "");
+        formData.append("tax_number", "");
+        formData.append("company_category", "");
+        formData.append("commercial_registration_number", "");
       }
       // Company specific fields
       else {
-        formData.append("company_number", user.companyNumber || "");
+        // formData.append(
+        //   "commercial_registration_number",
+        //   user.commercialRegistrationNumber || ""
+        // );
         formData.append("company_category", user.companyCategory || "");
         formData.append("secondary_email", user.secondaryEmail || "");
         formData.append("tax_number", user.taxNumber || "");
+        // Set empty values for individual-specific fields
+        formData.append("iqama_id", "");
+        formData.append("dob", "");
       }
 
+      // Ensure these required fields are always present with a default value if empty
+      formData.append("gender", ""); // Not in your form but in the API schema
+      formData.append("platform_status", "0");
+      formData.append("online_status", "0");
+      formData.append("company_verified", "0");
+      console.log(formData);
       // Send the data to the API
       const response = await apiCall(formData);
 
       if (response.result) {
-        // Save the user type to AsyncStorage
-        await AsyncStorage.setItem("account_type", userType);
-        // Navigate to the verified screen
+        await AsyncStorage.setItem("user_type", userType);
         router.push("/auth/verified");
       } else {
         throw new Error(response.message || "Failed to create account");
@@ -433,23 +468,49 @@ export default function CreateAccount() {
             </View>
           </TouchableOpacity>
         </View>
+        {!individualScreen && (
+          <CustomInputField
+            label="Commercial Registration Number"
+            placeholder="Enter commercial registration number"
+            IconComponent={<Building />}
+            value={user.commercialRegistrationNumber}
+            onChangeText={(text) =>
+              handleInputChange("commercialRegistrationNumber", text)
+            }
+            fieldName="commercialRegistrationNumber"
+            error={errors.commercialRegistrationNumber}
+          />
+        )}
+
+        {/* Common User Details Fields */}
+        <CustomInputField
+          label="Company Number"
+          placeholder="Enter company number"
+          IconComponent={<Building />}
+          value={user.companyNumber}
+          onChangeText={(text) => handleInputChange("companyNumber", text)}
+          fieldName="companyNumber"
+          error={errors.companyNumber}
+        />
+        <CustomInputField
+          label={individualScreen ? "Full Name" : "Company Name"}
+          placeholder={
+            individualScreen ? "Enter your name" : "Enter company name"
+          }
+          IconComponent={<Profile />}
+          value={user.name}
+          onChangeText={(text) => handleInputChange("name", text)}
+          fieldName="name"
+          error={errors.name}
+        />
 
         {/* Company fields */}
         {!individualScreen && (
           <>
             <CustomInputField
-              label="Company Number"
-              placeholder="Enter company number"
-              IconComponent={<Profile />}
-              value={user.companyNumber}
-              onChangeText={(text) => handleInputChange("companyNumber", text)}
-              fieldName="companyNumber"
-              error={errors.companyNumber}
-            />
-            <CustomInputField
               label="Company Category"
               placeholder="Enter company category"
-              IconComponent={<Profile />}
+              IconComponent={<Building />}
               value={user.companyCategory}
               onChangeText={(text) =>
                 handleInputChange("companyCategory", text)
@@ -457,41 +518,8 @@ export default function CreateAccount() {
               fieldName="companyCategory"
               error={errors.companyCategory}
             />
-            <CustomInputField
-              label="Secondary Email"
-              placeholder="Enter secondary email"
-              IconComponent={<Email />}
-              value={user.secondaryEmail}
-              keyboardType="email-address"
-              onChangeText={(text) => handleInputChange("secondaryEmail", text)}
-              fieldName="secondaryEmail"
-              required={false}
-              error={errors.secondaryEmail}
-            />
-            <CustomInputField
-              label="Tax Number"
-              placeholder="Enter tax number"
-              IconComponent={<Profile />}
-              value={user.taxNumber}
-              onChangeText={(text) => handleInputChange("taxNumber", text)}
-              fieldName="taxNumber"
-              required={false}
-              error={errors.taxNumber}
-              numbersOnly
-            />
           </>
         )}
-
-        {/* Common User Details Fields */}
-        <CustomInputField
-          label="Full Name"
-          placeholder="Enter your name"
-          IconComponent={<Profile />}
-          value={user.name}
-          onChangeText={(text) => handleInputChange("name", text)}
-          fieldName="name"
-          error={errors.name}
-        />
 
         <CustomInputField
           label="Email Address"
@@ -503,6 +531,20 @@ export default function CreateAccount() {
           fieldName="email"
           error={errors.email}
         />
+
+        {!individualScreen && (
+          <CustomInputField
+            label="Secondary Email"
+            placeholder="Enter secondary email (Optional)"
+            IconComponent={<Email />}
+            value={user.secondaryEmail}
+            keyboardType="email-address"
+            onChangeText={(text) => handleInputChange("secondaryEmail", text)}
+            fieldName="secondaryEmail"
+            required={false}
+            error={errors.secondaryEmail}
+          />
+        )}
 
         <CustomInputField
           label="Phone Number"
@@ -555,7 +597,7 @@ export default function CreateAccount() {
         </View>
 
         {/* Individual-specific fields */}
-        {individualScreen && (
+        {individualScreen ? (
           <>
             <CustomInputField
               label="Date of Birth"
@@ -569,7 +611,7 @@ export default function CreateAccount() {
             <CustomInputField
               label="Iqama ID"
               placeholder="Enter your KSA iqama ID /number"
-              IconComponent={<Profile />}
+              IconComponent={<Building />}
               value={user.iqamaId}
               onChangeText={(text) => handleInputChange("iqamaId", text)}
               fieldName="iqamaId"
@@ -577,101 +619,122 @@ export default function CreateAccount() {
               numbersOnly
             />
           </>
+        ) : (
+          // Company-specific tax field
+          <>
+            <CustomInputField
+              label="Tax Number"
+              placeholder="Enter tax number (Optional)"
+              IconComponent={<Tax />}
+              value={user.taxNumber}
+              onChangeText={(text) => handleInputChange("taxNumber", text)}
+              fieldName="taxNumber"
+              required={false}
+              error={errors.taxNumber}
+              numbersOnly
+            />
+          </>
         )}
 
         {/* Document Upload Section */}
-        <View style={styles.documentSection}>
-          <View style={styles.separatorContainer}>
-            <View style={styles.separator} />
-            <Text style={styles.separatorText}>Upload Document</Text>
-            <View style={styles.separator} />
+        {individualScreen && (
+          <View style={styles.documentSection}>
+            <View style={styles.separatorContainer}>
+              <View style={styles.separator} />
+              <Text style={styles.separatorText}>Upload Document</Text>
+              <View style={styles.separator} />
+            </View>
+
+            <Text style={styles.sectionLabel}>Select Document type</Text>
+            <RadioButton
+              options={["Passport", "Driving licence"]}
+              selectedOption={user.documentType}
+              onSelect={(option) => setUser({ ...user, documentType: option })}
+            />
+
+            <Text style={styles.sectionLabel}>
+              Front Side of {individualScreen ? "Card" : "Document"}
+              <Text style={{ color: "red" }}>*</Text>
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.uploadBox,
+                errors.documentFront ? styles.uploadBoxError : null,
+              ]}
+              onPress={() => openImagePicker("documentFront")}
+            >
+              {user.documentFront ? (
+                <Image
+                  source={{ uri: user.documentFront }}
+                  style={styles.documentImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.uploadContent}>
+                  <View
+                    style={{
+                      backgroundColor: Colors.primary300,
+                      padding: 6,
+                      borderRadius: 99,
+                      marginBottom: 6,
+                    }}
+                  >
+                    <Gallery />
+                  </View>
+                  <Text style={styles.uploadText}>
+                    Click to Upload Front Side of{" "}
+                    {individualScreen ? "Card" : "Document"}
+                  </Text>
+                  <Text style={{ fontSize: 12 }}> (Max. File size: 25 MB)</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            {errors.documentFront && (
+              <Text style={styles.errorText}>{errors.documentFront}</Text>
+            )}
+
+            <Text style={styles.sectionLabel}>
+              Back Side of {individualScreen ? "Card" : "Document"}
+              <Text style={{ color: "red" }}>*</Text>
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.uploadBox,
+                errors.documentBack ? styles.uploadBoxError : null,
+              ]}
+              onPress={() => openImagePicker("documentBack")}
+            >
+              {user.documentBack ? (
+                <Image
+                  source={{ uri: user.documentBack }}
+                  style={styles.documentImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.uploadContent}>
+                  <View
+                    style={{
+                      backgroundColor: Colors.primary300,
+                      padding: 6,
+                      borderRadius: 99,
+                      marginBottom: 6,
+                    }}
+                  >
+                    <Gallery />
+                  </View>
+                  <Text style={styles.uploadText}>
+                    Click to Upload Back Side of{" "}
+                    {individualScreen ? "Card" : "Document"}
+                  </Text>
+                  <Text style={{ fontSize: 12 }}> (Max. File size: 25 MB)</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            {errors.documentBack && (
+              <Text style={styles.errorText}>{errors.documentBack}</Text>
+            )}
           </View>
-
-          <Text style={styles.sectionLabel}>Select Document type</Text>
-          <RadioButton
-            options={["Passport", "Driving licence"]}
-            selectedOption={user.documentType}
-            onSelect={(option) => setUser({ ...user, documentType: option })}
-          />
-
-          <Text style={styles.sectionLabel}>
-            Front Side of Card<Text style={{ color: "red" }}>*</Text>
-          </Text>
-          <TouchableOpacity
-            style={[
-              styles.uploadBox,
-              errors.documentFront ? styles.uploadBoxError : null,
-            ]}
-            onPress={() => openImagePicker("documentFront")}
-          >
-            {user.documentFront ? (
-              <Image
-                source={{ uri: user.documentFront }}
-                style={styles.documentImage}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={styles.uploadContent}>
-                <View
-                  style={{
-                    backgroundColor: Colors.primary300,
-                    padding: 6,
-                    borderRadius: 99,
-                    marginBottom: 6,
-                  }}
-                >
-                  <Gallery />
-                </View>
-                <Text style={styles.uploadText}>
-                  Click to Upload Front Side of Card
-                </Text>
-                <Text style={{ fontSize: 12 }}> (Max. File size: 25 MB)</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          {errors.documentFront && (
-            <Text style={styles.errorText}>{errors.documentFront}</Text>
-          )}
-
-          <Text style={styles.sectionLabel}>
-            Back Side of Card<Text style={{ color: "red" }}>*</Text>
-          </Text>
-          <TouchableOpacity
-            style={[
-              styles.uploadBox,
-              errors.documentBack ? styles.uploadBoxError : null,
-            ]}
-            onPress={() => openImagePicker("documentBack")}
-          >
-            {user.documentBack ? (
-              <Image
-                source={{ uri: user.documentBack }}
-                style={styles.documentImage}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={styles.uploadContent}>
-                <View
-                  style={{
-                    backgroundColor: Colors.primary300,
-                    padding: 6,
-                    borderRadius: 99,
-                    marginBottom: 6,
-                  }}
-                >
-                  <Gallery />
-                </View>
-                <Text style={styles.uploadText}>
-                  Click to Upload Back Side of Card
-                </Text>
-                <Text style={{ fontSize: 12 }}> (Max. File size: 25 MB)</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          {errors.documentBack && (
-            <Text style={styles.errorText}>{errors.documentBack}</Text>
-          )}
-        </View>
+        )}
 
         <View style={{ height: 80 }} />
       </ScrollView>
@@ -844,6 +907,7 @@ const styles = StyleSheet.create({
   uploadText: {
     fontSize: 14,
     color: Colors.secondary300,
+    textAlign: "center",
   },
   documentImage: {
     width: "100%",

@@ -22,6 +22,8 @@ import DOB from "@/assets/svgs/profile/Calendar.svg";
 import Address from "@/assets/svgs/profile/location.svg";
 import City from "@/assets/svgs/profile/Global.svg";
 import Zip from "@/assets/svgs/profile/zip.svg";
+import Building from "@/assets/svgs/buliding.svg";
+import Tax from "@/assets/svgs/tax.svg";
 import Gallery from "@/assets/svgs/addImage2.svg";
 import RadioButton from "~/components/radio_button";
 import { apiCall } from "~/utils/api";
@@ -39,11 +41,20 @@ type User = {
   city: string;
   zip: string;
   image: string;
+  user_type: string;
+  // Individual specific fields
   iqamaId: string;
   documentType: string;
   documents: DocumentItem[];
   documentFront: string;
   documentBack: string;
+  // Company specific fields
+  companyNumber: string;
+  companyCategory: string;
+  commercialRegistrationNumber: string;
+  secondaryEmail: string;
+  taxNumber: string;
+  // Status fields
   online?: boolean;
   verified?: boolean;
 };
@@ -52,6 +63,10 @@ type DocumentItem = {
   type: string;
   side: string;
   file: string;
+};
+
+type FieldError = {
+  [key: string]: string;
 };
 
 export default function EditProfile() {
@@ -69,6 +84,13 @@ export default function EditProfile() {
     documentBack: "",
     image: "",
     documents: [],
+    user_type: "individual",
+    // Company fields
+    companyNumber: "",
+    companyCategory: "",
+    commercialRegistrationNumber: "",
+    secondaryEmail: "",
+    taxNumber: "",
     verified: false,
   });
 
@@ -78,9 +100,11 @@ export default function EditProfile() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [errors, setErrors] = useState<FieldError>({});
   const [imageBaseUrl, setImageBaseUrl] = useState<string>(
     "https://7tracking.com/saudiservices/images/"
   );
+  const [isCompanyAccount, setIsCompanyAccount] = useState<boolean>(false);
 
   useEffect(() => {
     fetchUserProfile();
@@ -90,9 +114,13 @@ export default function EditProfile() {
     try {
       setLoading(true);
       const storedUserId = await AsyncStorage.getItem("user_id");
+      const userType = await AsyncStorage.getItem("user_type");
+
       if (!storedUserId) throw new Error("User ID not found");
 
       setUserId(storedUserId);
+      setIsCompanyAccount(userType === "company");
+
       const formData = new FormData();
       formData.append("type", "profile");
       formData.append("user_id", storedUserId);
@@ -107,7 +135,8 @@ export default function EditProfile() {
 
         if (
           profileData.documents &&
-          typeof profileData.documents === "string"
+          typeof profileData.documents === "string" &&
+          profileData.documents.trim() !== ""
         ) {
           try {
             // Clean up the escaped string
@@ -121,19 +150,17 @@ export default function EditProfile() {
           }
         }
 
-        console.log("Parsed documents:", parsedDocuments);
-
         let frontDoc = parsedDocuments.find((doc) => doc.side === "front");
         let backDoc = parsedDocuments.find((doc) => doc.side === "back");
-
-        console.log("Front file:", frontDoc?.file);
-        console.log("Back file:", backDoc?.file);
 
         setUser({
           name: profileData.name || "",
           email: profileData.email || "",
           phone: profileData.phone || "",
-          dob: profileData.dob !== "0000-00-00" ? profileData.dob : "",
+          dob:
+            profileData.dob && profileData.dob !== "0000-00-00"
+              ? profileData.dob
+              : "",
           address: profileData.address || "",
           city: profileData.city || "",
           zip: profileData.postal || "",
@@ -144,8 +171,21 @@ export default function EditProfile() {
           documentBack: backDoc ? backDoc.file : "",
           image: profileData.image || "",
           documents: parsedDocuments,
+          user_type: profileData.user_type || userType || "individual",
+          // Company fields
+          companyNumber: profileData.company_number || "",
+          companyCategory: profileData.company_category || "",
+          commercialRegistrationNumber:
+            profileData.commercial_registration_number || "",
+          secondaryEmail: profileData.secondary_email || "",
+          taxNumber: profileData.tax_number || "",
           verified: profileData.company_verified === "1",
         });
+
+        // Update company flag based on user data
+        setIsCompanyAccount(
+          profileData.user_type === "company" || userType === "company"
+        );
       } else {
         throw new Error(response.message || "Failed to load profile.");
       }
@@ -333,44 +373,177 @@ export default function EditProfile() {
 
   const handleInputChange = (field: keyof User, value: string) => {
     setUser((prevUser) => ({ ...prevUser, [field]: value }));
+
+    // Clear error when user types
+    if (errors[field]) {
+      setErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[field];
+        return updated;
+      });
+    }
+  };
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhoneNumber = (phone: string): boolean => {
+    return phone.length >= 9 && phone.length <= 15;
+  };
+
+  const validateZipCode = (zip: string): boolean => {
+    return zip.length >= 4 && zip.length <= 10;
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FieldError = {};
+    let isValid = true;
+
+    // Common validation for both individual and company
+    if (!user.name.trim()) {
+      newErrors.name = isCompanyAccount
+        ? "Company name is required"
+        : "Full name is required";
+      isValid = false;
+    }
+
+    if (!user.email.trim()) {
+      newErrors.email = "Email is required";
+      isValid = false;
+    } else if (!validateEmail(user.email)) {
+      newErrors.email = "Please enter a valid email address";
+      isValid = false;
+    }
+
+    if (!user.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+      isValid = false;
+    } else if (!validatePhoneNumber(user.phone)) {
+      newErrors.phone = "Please enter a valid phone number";
+      isValid = false;
+    }
+
+    if (!user.address.trim()) {
+      newErrors.address = "Address is required";
+      isValid = false;
+    }
+
+    if (!user.city.trim()) {
+      newErrors.city = "City is required";
+      isValid = false;
+    }
+
+    if (!user.zip.trim()) {
+      newErrors.zip = "Zip code is required";
+      isValid = false;
+    } else if (!validateZipCode(user.zip)) {
+      newErrors.zip = "Please enter a valid zip code";
+      isValid = false;
+    }
+
+    // Individual specific validation
+    if (!isCompanyAccount) {
+      if (user.dob && !/^\d{4}-\d{2}-\d{2}$/.test(user.dob)) {
+        newErrors.dob = "Date format should be YYYY-MM-DD";
+        isValid = false;
+      }
+
+      if (!user.iqamaId?.trim()) {
+        newErrors.iqamaId = "Iqama ID is required";
+        isValid = false;
+      }
+    } else {
+      // Company specific validation
+      if (!user.companyNumber?.trim()) {
+        newErrors.companyNumber = "Company number is required";
+        isValid = false;
+      }
+
+      if (!user.companyCategory?.trim()) {
+        newErrors.companyCategory = "Company category is required";
+        isValid = false;
+      }
+
+      if (user.secondaryEmail && !validateEmail(user.secondaryEmail)) {
+        newErrors.secondaryEmail = "Please enter a valid email address";
+        isValid = false;
+      }
+    }
+
+    setErrors(newErrors);
+    return isValid;
   };
 
   const handleUpdate = async () => {
+    if (!validateForm()) return;
+
     try {
       setError(null);
-      const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(user.dob);
-
-      if (user.dob && !isValidDate) {
-        Alert.alert("Invalid Date", "DOB must be in YYYY-MM-DD format.");
-        return;
-      }
+      setUploading(true);
 
       if (!userId) throw new Error("User ID not found");
 
-      // Prepare documents JSON
-      const documentsJson = JSON.stringify(user.documents);
+      // Prepare documents JSON if there are any documents
+      const documentsJson =
+        user.documents.length > 0 ? JSON.stringify(user.documents) : "";
 
       const formData = new FormData();
       formData.append("type", "update_data");
       formData.append("table_name", "users");
       formData.append("id", userId);
+
+      // Common fields
       formData.append("name", user.name);
       formData.append("email", user.email);
       formData.append("phone", user.phone);
-      formData.append("dob", user.dob);
       formData.append("address", user.address);
       formData.append("city", user.city);
       formData.append("postal", user.zip);
-      formData.append("iqama_id", user.iqamaId);
-      formData.append("documents", documentsJson);
+      formData.append("user_type", isCompanyAccount ? "company" : "employee");
+      formData.append("company_number", user.companyNumber || "");
 
       // Extract filename from image URL if needed
       let imageName = user.image;
       if (imageName && imageName.includes("/")) {
         imageName = imageName.split("/").pop() || "";
       }
-
       if (imageName) formData.append("image", imageName);
+
+      // Add documents if there are any
+      if (documentsJson) {
+        formData.append("documents", documentsJson);
+      }
+
+      // Individual specific fields
+      if (!isCompanyAccount) {
+        formData.append("iqama_id", user.iqamaId || "");
+        formData.append("dob", user.dob || "");
+        // Set empty values for company-specific fields
+        formData.append("secondary_email", "");
+        formData.append("tax_number", "");
+        formData.append("company_category", "");
+        formData.append("commercial_registration_number", "");
+      } else {
+        // Company specific fields
+        formData.append("company_category", user.companyCategory || "");
+        formData.append("secondary_email", user.secondaryEmail || "");
+        formData.append("tax_number", user.taxNumber || "");
+        formData.append(
+          "commercial_registration_number",
+          user.commercialRegistrationNumber || ""
+        );
+        // Set empty values for individual-specific fields
+        formData.append("iqama_id", "");
+        formData.append("dob", "");
+      }
+
+      // Ensure these required fields are always present with a default value if empty
+      formData.append("gender", ""); // Not in your form but in the API schema
+      formData.append("platform_status", "0");
+      formData.append("online_status", "0");
+      formData.append("company_verified", "0");
 
       const response = await apiCall(formData);
 
@@ -385,6 +558,8 @@ export default function EditProfile() {
     } catch (err: any) {
       console.error("Update error:", err);
       setError(err.message || "Something went wrong.");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -436,48 +611,98 @@ export default function EditProfile() {
 
             <Seprator />
 
-            {/* User Details Fields */}
+            {/* Company number (for both) */}
             <Inputfield
-              label="Full Name"
-              placeholder="Enter your name"
+              label="Company Number"
+              placeholder="Enter company number"
+              IconComponent={<Building />}
+              value={user.companyNumber}
+              onChangeText={(text) => handleInputChange("companyNumber", text)}
+              error={errors.companyNumber}
+            />
+
+            {/* User Name Field (different label based on type) */}
+            <Inputfield
+              label={isCompanyAccount ? "Company Name" : "Full Name"}
+              placeholder={
+                isCompanyAccount ? "Enter company name" : "Enter your name"
+              }
               IconComponent={<Profile />}
               value={user.name}
               onChangeText={(text) => handleInputChange("name", text)}
+              error={errors.name}
             />
-            <Inputfield
-              label="Phone Number"
-              placeholder="Enter your phone"
-              IconComponent={<Phone />}
-              value={user.phone}
-              onChangeText={(text) => handleInputChange("phone", text)}
-            />
+
+            {/* Company specific fields */}
+            {isCompanyAccount && (
+              <>
+                <Inputfield
+                  label="Commercial Registration Number"
+                  placeholder="Enter commercial registration number"
+                  IconComponent={<Building />}
+                  value={user.commercialRegistrationNumber}
+                  onChangeText={(text) =>
+                    handleInputChange("commercialRegistrationNumber", text)
+                  }
+                  error={errors.commercialRegistrationNumber}
+                />
+                <Inputfield
+                  label="Company Category"
+                  placeholder="Enter company category"
+                  IconComponent={<Building />}
+                  value={user.companyCategory}
+                  onChangeText={(text) =>
+                    handleInputChange("companyCategory", text)
+                  }
+                  error={errors.companyCategory}
+                />
+              </>
+            )}
+
+            {/* Common fields */}
             <Inputfield
               label="Email Address"
               placeholder="Enter your email"
               IconComponent={<Email />}
               value={user.email}
               onChangeText={(text) => handleInputChange("email", text)}
+              keyboardType="email-address"
+              error={errors.email}
             />
+
+            {/* Secondary email for company */}
+            {isCompanyAccount && (
+              <Inputfield
+                label="Secondary Email"
+                placeholder="Enter secondary email (Optional)"
+                IconComponent={<Email />}
+                value={user.secondaryEmail}
+                onChangeText={(text) =>
+                  handleInputChange("secondaryEmail", text)
+                }
+                keyboardType="email-address"
+                required={false}
+                error={errors.secondaryEmail}
+              />
+            )}
+
             <Inputfield
-              label="Date of Birth"
-              placeholder="YYYY-MM-DD"
-              IconComponent={<DOB />}
-              value={user.dob}
-              onChangeText={(text) => handleInputChange("dob", text)}
+              label="Phone Number"
+              placeholder="Enter your phone"
+              IconComponent={<Phone />}
+              value={user.phone}
+              onChangeText={(text) => handleInputChange("phone", text)}
+              keyboardType="phone-pad"
+              error={errors.phone}
             />
+
             <Inputfield
               label="Address"
               placeholder="Enter your address"
               IconComponent={<Address />}
               value={user.address}
               onChangeText={(text) => handleInputChange("address", text)}
-            />
-            <Inputfield
-              label="Iqama ID"
-              placeholder="Enter your KSA iqama ID/number"
-              IconComponent={<DOB />}
-              value={user.iqamaId}
-              onChangeText={(text) => handleInputChange("iqamaId", text)}
+              error={errors.address}
             />
 
             <View style={styles.rowContainer}>
@@ -488,6 +713,7 @@ export default function EditProfile() {
                   IconComponent={<City />}
                   value={user.city}
                   onChangeText={(text) => handleInputChange("city", text)}
+                  error={errors.city}
                 />
               </View>
               <View style={styles.flexItem}>
@@ -497,105 +723,155 @@ export default function EditProfile() {
                   IconComponent={<Zip />}
                   value={user.zip}
                   onChangeText={(text) => handleInputChange("zip", text)}
+                  error={errors.zip}
                 />
               </View>
             </View>
 
-            {/* Document Upload Section */}
-            <View style={styles.documentSection}>
-              <View style={styles.separatorContainer}>
-                <View style={styles.separator} />
-                <Text style={styles.separatorText}>Upload Document</Text>
-                <View style={styles.separator} />
-              </View>
+            {/* Individual specific fields */}
+            {!isCompanyAccount && (
+              <>
+                <Inputfield
+                  label="Date of Birth"
+                  placeholder="YYYY-MM-DD"
+                  IconComponent={<DOB />}
+                  value={user.dob}
+                  onChangeText={(text) => handleInputChange("dob", text)}
+                  error={errors.dob}
+                />
+                <Inputfield
+                  label="Iqama ID"
+                  placeholder="Enter your KSA iqama ID/number"
+                  IconComponent={<DOB />}
+                  value={user.iqamaId}
+                  onChangeText={(text) => handleInputChange("iqamaId", text)}
+                  error={errors.iqamaId}
+                />
+              </>
+            )}
 
-              <Text style={styles.sectionLabel}>Select Document type</Text>
-              <RadioButton
-                options={["Passport", "Driving licence"]}
-                selectedOption={user.documentType}
-                onSelect={(option) =>
-                  setUser({ ...user, documentType: option })
-                }
+            {/* Company specific tax field */}
+            {isCompanyAccount && (
+              <Inputfield
+                label="Tax Number"
+                placeholder="Enter tax number (Optional)"
+                IconComponent={<Tax />}
+                value={user.taxNumber}
+                onChangeText={(text) => handleInputChange("taxNumber", text)}
+                required={false}
+                error={errors.taxNumber}
               />
+            )}
 
-              <Text style={styles.sectionLabel}>
-                Front Side of Card<Text style={{ color: "red" }}>*</Text>
-              </Text>
-              <TouchableOpacity
-                style={styles.uploadBox}
-                onPress={() => openImagePicker("documentFront")}
-                disabled={uploading}
-              >
-                {uploading && uploadingField === "documentFront" ? (
-                  <ActivityIndicator size="large" color={Colors.primary} />
-                ) : user.documentFront ? (
-                  <Image
-                    source={{ uri: getImageUrl(user.documentFront) }}
-                    style={styles.documentImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={styles.uploadContent}>
-                    <View
-                      style={{
-                        backgroundColor: Colors.primary300,
-                        padding: 6,
-                        borderRadius: 99,
-                        marginBottom: 6,
-                      }}
-                    >
-                      <Gallery />
-                    </View>
-                    <Text style={styles.uploadText}>
-                      Click to Upload Front Side of Card
-                    </Text>
-                    <Text style={{ fontSize: 12 }}>
-                      {" "}
-                      (Max. File size: 25 MB)
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+            {/* Document Upload Section (only for individual) */}
+            {!isCompanyAccount && (
+              <View style={styles.documentSection}>
+                <View style={styles.separatorContainer}>
+                  <View style={styles.separator} />
+                  <Text style={styles.separatorText}>Upload Document</Text>
+                  <View style={styles.separator} />
+                </View>
 
-              <Text style={styles.sectionLabel}>
-                Back Side of Card<Text style={{ color: "red" }}>*</Text>
-              </Text>
-              <TouchableOpacity
-                style={styles.uploadBox}
-                onPress={() => openImagePicker("documentBack")}
-                disabled={uploading}
-              >
-                {uploading && uploadingField === "documentBack" ? (
-                  <ActivityIndicator size="large" color={Colors.primary} />
-                ) : user.documentBack ? (
-                  <Image
-                    source={{ uri: getImageUrl(user.documentBack) }}
-                    style={styles.documentImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={styles.uploadContent}>
-                    <View
-                      style={{
-                        backgroundColor: Colors.primary300,
-                        padding: 6,
-                        borderRadius: 99,
-                        marginBottom: 6,
-                      }}
-                    >
-                      <Gallery />
+                <Text style={styles.sectionLabel}>Select Document type</Text>
+                <RadioButton
+                  options={["Passport", "Driving licence"]}
+                  selectedOption={user.documentType}
+                  onSelect={(option) =>
+                    setUser({ ...user, documentType: option })
+                  }
+                />
+
+                <Text style={styles.sectionLabel}>
+                  Front Side of Card<Text style={{ color: "red" }}>*</Text>
+                </Text>
+                <TouchableOpacity
+                  style={[
+                    styles.uploadBox,
+                    errors.documentFront ? styles.uploadBoxError : null,
+                  ]}
+                  onPress={() => openImagePicker("documentFront")}
+                  disabled={uploading}
+                >
+                  {uploading && uploadingField === "documentFront" ? (
+                    <ActivityIndicator size="large" color={Colors.primary} />
+                  ) : user.documentFront ? (
+                    <Image
+                      source={{ uri: getImageUrl(user.documentFront) }}
+                      style={styles.documentImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.uploadContent}>
+                      <View
+                        style={{
+                          backgroundColor: Colors.primary300,
+                          padding: 6,
+                          borderRadius: 99,
+                          marginBottom: 6,
+                        }}
+                      >
+                        <Gallery />
+                      </View>
+                      <Text style={styles.uploadText}>
+                        Click to Upload Front Side of Card
+                      </Text>
+                      <Text style={{ fontSize: 12 }}>
+                        {" "}
+                        (Max. File size: 25 MB)
+                      </Text>
                     </View>
-                    <Text style={styles.uploadText}>
-                      Click to Upload Back Side of Card
-                    </Text>
-                    <Text style={{ fontSize: 12 }}>
-                      {" "}
-                      (Max. File size: 25 MB)
-                    </Text>
-                  </View>
+                  )}
+                </TouchableOpacity>
+                {errors.documentFront && (
+                  <Text style={styles.errorText}>{errors.documentFront}</Text>
                 )}
-              </TouchableOpacity>
-            </View>
+
+                <Text style={styles.sectionLabel}>
+                  Back Side of Card<Text style={{ color: "red" }}>*</Text>
+                </Text>
+                <TouchableOpacity
+                  style={[
+                    styles.uploadBox,
+                    errors.documentBack ? styles.uploadBoxError : null,
+                  ]}
+                  onPress={() => openImagePicker("documentBack")}
+                  disabled={uploading}
+                >
+                  {uploading && uploadingField === "documentBack" ? (
+                    <ActivityIndicator size="large" color={Colors.primary} />
+                  ) : user.documentBack ? (
+                    <Image
+                      source={{ uri: getImageUrl(user.documentBack) }}
+                      style={styles.documentImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.uploadContent}>
+                      <View
+                        style={{
+                          backgroundColor: Colors.primary300,
+                          padding: 6,
+                          borderRadius: 99,
+                          marginBottom: 6,
+                        }}
+                      >
+                        <Gallery />
+                      </View>
+                      <Text style={styles.uploadText}>
+                        Click to Upload Back Side of Card
+                      </Text>
+                      <Text style={{ fontSize: 12 }}>
+                        {" "}
+                        (Max. File size: 25 MB)
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+                {errors.documentBack && (
+                  <Text style={styles.errorText}>{errors.documentBack}</Text>
+                )}
+              </View>
+            )}
 
             {error && <Text style={styles.errorText}>{error}</Text>}
             <View style={styles.buttonContainer}>
@@ -711,6 +987,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 16,
     overflow: "hidden",
+  },
+  uploadBoxError: {
+    borderColor: "red",
   },
   uploadContent: {
     alignItems: "center",

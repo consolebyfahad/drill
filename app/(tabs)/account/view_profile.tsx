@@ -73,7 +73,7 @@ type User = {
   user_type: string;
 };
 
-export default function ViewProfile(): JSX.Element {
+export default function ViewProfile() {
   const [showAllOrders, setShowAllOrders] = useState<boolean>(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -240,8 +240,6 @@ export default function ViewProfile(): JSX.Element {
             <Text style={styles.ratingText}>4.8</Text>
             <Text style={styles.reviewCount}>(120+ reviews)</Text>
           </View>
-
-          <Text style={styles.balance}>Balance: SAR {user.balance}</Text>
           <Text style={styles.userEmail}>{user.email}</Text>
 
           <View style={styles.locationContainer}>
