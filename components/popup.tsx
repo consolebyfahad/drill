@@ -55,17 +55,11 @@ export default function Popup({ setShowPopup, type }: PopupProps) {
         ) : type === "tipup" ? (
           <>
             <Tipup style={styles.image} />
-            <Text style={styles.title}>Add a Tip</Text>
+            <Text style={styles.title}>Buyer Tipped You!</Text>
             <Text style={styles.description}>
-              Show appreciation for the service provider by adding a tip.
+              Your buyer has given you a tip. You’ve just received a SAR $
+              {tipAmount} tip
             </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter tip amount"
-              keyboardType="numeric"
-              value={tipAmount}
-              onChangeText={setTipAmount}
-            />
           </>
         ) : type === "orderComplete" ? (
           <>
@@ -127,17 +121,10 @@ export default function Popup({ setShowPopup, type }: PopupProps) {
         ) : type === "tipup" ? (
           <>
             <Button
-              title="Skip"
-              variant="secondary"
-              fullWidth={false}
-              width="34%"
-              onPress={handleHide}
-            />
-            <Button
               title="Continue"
               variant="primary"
               fullWidth={false}
-              width="64%"
+              width="100%"
               onPress={handleNext}
             />
           </>

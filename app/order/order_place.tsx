@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -18,8 +18,21 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { apiCall } from "~/utils/api";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { OrderType } from "~/types/dataTypes";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  getFCMToken,
+  requestFCMPermission,
+  setupNotificationListeners,
+} from "~/utils/notification";
 
 type PopupType = "timeup" | "tipup" | "orderComplete" | "review";
+
+// Define notification data type
+interface NotificationData {
+  order_id?: string;
+  status?: string;
+  message?: string;
+}
 
 const OrderPlace: React.FC = () => {
   const { orderId, tab } = useLocalSearchParams();
@@ -30,15 +43,80 @@ const OrderPlace: React.FC = () => {
   const [popupType, setPopupType] = useState<PopupType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [order, setOrder] = useState<OrderType | null>(null);
+  const [tipAmount, setTipAmount] = useState("");
+
+  // Reference to store interval ID for polling order status
+  const statusCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Show or hide popup based on popupType
   const showPopup = popupType !== null;
+
+  // Initialize FCM
+  useEffect(() => {
+    const initFCM = async () => {
+      try {
+        await requestFCMPermission();
+        const token = await getFCMToken();
+        console.log("📲 Order Place - User FCM Token:", token);
+      } catch (error) {
+        console.error("Error initializing FCM:", error);
+      }
+    };
+
+    const handleNotificationPress = async (data: NotificationData) => {
+      console.log("🚨 Order Place - Notification received:", data);
+
+      // Check if this notification is for the current order
+      if (data?.order_id === orderId) {
+        // Update order details
+        await getOrderDetails(String(orderId));
+
+        // Handle different notification types
+        if (data?.status === "started") {
+          // Customer started the order
+          Alert.alert("Order Started", "The customer has started the order.");
+        } else if (data?.status === "completed") {
+          setPopupType("orderComplete");
+        } else if (data?.status === "tipped" && data.message) {
+          // Customer tipped you
+          const tipMatch = data.message.match(/\$(\d+(\.\d+)?)/);
+          if (tipMatch) {
+            setTipAmount(tipMatch[1]);
+            setPopupType("tipup");
+          }
+        } else if (data?.status === "time_exceeded") {
+          setPopupType("timeup");
+        }
+      }
+    };
+
+    initFCM();
+    const unsubscribe = setupNotificationListeners(handleNotificationPress);
+
+    return () => {
+      unsubscribe(); // Clean up listeners
+      if (statusCheckIntervalRef.current) {
+        clearInterval(statusCheckIntervalRef.current);
+      }
+    };
+  }, [orderId]);
 
   useFocusEffect(
     useCallback(() => {
       if (orderId) {
         getOrderDetails(String(orderId));
+
+        // Set up interval to poll for order status changes
+        statusCheckIntervalRef.current = setInterval(() => {
+          getOrderDetails(String(orderId));
+        }, 30000); // Check every 30 seconds
       }
+
+      return () => {
+        if (statusCheckIntervalRef.current) {
+          clearInterval(statusCheckIntervalRef.current);
+        }
+      };
     }, [orderId])
   );
 
@@ -54,6 +132,12 @@ const OrderPlace: React.FC = () => {
       const response = await apiCall(formData);
       if (response && response.data && response.data.length > 0) {
         const orderData = response.data[0];
+
+        // Check if status changed
+        if (order && order.status !== orderData.status) {
+          handleOrderStatusChange(order.status, orderData.status);
+        }
+
         setOrder(orderData);
       } else {
         Alert.alert("Error", "No order details found");
@@ -65,6 +149,23 @@ const OrderPlace: React.FC = () => {
       setOrder(null);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Handle order status changes
+  const handleOrderStatusChange = (oldStatus: string, newStatus: string) => {
+    console.log(`Order status changed from ${oldStatus} to ${newStatus}`);
+
+    if (newStatus === "started") {
+      Alert.alert("Order Started", "The customer has started the order.");
+    } else if (newStatus === "completed") {
+      setPopupType("orderComplete");
+    } else if (newStatus === "tipped") {
+      // You might need to fetch tip amount separately
+      setPopupType("tipup");
+    } else if (oldStatus === "arrived" && newStatus === "started") {
+      // Customer changed from arrived to started
+      Alert.alert("Order Started", "The customer has started the order.");
     }
   };
 
