@@ -4,59 +4,87 @@ import { Colors } from "@/constants/Colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { apiCall } from "~/utils/api";
 
-// Order type definition
-export type Order = {
+export type OrderApiResponse = {
   id: string;
   order_no: string;
   created_at: string;
+  timestamp: string;
   status: string;
   payment_method: string;
+  payment_status?: string;
+  amount?: string;
+  discount?: string;
   address: string;
   description: string;
   image_url?: string;
   images?: string;
   cat_id: string;
-  // UI specific fields
+  rating?: string;
+  tipped?: string;
+  user?: {
+    id: string;
+    name: string;
+    image?: string;
+  };
+  provider?: {
+    id: string;
+    name: string;
+    image?: string;
+  };
+  category?: {
+    id: string;
+    name: string;
+    image?: string;
+  };
+  package?: any;
+};
+
+export type Order = {
+  id: string;
   title?: string;
+  orderId?: string;
+  status: string;
   amount?: string;
   discount?: string;
+  date?: string;
+  customer?: string;
   provider?: string;
+  paymentStatus?: string;
   rating?: string;
   tip?: string;
+  image?: any; // React Native image source
+  imageUrl?: string;
 };
 
 export default function Orders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
 
-  // Dropdown state
   const [open, setOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState("All");
   const [items, setItems] = useState([
     { label: "All", value: "All" },
     { label: "Pending", value: "pending" },
     { label: "Completed", value: "completed" },
+    { label: "Accepted", value: "accepted" },
+    { label: "Cancelled", value: "cancelled" },
   ]);
 
   useFocusEffect(
     useCallback(() => {
-      const init = async () => {
-        try {
-          const user_id = await AsyncStorage.getItem("user_id");
-          setUserId(user_id);
-          fetchOrders();
-        } catch (error) {
-          console.error("Initialization error:", error);
-          Alert.alert("Error", "Failed to initialize orders");
-        }
-      };
-      init();
+      fetchOrders();
     }, [])
   );
 
@@ -64,31 +92,21 @@ export default function Orders() {
     setIsLoading(true);
     const userId = await AsyncStorage.getItem("user_id");
 
-    if (!userId) throw new Error("User ID not found");
-    console.log(userId);
+    if (!userId) {
+      setIsLoading(false);
+      throw new Error("User ID not found");
+    }
 
     const formData = new FormData();
     formData.append("type", "get_data");
     formData.append("table_name", "orders");
-    formData.append("user_id", userId);
+    formData.append("to_id", userId);
 
     try {
       const response = await apiCall(formData);
       if (response && response.data && response.data.length > 0) {
-        const transformedOrders = response.data.map((order: any) => ({
-          ...order,
-          title: order.cat_name || "Service",
-          amount: order.order_price || "0",
-          discount: order.discount || "0",
-          paymentStatus: order.payment_method || "Unknown",
-          provider:
-            order.to_id !== "0"
-              ? order.provider || "Assigned Provider"
-              : "Waiting for provider",
-          image: require("@/assets/images/cleaning_service.png"),
-        }));
-
-        setOrders(transformedOrders);
+        const orders = response.data;
+        setOrders(orders);
       } else {
         setOrders([]);
       }
@@ -101,9 +119,11 @@ export default function Orders() {
   };
 
   const handleOrderScreen = (order: Order) => {
-    // Store the order ID in AsyncStorage for the order place screen
-    AsyncStorage.setItem("order_id", order.id).then(() => {
-      router.push("/order/order_place");
+    router.push({
+      pathname: "/order/order_place",
+      params: {
+        orderId: order.id,
+      },
     });
   };
 
@@ -146,35 +166,24 @@ export default function Orders() {
           ]}
           showsVerticalScrollIndicator={false}
         >
-          <View>
+          <View style={styles.ordersContainer}>
             {isLoading ? (
               <View style={styles.loadingContainer}>
-                <Text>Loading orders...</Text>
+                <ActivityIndicator size="large" color={Colors.primary} />
+                <Text style={styles.loadingText}>Loading orders...</Text>
               </View>
             ) : filteredOrders.length > 0 ? (
               filteredOrders.map((order, index) => (
                 <ServiceDetailsCard
-                  key={index}
-                  order={{
-                    id: order.order_no,
-                    title: order.title || `Service `,
-                    status: order.status,
-                    amount: order.amount || "0.00",
-                    discount: order.discount || "0",
-                    date: order.created_at,
-                    provider: order.provider || "Unassigned",
-                    paymentStatus: order.payment_method,
-                    rating: order.rating || "0",
-                    tip: order.tip || "0",
-                    image: { uri: order.image_url },
-                  }}
+                  key={`order-${order.id}`}
+                  order={order}
                   orderScreen={true}
                   onPress={() => handleOrderScreen(order)}
                 />
               ))
             ) : (
               <View style={styles.noOrdersContainer}>
-                <Text>No orders found</Text>
+                <Text style={styles.noOrdersText}>No orders found</Text>
               </View>
             )}
           </View>
@@ -195,6 +204,9 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     paddingBottom: 120,
+  },
+  ordersContainer: {
+    marginTop: 8,
   },
   dropdownContainer: {
     marginVertical: 16,
@@ -226,12 +238,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   loadingContainer: {
-    padding: 20,
+    padding: 40,
     alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: Colors.secondary,
   },
   noOrdersContainer: {
     padding: 40,
     alignItems: "center",
     justifyContent: "center",
+  },
+  noOrdersText: {
+    fontSize: 16,
+    color: Colors.secondary300,
   },
 });

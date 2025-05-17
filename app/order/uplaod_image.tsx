@@ -1,19 +1,31 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { useRouter } from "expo-router";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Alert,
+} from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { Colors } from "~/constants/Colors";
 import Banner from "@/assets/svgs/uplaodImage.svg";
 import Verify from "@/assets/svgs/grayTick.svg";
 import Verified from "@/assets/svgs/doubletickicon.svg";
+import { apiCall } from "~/utils/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function UploadImage() {
   const router = useRouter();
-  const [itemImage, setItemImage] = useState<string | null>(null);
-  const [recipeImage, setRecipeImage] = useState<string | null>(null);
+  const { orderId } = useLocalSearchParams();
+  const [itemImage, setItemImage] = useState(null);
+  const [itemImageName, setItemImageName] = useState(null);
+  const [recipeImage, setRecipeImage] = useState(null);
+  const [recipeImageName, setRecipeImageName] = useState(null);
 
   // Open camera and capture image
-  const captureImage = async (type: "item" | "recipe") => {
+  const captureImage = async (type) => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
       alert("Camera permission is required!");
@@ -28,19 +40,72 @@ export default function UploadImage() {
 
     if (!result.canceled) {
       if (type === "item") {
-        setItemImage(result.assets[0].uri);
+        setItemImage(result?.file_name);
+        handleImageUpload(result?.file_name, "item");
       } else {
-        setRecipeImage(result.assets[0].uri);
+        setRecipeImage(result?.file_name);
+        handleImageUpload(result?.file_name, "recipe");
       }
     }
   };
 
-  // Check if both images are uploaded, then navigate back after 3s
-  useEffect(() => {
-    if (itemImage && recipeImage) {
-      setTimeout(() => router.back(), 1000);
+  const handleImageUpload = async (imageUri, type) => {
+    const userId = await AsyncStorage.getItem("user_id");
+    if (!userId) {
+      Alert.alert("Error", "User ID not found.");
+      return;
     }
-  }, [itemImage, recipeImage]);
+
+    try {
+      const uriParts = imageUri.split(".");
+      const fileType = uriParts[uriParts.length - 1];
+
+      const formData = new FormData();
+      formData.append("type", "upload_data");
+      formData.append("user_id", userId);
+      formData.append("file", {
+        uri: imageUri,
+        name: `${type}_image.${fileType}`,
+        type: `image/${fileType}`,
+      });
+
+      const response = await apiCall(formData);
+
+      if (response.result && response.file_name) {
+        if (type === "item") {
+          setItemImageName(response.file_name);
+        } else {
+          setRecipeImageName(response.file_name);
+        }
+      } else {
+        throw new Error(response.message || "Failed to upload image.");
+      }
+    } catch (err) {
+      Alert.alert("Upload Error", err.message || "Something went wrong.");
+    }
+  };
+
+  // Save uploaded image filenames and navigate back after both images are uploaded
+  useEffect(() => {
+    if (itemImageName && recipeImageName) {
+      setTimeout(() => {
+        // Save both filenames to AsyncStorage before navigating back
+        const saveImages = async () => {
+          try {
+            const imageData = JSON.stringify({
+              itemImage: itemImageName,
+              recipeImage: recipeImageName,
+            });
+            await AsyncStorage.setItem(`order_${orderId}_images`, imageData);
+            router.back();
+          } catch (error) {
+            console.error("Error saving images:", error);
+          }
+        };
+        saveImages();
+      }, 1000);
+    }
+  }, [itemImageName, recipeImageName]);
 
   return (
     <View style={styles.container}>

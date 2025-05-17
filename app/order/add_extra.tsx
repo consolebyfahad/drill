@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,15 +6,17 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
+  Alert,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import Camera from "@/assets/svgs/camera.svg";
 import { Colors } from "~/constants/Colors";
 import Header from "~/components/header";
 import Seprator from "~/components/seprator";
 import Button from "~/components/button";
+import { apiCall } from "~/utils/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // SVG Icons (simulated with components)
 const CameraIcon = () => (
@@ -36,18 +38,106 @@ const HandIcon = () => (
 );
 
 export default function AddExtra() {
+  const { orderId } = useLocalSearchParams();
   const [description, setDescription] = useState("");
-  const [totalPrice, setTotalPrice] = useState();
+  const [totalPrice, setTotalPrice] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("me");
+  const [uploadedImages, setUploadedImages] = useState(null);
+  const [imagesUploaded, setImagesUploaded] = useState(false);
+
+  // Check for uploaded images when the component mounts or is focused
+  useFocusEffect(
+    useCallback(() => {
+      const checkForUploadedImages = async () => {
+        try {
+          const imagesData = await AsyncStorage.getItem(
+            `order_${orderId}_images`
+          );
+
+          if (imagesData) {
+            const parsedImages = JSON.parse(imagesData);
+            setUploadedImages(parsedImages);
+            setImagesUploaded(true);
+          } else {
+            setUploadedImages([]);
+            setImagesUploaded(false);
+          }
+        } catch (error) {
+          console.error("Error retrieving uploaded images:", error);
+        }
+      };
+
+      checkForUploadedImages();
+    }, [orderId])
+  );
 
   const handleUploadPress = () => {
-    // Navigate to upload image screen
-    router.push("/order/uplaod_image");
+    router.push({
+      pathname: "/order/uplaod_image",
+      params: { orderId: orderId },
+    });
   };
 
-  const handleNextPress = () => {
-    // Handle next button press
-    console.log("Next pressed");
+  const handleNextPress = async () => {
+    // Validate inputs
+    if (!description.trim()) {
+      Alert.alert("Missing Information", "Please enter a description");
+      return;
+    }
+
+    if (!totalPrice || isNaN(parseFloat(totalPrice))) {
+      Alert.alert("Missing Information", "Please enter a valid price");
+      return;
+    }
+
+    if (!imagesUploaded || !uploadedImages) {
+      Alert.alert(
+        "Missing Images",
+        "Please upload item and receipt images first"
+      );
+      return;
+    }
+
+    try {
+      // Prepare the final images object
+      const finalImages = {
+        itemImage: uploadedImages.itemImage,
+        recipeImage: uploadedImages.recipeImage,
+      };
+
+      const formData = new FormData();
+      formData.append("type", "update_data");
+      formData.append("table_name", "orders");
+      formData.append("id", orderId);
+      formData.append("final_images", JSON.stringify(finalImages));
+      formData.append("extra_detail", description);
+      formData.append("extra_amount", totalPrice);
+      formData.append("paid_by", paymentMethod);
+
+      const response = await apiCall(formData);
+
+      if (response && response.result === true) {
+        // Clear the stored images after successful submission
+        await AsyncStorage.removeItem(`order_${orderId}_images`);
+
+        // Navigate to order place screen
+        router.push({
+          pathname: "/order/order_place",
+          params: { orderId: orderId },
+        });
+      } else {
+        Alert.alert(
+          "Error",
+          response?.message || "Failed to update order information"
+        );
+      }
+    } catch (error) {
+      console.error("Error updating order information:", error);
+      Alert.alert(
+        "Error",
+        "An error occurred while updating the order information"
+      );
+    }
   };
 
   return (
@@ -59,12 +149,17 @@ export default function AddExtra() {
         <View>
           <Text style={styles.sectionTitle}>Upload Picture</Text>
           <TouchableOpacity
-            style={styles.uploadButton}
+            style={[
+              styles.uploadButton,
+              imagesUploaded && styles.uploadButtonComplete,
+            ]}
             onPress={handleUploadPress}
           >
             <CameraIcon />
             <Text style={styles.uploadText}>
-              Upload the picture of item and bill
+              {imagesUploaded
+                ? "Images uploaded successfully ✓"
+                : "Upload the picture of item and bill"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -178,6 +273,11 @@ const styles = StyleSheet.create({
     padding: 20,
     flexDirection: "row",
     alignItems: "center",
+  },
+  uploadButtonComplete: {
+    backgroundColor: Colors.primary300,
+    borderWidth: 1,
+    borderColor: Colors.success,
   },
   icon: {
     marginRight: 15,

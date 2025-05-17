@@ -11,7 +11,7 @@ import { Colors } from "~/constants/Colors";
 
 type ButtonProps = {
   title?: string;
-  onPress: () => Promise<void> | void;
+  onPress?: () => Promise<void> | void;
   variant?: "primary" | "secondary";
   fullWidth?: boolean;
   width?: DimensionValue;

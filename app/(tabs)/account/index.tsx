@@ -10,7 +10,7 @@ import {
   Linking,
   Platform,
 } from "react-native";
-import React, { useCallback, useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import Header from "@/components/header";
@@ -23,8 +23,8 @@ import Rating from "@/assets/svgs/emptyStar.svg";
 import About from "@/assets/svgs/info.svg";
 import Support from "@/assets/svgs/profile/support.svg";
 import Language from "@/assets/svgs/language.svg";
+import Wallet from "@/assets/svgs/profile/Wallet.svg";
 import Verify from "@/assets/svgs/verify.svg";
-import Card from "@/assets/svgs/profile/Card.svg";
 import Employee from "@/assets/svgs/employee.svg";
 import Logout from "@/assets/svgs/Logout.svg";
 import { apiCall } from "~/utils/api";
@@ -38,21 +38,34 @@ type User = {
   id: string;
   name: string;
   email: string;
-  phone: string;
+  password: string;
   dob: string;
+  user_type: string;
   address: string;
-  city: string;
-  zip: string;
+  postal: string;
   image: string;
-  balance: string;
-  country: string;
+  phone: string;
   gender: string;
   lat: string;
   lng: string;
+  country: string;
   state: string;
+  city: string;
   status: string;
+  company_number: string;
+  secondary_email: string;
+  tax_number: string;
+  company_category: string;
+  company_code: string;
+  iqama_id: string;
+  documents: string;
+  online_status: string;
+  company_verified: string;
+  platform_status: string;
+  balance: string;
+  social_token: string;
+  company_id: string;
   timestamp: string;
-  user_type: string;
 };
 
 export default function Account() {
@@ -63,21 +76,34 @@ export default function Account() {
     id: "",
     name: "",
     email: "",
-    phone: "",
+    password: "",
     dob: "",
+    user_type: "",
     address: "",
-    city: "",
-    zip: "",
+    postal: "",
     image: "",
-    balance: "",
-    country: "",
+    phone: "",
     gender: "",
     lat: "",
     lng: "",
+    country: "",
     state: "",
+    city: "",
     status: "",
+    company_number: "",
+    secondary_email: "",
+    tax_number: "",
+    company_category: "",
+    company_code: "",
+    iqama_id: "",
+    documents: "",
+    online_status: "",
+    company_verified: "",
+    platform_status: "",
+    balance: "",
+    social_token: "",
+    company_id: "",
     timestamp: "",
-    user_type: "",
   });
 
   useFocusEffect(
@@ -106,7 +132,6 @@ export default function Account() {
       const authStatus = await messaging().hasPermission();
       console.log("Notification permission status:", authStatus);
 
-      // For both iOS and Android: AUTHORIZED(1) or PROVISIONAL(2) means enabled
       const enabled =
         authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
         authStatus === messaging.AuthorizationStatus.PROVISIONAL;
@@ -120,28 +145,20 @@ export default function Account() {
 
   const handleNotificationToggle = async (value: boolean) => {
     if (value) {
-      // User wants to enable notifications
       try {
-        // First check current permission status
         const authStatus = await messaging().hasPermission();
 
-        // If permission is not determined (never asked), request it
         if (authStatus === messaging.AuthorizationStatus.NOT_DETERMINED) {
           const permissionGranted = await requestFCMPermission();
           if (permissionGranted) {
             setNotificationsEnabled(true);
             await updateNotificationSettings(true);
           } else {
-            // Permission denied in the system dialog
             setNotificationsEnabled(false);
           }
-        }
-        // If permission was denied before, show settings alert
-        else if (authStatus === messaging.AuthorizationStatus.DENIED) {
+        } else if (authStatus === messaging.AuthorizationStatus.DENIED) {
           showSettingsAlert();
-        }
-        // If already authorized, just update UI and settings
-        else {
+        } else {
           setNotificationsEnabled(true);
           await updateNotificationSettings(true);
         }
@@ -150,7 +167,6 @@ export default function Account() {
         setNotificationsEnabled(false);
       }
     } else {
-      // User wants to disable notifications
       setNotificationsEnabled(false);
       await updateNotificationSettings(false);
       showDisableNotificationsInfo();
@@ -212,11 +228,6 @@ export default function Account() {
 
   const fetchUserProfile = async () => {
     try {
-      const keys = await AsyncStorage.getAllKeys();
-      const items = await AsyncStorage.multiGet(keys);
-      const allData = Object.fromEntries(items);
-
-      console.log("All AsyncStorage data:", allData);
       const userId = await AsyncStorage.getItem("user_id");
       if (!userId) throw new Error("User ID not found");
 
@@ -225,36 +236,16 @@ export default function Account() {
       formData.append("user_id", userId);
 
       const response = await apiCall(formData);
-      if (response.profile) {
-        const profileData = response.profile;
-        setUser({
-          id: profileData.id || "",
-          name: profileData.name || "Username",
-          email: profileData.email || "emailaddress",
-          phone: profileData.phone || "+92000000000",
-          dob: profileData.dob !== "0000-00-00" ? profileData.dob : "",
-          address: profileData.address || "",
-          city: profileData.city || "",
-          zip: profileData.postal || "",
-          image: profileData.image || "",
-          balance: profileData.balance || "0",
-          country: profileData.country || "",
-          gender: profileData.gender || "",
-          lat: profileData.lat || "",
-          lng: profileData.lng || "",
-          state: profileData.state || "",
-          status: profileData.status || "",
-          timestamp: profileData.timestamp || "",
-          user_type: profileData.user_type || "",
-        });
 
-        // Update account type based on user profile if not already set
-        if (profileData.user_type && !accountType) {
+      if (response.profile || response.user) {
+        const profileData = response.profile || response.user;
+        setUser(profileData);
+
+        if (profileData.user_type) {
           setAccountType(profileData.user_type);
           await AsyncStorage.setItem("account_type", profileData.user_type);
         }
 
-        // Get notification preferences from backend if available
         if (profileData.notifications_enabled) {
           setNotificationsEnabled(profileData.notifications_enabled === "1");
         }
@@ -269,7 +260,18 @@ export default function Account() {
       case "Employees":
         router.push("/account/employee");
         break;
+      case "Wallet":
+        router.push("/account/wallet");
+        break;
       case "Rate Us":
+        // Handle rate us functionality (e.g., open app store)
+        if (Platform.OS === "ios") {
+          Linking.openURL("https://apps.apple.com/app/YOUR_APP_ID");
+        } else {
+          Linking.openURL(
+            "https://play.google.com/store/apps/details?id=YOUR_PACKAGE_NAME"
+          );
+        }
         break;
       case "About App":
         router.push("/account/about");
@@ -316,16 +318,9 @@ export default function Account() {
   };
 
   const handleEditProfile = () => {
-    router.push({
-      pathname: "/account/edit_profile",
-      params: {
-        ...user,
-        verified: user.status ? "true" : "false",
-      },
-    });
+    router.push("/account/edit_profile");
   };
 
-  // Render notification icon with visual indication of permission status
   const renderNotificationIcon = () => {
     return (
       <View style={{ position: "relative" }}>
@@ -337,13 +332,15 @@ export default function Account() {
     );
   };
 
-  // Update the icon map to include the Employee icon
+  // Update the icon map to include all necessary icons
   const iconMap: { [key: string]: JSX.Element } = {
     Account: <AccountStatus />,
     Employee: <Employee />,
+    Wallet: <Wallet />,
     Notification: renderNotificationIcon(),
     "Rate Us": <Rating />,
     "About App": <About />,
+    Language: <Language />,
     Support: <Support />,
     Logout: <Logout />,
   };
@@ -354,22 +351,51 @@ export default function Account() {
       {
         icon: "Account",
         title: "Account Status",
-        right: user.state === "1" ? "Verified" : "Unverified",
-        rightColor: user.state === "1" ? Colors.success : Colors.danger,
+        right:
+          accountType === "company"
+            ? user.platform_status === "1"
+              ? "Verified"
+              : "Unverified"
+            : accountType === "employee"
+            ? user.platform_status === "1" && user.company_verified === "1"
+              ? "Verified"
+              : user.platform_status === "1" || user.company_verified === "1"
+              ? "1/2 Verified"
+              : "Unverified"
+            : "Unverified",
+        rightColor:
+          user.platform_status === "1" ? Colors.success : Colors.danger,
       },
-      // This item will be conditionally added based on account type
-      {
+      ...(accountType === "company"
+        ? [
+            {
+              icon: "Wallet",
+              title: "Wallet",
+              extraRight: "chevron-forward",
+            },
+          ]
+        : []),
+      ,
+    ];
+
+    // Only show Employees for company accounts
+    if (accountType === "company") {
+      baseMenuItems.push({
         icon: "Employee",
         title: "Employees",
         extraRight: "chevron-forward",
-      },
-      { icon: "Notification", title: "Notification", right: "toggle" },
+      });
+    }
 
+    // Add the rest of the menu items
+    baseMenuItems.push(
+      { icon: "Notification", title: "Notification", right: "toggle" },
       { icon: "Rate Us", title: "Rate Us", extraRight: "chevron-forward" },
       { icon: "About App", title: "About App", extraRight: "chevron-forward" },
+      { icon: "Language", title: "Language", extraRight: "chevron-forward" },
       { icon: "Support", title: "Support", extraRight: "chevron-forward" },
-      { icon: "Logout", title: "Logout", extraRight: "chevron-forward" },
-    ];
+      { icon: "Logout", title: "Logout", extraRight: "chevron-forward" }
+    );
 
     return baseMenuItems;
   };
@@ -395,11 +421,27 @@ export default function Account() {
                 console.warn("Image failed to load", nativeEvent.error);
               }}
             />
-            {user.state === "1" && <Verify style={styles.verifiedIcon} />}
-            {user.status === "1" && <View style={styles.onlineIndicator} />}
+            {user.platform_status === "1" &&
+              (accountType === "company" ||
+                (accountType === "employee" &&
+                  user.company_verified === "1")) && (
+                <Verify style={styles.verifiedIcon} />
+              )}
+            {user.online_status === "1" && (
+              <View style={styles.onlineIndicator} />
+            )}
           </View>
           <Text style={styles.userName}>{user.name}</Text>
-          <Text style={styles.userEmail}>{user.email}</Text>
+          {accountType === "employee" ? (
+            <Text style={styles.userEmail}>{user.email}</Text>
+          ) : (
+            <Text style={styles.userEmail}>Balance: SAR {user.balance}</Text>
+          )}
+          {accountType === "company" && user.company_code && (
+            <Text style={styles.companyCode}>
+              Company#: {user.company_code}
+            </Text>
+          )}
         </View>
         {/* Buttons */}
         <View style={styles.buttonRow}>
@@ -436,14 +478,17 @@ export default function Account() {
                 />
               </View>
             ) : (
-              <TouchableOpacity onPress={() => handleNavigation(item.title)}>
+              <TouchableOpacity
+                onPress={() => handleNavigation(item.title)}
+                activeOpacity={0.7}
+              >
                 <View style={styles.row}>
                   <View style={styles.rowLeft}>
                     {iconMap[item.icon]}
                     <Text style={styles.itemText}>{item.title}</Text>
                   </View>
                   <View style={styles.rowRight}>
-                    {item.right && (
+                    {item.right && item.right !== "toggle" && (
                       <Text
                         style={[
                           styles.itemRightText,
@@ -478,22 +523,24 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   scrollView: {
-    padding: 16,
     flex: 1,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
   },
   profileContainer: {
     alignItems: "flex-start",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   imageWrapper: {
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: Colors.success,
     borderRadius: 999,
     position: "relative",
+    marginBottom: 16,
   },
   image: {
     width: 96,
-    height: 87,
+    height: 96,
     borderRadius: 999,
   },
   onlineIndicator: {
@@ -513,14 +560,20 @@ const styles = StyleSheet.create({
     right: 0,
   },
   userName: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "700",
     color: Colors.secondary,
-    marginTop: 8,
   },
   userEmail: {
-    fontSize: 16,
+    fontSize: 17,
+    fontWeight: "500",
     color: Colors.secondary300,
+  },
+  companyCode: {
+    fontSize: 17,
+    fontWeight: "500",
+    color: Colors.secondary300,
+    marginTop: 4,
   },
   buttonRow: {
     flexDirection: "row",
@@ -530,7 +583,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
   },
   rowLeft: {
     flexDirection: "row",
@@ -543,8 +595,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   itemText: {
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.secondary,
+    fontWeight: "500",
   },
   itemRightText: {
     fontSize: 14,

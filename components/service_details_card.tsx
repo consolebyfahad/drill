@@ -1,31 +1,22 @@
 import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
-import React from "react";
 import DashedSeprator from "./dashed_seprator";
 import { Colors } from "../constants/Colors";
 
-// Updated Order type to match the actual data structure
-type Order = {
-  id?: string;
-  order_no?: string;
-  category?: {
-    name: string;
-    image: string;
-  };
-  status?: string;
+export type Order = {
+  id: string;
+  title?: string;
+  orderId?: string;
+  status: string;
   amount?: string;
   discount?: string;
-  timestamp?: string;
-  created_at?: string;
-  provider?: {
-    name: string;
-    image: string;
-  };
-  payment_method?: string;
+  date?: string;
+  customer?: string;
+  provider?: string;
   paymentStatus?: string;
   rating?: string;
   tip?: string;
-  image_url?: string;
-  images?: string;
+  image?: any;
+  imageUrl?: string;
 };
 
 type ServiceDetailsCardProps = {
@@ -36,45 +27,61 @@ type ServiceDetailsCardProps = {
 
 export default function ServiceDetailsCard({
   order,
-  orderScreen,
   onPress,
 }: ServiceDetailsCardProps) {
-  // Function to get the image source
-  const getImageSource = () => {
-    if (order.images && order.image_url) {
-      return { uri: `${order.image_url}${order.images}` };
-    } else if (order.category?.image) {
-      return { uri: `${order.image_url}${order.category.image}` };
-    } else {
-      return require("../assets/images/default-profile.png");
+  // Function to get different status styles based on status
+  const getStatusStyle = (status: string | undefined) => {
+    switch (status?.toLowerCase()) {
+      case "accepted":
+        return { backgroundColor: Colors.primary100, color: Colors.primary };
+      case "pending":
+        return { backgroundColor: "#FFF3CD", color: "#856404" };
+      case "arrived":
+        return { backgroundColor: "#FFF3CD", color: "#856404" };
+      case "completed":
+        return { backgroundColor: Colors.success100, color: Colors.success };
+      case "cancelled":
+        return { backgroundColor: "#F8D7DA", color: "#721C24" };
+      default:
+        return { backgroundColor: Colors.primary100, color: Colors.secondary };
     }
   };
 
+  // Get the status style for the current order
+  const statusStyle = getStatusStyle(order.status);
+
   return (
-    <TouchableOpacity onPress={onPress} style={styles.card}>
+    <TouchableOpacity onPress={onPress} style={styles.card} activeOpacity={0.7}>
       {/* Order Top Section */}
       <View style={styles.orderTopSection}>
         <Image
-          source={getImageSource()}
+          source={{ uri: `${order.image_url}${order?.category?.image}` }}
           style={styles.image}
           resizeMode="cover"
         />
         <View style={styles.orderInfo}>
           <View style={styles.orderHeader}>
             <Text style={styles.title}>
-              {order.category?.name || "Service Order"}
+              {order?.category?.name || "Service Order"}
             </Text>
-            <Text style={[styles.status, getStatusStyle(order.status)]}>
-              {order.status}
-            </Text>
+            <View
+              style={[
+                styles.statusContainer,
+                { backgroundColor: statusStyle.backgroundColor },
+              ]}
+            >
+              <Text style={[styles.statusText, { color: statusStyle.color }]}>
+                {order.status === "accepted" ? "In-Progress" : order?.status}
+              </Text>
+            </View>
           </View>
           <Text style={styles.orderId}>
             Order ID: <Text style={styles.orderIdValue}>{order.order_no}</Text>
           </Text>
           <Text style={styles.amount}>
             SAR {order.amount || "0.00"}{" "}
-            {order.discount && (
-              <Text style={styles.discount}>({order.discount}%)</Text>
+            {order.discount && parseInt(order.discount) > 0 && (
+              <Text style={styles.discount}>({order.discount}% off)</Text>
             )}
           </Text>
         </View>
@@ -84,16 +91,21 @@ export default function ServiceDetailsCard({
       <View style={styles.detailsContainer}>
         <View style={styles.detailsRow}>
           <Text style={styles.label}>Date & Time</Text>
-          <Text style={styles.value}>
-            {order.timestamp || order.created_at || "N/A"}
-          </Text>
+          <Text style={styles.value}>{order.timestamp || "N/A"}</Text>
         </View>
         <DashedSeprator />
 
         <View style={styles.detailsRow}>
-          <Text style={styles.label}>Provider</Text>
+          <Text style={styles.label}>Customer</Text>
           <Text style={styles.value}>
-            {order.provider?.name || "Not assigned yet"}
+            {order?.user?.name || "Not assigned yet"}
+          </Text>
+        </View>
+        <DashedSeprator />
+        <View style={styles.detailsRow}>
+          <Text style={styles.label}>Order Status</Text>
+          <Text style={[styles.value, { color: statusStyle.color }]}>
+            {order.status === "accepted" ? "In-Progress" : order?.status}
           </Text>
         </View>
         <DashedSeprator />
@@ -101,17 +113,16 @@ export default function ServiceDetailsCard({
         <View style={styles.detailsRow}>
           <Text style={styles.label}>Payment Status</Text>
           <Text style={styles.paymentStatus}>
-            {order.paymentStatus || "Pending"}
+            {order?.payment_status || "Pending"}
           </Text>
         </View>
-
-        {order.status === "completed" && orderScreen && (
+        {order.status === "completed" && (
           <>
+            {" "}
             <DashedSeprator />
             <View style={styles.detailsRow}>
               <Text style={styles.label}>Rating</Text>
               <View style={styles.ratingContainer}>
-                {/* Use icon component or image for star */}
                 <Text style={styles.starIcon}>★</Text>
                 <Text style={styles.value}>{order.rating || "0"}</Text>
               </View>
@@ -128,28 +139,17 @@ export default function ServiceDetailsCard({
   );
 }
 
-// Function to get different status styles
-const getStatusStyle = (status) => {
-  switch (status?.toLowerCase()) {
-    case "accepted":
-      return { backgroundColor: Colors.success100, color: Colors.success };
-    case "pending":
-      return { backgroundColor: "#FFF3CD", color: "#856404" };
-    case "completed":
-      return { backgroundColor: "#D4EDDA", color: "#155724" };
-    case "cancelled":
-      return { backgroundColor: "#F8D7DA", color: "#721C24" };
-    default:
-      return { backgroundColor: Colors.primary100, color: Colors.secondary };
-  }
-};
-
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.primary300,
     padding: 16,
     borderRadius: 16,
     marginTop: 16,
+    shadowColor: Colors.gray100,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.01,
+    shadowRadius: 6,
+    elevation: 2,
   },
   orderTopSection: {
     flexDirection: "row",
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     width: 62,
     borderRadius: 8,
     backgroundColor: Colors.white,
-    padding: 8,
+    padding: 12,
   },
   orderInfo: {
     flex: 1,
@@ -176,12 +176,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.secondary,
+    flex: 1,
+    textTransform: "capitalize",
   },
-  status: {
-    padding: 8,
+  statusContainer: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  statusText: {
     fontSize: 14,
     fontWeight: "500",
-    borderRadius: 8,
+    textTransform: "capitalize",
   },
   orderId: {
     fontSize: 14,
@@ -193,6 +199,7 @@ const styles = StyleSheet.create({
   amount: {
     fontSize: 14,
     color: Colors.secondary,
+    fontWeight: "500",
   },
   discount: {
     color: Colors.success,
@@ -206,7 +213,8 @@ const styles = StyleSheet.create({
   detailsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginVertical: 4,
+    alignItems: "center",
+    marginVertical: 8,
   },
   label: {
     color: Colors.secondary300,
@@ -216,6 +224,7 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
     fontSize: 14,
     fontWeight: "600",
+    textTransform: "capitalize",
   },
   paymentStatus: {
     color: Colors.success,

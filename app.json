@@ -14,7 +14,9 @@
       "bundleIdentifier": "sa.com.drill.service",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "We need your location to show your position on the map.",
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       },
       "entitlements": {
         "aps-environment": "production"
@@ -59,7 +61,8 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true

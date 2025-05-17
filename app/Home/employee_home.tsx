@@ -491,12 +491,36 @@ const EmployeeHome = () => {
   };
 
   // Handle toggle change
-  const handleToggleChange = (value: boolean) => {
-    setIsOn(value);
+  const handleToggleChange = async (value: boolean) => {
+    try {
+      const userId = await AsyncStorage.getItem("user_id");
 
-    // Clear job requests when turning off
-    if (!value) {
-      setJobRequests([]);
+      if (!userId) {
+        Alert.alert("Error", "User information not found");
+        setIsLoading(false);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("type", "update_data");
+      formData.append("table_name", "users");
+      formData.append("id", userId);
+      formData.append("online_status", value ? "1" : "0");
+
+      console.log("Accepting order:", formData);
+
+      const response = await apiCall(formData);
+
+      if (response && response.result === true) {
+        setIsOn(value);
+      } else {
+        Alert.alert("Error", "Failed to accept job request");
+      }
+    } catch (error) {
+      console.error("Error accepting job request:", error);
+      Alert.alert("Error", "An error occurred while accepting the job request");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -562,37 +586,30 @@ const EmployeeHome = () => {
         </View>
 
         {/* Job Requests List */}
-        {jobRequests.length > 0 && (
-          <FlatList
-            data={jobRequests}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => {
-              // Get image URL for the service
-              const serviceImageUrl =
-                item?.category?.image && item?.image_url
-                  ? { uri: `${item.image_url}${item.category.image}` }
-                  : require("@/assets/images/default-profile.png");
+        {jobRequests.length > 0 &&
+          (() => {
+            const item = jobRequests[0];
 
-              return (
-                <JobRequestCard
-                  userName={item.provider?.name || "Client"}
-                  serviceTitle={item.category?.name || "Service"}
-                  packageTitle={item.package_id}
-                  distance={`${item.distance || "N/A"}km`}
-                  duration={item.estimatedDuration || "N/A"}
-                  jobLocation={item.provider?.address || "Address unavailable"}
-                  currentLocation={location.address}
-                  onDecline={() => handleHideJob(item.id)}
-                  onAccept={() => handleAcceptJob(item)}
-                  serviceImage={serviceImageUrl}
-                />
-              );
-            }}
-            style={styles.requestsList}
-            contentContainerStyle={styles.requestsContent}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
+            const serviceImageUrl =
+              item?.category?.image && item?.image_url
+                ? { uri: `${item.image_url}${item.category.image}` }
+                : require("@/assets/images/default-profile.png");
+
+            return (
+              <JobRequestCard
+                userName={item.provider?.name || "Client"}
+                serviceTitle={item.category?.name || "Service"}
+                packageTitle={item.package_id}
+                distance={`${item.distance || "N/A"}km`}
+                duration={item.estimatedDuration || "N/A"}
+                jobLocation={item.provider?.address || "Address unavailable"}
+                currentLocation={location.address}
+                onDecline={() => handleHideJob(item.id)}
+                onAccept={() => handleAcceptJob(item)}
+                serviceImage={serviceImageUrl}
+              />
+            );
+          })()}
       </View>
 
       {/* Center on user button */}

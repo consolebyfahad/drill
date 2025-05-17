@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Modal,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import Header from "@/components/header";
 import OrderDetails from "./order_details";
@@ -13,175 +14,74 @@ import ChatScreen from "./chat_screen";
 import Button from "@/components/button";
 import { Colors } from "~/constants/Colors";
 import Popup from "~/components/popup";
-import { useFocusEffect } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { apiCall } from "~/utils/api";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-// Define the interface for order data
-export interface OrderType {
-  id: string;
-  order_no: string;
-  user_id: string;
-  cat_id: string;
-  to_id: string;
-  address: string;
-  lat: string;
-  lng: string;
-  date: string;
-  images: string;
-  description: string;
-  package_id: string;
-  payment_method: string;
-  method_details: string;
-  promo_code: string;
-  status: string;
-  timestamp: string;
-  created_at: string;
-  distance: number;
-  user: UserType;
-  image_url: string;
-  // Additional fields needed for UI
-  title?: string;
-  amount?: string;
-  discount?: string;
-  provider?: ProviderType | null;
-  paymentStatus?: string;
-}
-
-interface UserType {
-  id: string;
-  email: string;
-  name: string;
-  dob: string;
-  user_type: string;
-  address: string;
-  postal: string;
-  image: string;
-  phone: string;
-  gender: string;
-  city: string;
-  status: string;
-  timestamp: string;
-  // Other user fields as needed
-}
-
-interface ProviderType {
-  id: string;
-  name: string;
-  image: string;
-  rating?: number;
-  jobsCompleted?: number;
-}
+import { OrderType } from "~/types/dataTypes";
 
 type PopupType = "timeup" | "tipup" | "orderComplete" | "review";
 
 const OrderPlace: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>("Details");
+  const { orderId, tab } = useLocalSearchParams();
+  console.log(tab);
+  const [activeTab, setActiveTab] = useState<string>(
+    tab ? String(tab) : "Details"
+  );
   const [popupType, setPopupType] = useState<PopupType | null>(null);
-  const [showPopup, setShowPopup] = useState(false);
-  const [detailsScreen, setDetailsScreen] = useState(true);
-  const [orderId, setOrderId] = useState<string | 35>(35);
-  const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [order, setOrder] = useState<OrderType | null>(null);
-  const [provider, setProvider] = useState(true);
-  // Effect to show popup whenever popupType updates
-  useEffect(() => {
-    if (popupType) {
-      setShowPopup(true);
-    } else {
-      setShowPopup(false);
-    }
-  }, [popupType]);
+
+  // Show or hide popup based on popupType
+  const showPopup = popupType !== null;
 
   useFocusEffect(
     useCallback(() => {
-      const init = async () => {
-        try {
-          const storedOrderId = await AsyncStorage.getItem("order_id");
-          const userId = await AsyncStorage.getItem("user_id");
-
-          // setOrderId(storedOrderId);
-          setUserId(userId);
-
-          if (orderId) {
-            getOrderDetails();
-          }
-        } catch (error) {
-          console.error("Initialization error:", error);
-          Alert.alert("Error", "Failed to initialize order details");
-        }
-      };
-      init();
-    }, [])
+      if (orderId) {
+        getOrderDetails(String(orderId));
+      }
+    }, [orderId])
   );
-  const getOrderDetails = async () => {
+
+  const getOrderDetails = async (id: string) => {
     setIsLoading(true);
 
     const formData = new FormData();
     formData.append("type", "get_data");
     formData.append("table_name", "orders");
-    formData.append("user_id", userId);
-    formData.append("id", 12);
-    console.log(formData);
+    formData.append("id", id);
+
     try {
       const response = await apiCall(formData);
       if (response && response.data && response.data.length > 0) {
-        // console.log("Order details:", JSON.stringify(response.data[0]));
-
-        // const mockProvider =
-        //   response.data[0].to_id === "0"
-        //     ? null
-        //     : {
-        //         id: "123",
-        //         name: "Test Provider",
-        //         image: "provider.jpg",
-        //         rating: 4.7,
-        //         jobsCompleted: 124,
-        //       };
-
-        // const transformedOrder: OrderType = {
-        //   ...response.data[0],
-        //   title: `Service Request #${response.data[0].order_no}`,
-        //   amount: "195.20",
-        //   discount: "5",
-        //   provider: mockProvider,
-        //   paymentStatus:
-        //     response.data[0].payment_method === "Visa Card"
-        //       ? "Pay Later"
-        //       : "Paid",
-        // };
-        const orderDetails = response.data[0];
-        console.log(response);
-        setOrder(orderDetails);
+        const orderData = response.data[0];
+        setOrder(orderData);
       } else {
         Alert.alert("Error", "No order details found");
+        setOrder(null);
       }
     } catch (error) {
       console.error("Failed to fetch order details", error);
       Alert.alert("Error", "Failed to fetch order details");
+      setOrder(null);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handlePay = () => {
-    setPopupType("orderComplete");
   };
 
   const handleCancel = () => {
     setPopupType("tipup");
   };
 
-  const handleActiveChat = () => {
-    setActiveTab("Chat");
-    setDetailsScreen(false);
+  const handleAlert = () => {};
+  const handleComplete = () => {
+    router.push({
+      pathname: "/order/add_extra",
+      params: { orderId: orderId },
+    });
   };
 
-  const handleDetailsScreen = () => {
-    setActiveTab("Details");
-    setDetailsScreen(true);
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
   };
 
   if (isLoading) {
@@ -195,7 +95,8 @@ const OrderPlace: React.FC = () => {
             support={true}
           />
           <View style={styles.loadingContainer}>
-            <Text>Loading order details...</Text>
+            <ActivityIndicator size="large" color={Colors.primary} />
+            <Text style={styles.loadingText}>Loading order details...</Text>
           </View>
         </View>
       </SafeAreaView>
@@ -211,9 +112,10 @@ const OrderPlace: React.FC = () => {
             title="Order Details"
             icon={true}
             support={true}
+            backAddress={"/(tabs)"}
           />
           <View style={styles.loadingContainer}>
-            <Text>No order details available</Text>
+            <Text style={styles.errorText}>No order details available</Text>
           </View>
         </View>
       </SafeAreaView>
@@ -234,7 +136,7 @@ const OrderPlace: React.FC = () => {
             style={
               activeTab === "Details" ? styles.activeTab : styles.inactiveTab
             }
-            onPress={handleDetailsScreen}
+            onPress={() => handleTabChange("Details")}
           >
             <Text
               style={
@@ -248,7 +150,7 @@ const OrderPlace: React.FC = () => {
           </TouchableOpacity>
           <TouchableOpacity
             style={activeTab === "Chat" ? styles.activeTab : styles.inactiveTab}
-            onPress={handleActiveChat}
+            onPress={() => handleTabChange("Chat")}
           >
             <Text
               style={
@@ -261,6 +163,7 @@ const OrderPlace: React.FC = () => {
             </Text>
           </TouchableOpacity>
         </View>
+
         {activeTab === "Details" ? (
           <OrderDetails order={order} />
         ) : (
@@ -268,20 +171,41 @@ const OrderPlace: React.FC = () => {
         )}
       </View>
 
-      {detailsScreen && (
+      {activeTab === "Details" && (
         <View style={styles.footerButtons}>
-          <Button
-            title="Cancel"
-            variant="primary"
-            fullWidth={false}
-            width="100%"
-            onPress={handleCancel}
-          />
+          {order?.status === "arrived" || order?.status === "started" ? (
+            <View style={styles.buttonContainer}>
+              <Button
+                title="Cancel"
+                variant="secondary"
+                fullWidth={false}
+                width="48%"
+                onPress={handleCancel}
+              />
+              <Button
+                title={order.status === "arrived" ? "Send Alert" : "Complete"}
+                variant="primary"
+                fullWidth={false}
+                width="48%"
+                onPress={
+                  order.status === "arrived" ? handleAlert : handleComplete
+                }
+              />
+            </View>
+          ) : (
+            <Button
+              title="Cancel Order"
+              variant="primary"
+              fullWidth={false}
+              width="100%"
+              onPress={handleCancel}
+            />
+          )}
         </View>
       )}
 
       {/* Popup with Background Overlay */}
-      {showPopup && popupType && (
+      {showPopup && (
         <Modal transparent visible={showPopup} animationType="slide">
           <View style={styles.overlay}>
             <TouchableOpacity
@@ -289,7 +213,10 @@ const OrderPlace: React.FC = () => {
               onPress={() => setPopupType(null)}
             />
             <View style={styles.popupContainer}>
-              <Popup type={popupType} setShowPopup={setPopupType} />
+              <Popup
+                type={popupType as PopupType}
+                setShowPopup={setPopupType}
+              />
             </View>
           </View>
         </Modal>
@@ -299,12 +226,19 @@ const OrderPlace: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
-  content: { flex: 1, padding: 16 },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.white,
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+  },
   tabContainer: {
     flexDirection: "row",
     backgroundColor: Colors.primary300,
     borderRadius: 25,
+    marginBottom: 16,
   },
   activeTab: {
     fontSize: 18,
@@ -316,7 +250,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  activeTabText: { color: Colors.white, fontSize: 16, fontWeight: "500" },
+  activeTabText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: "500",
+  },
   inactiveTabText: {
     color: Colors.secondary300,
     fontSize: 16,
@@ -358,6 +296,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: Colors.secondary,
+  },
+  errorText: {
+    fontSize: 16,
+    color: Colors.secondary300,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-between",
   },
 });
 

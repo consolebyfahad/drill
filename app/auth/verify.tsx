@@ -92,6 +92,11 @@ export default function Verify() {
         await AsyncStorage.setItem("user_phone", response?.user?.phone);
         if (newUser) {
           setTimeout(() => router.push("/auth/create_account"), 800);
+        } else if (
+          response?.user?.company_verified === "1" &&
+          response?.user?.platform_status === "1"
+        ) {
+          setTimeout(() => router.push("/auth/access_location"), 800);
         } else {
           setTimeout(() => router.push("/auth/verified"), 800);
         }

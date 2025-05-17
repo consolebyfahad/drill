@@ -21,6 +21,8 @@ import LocationIcon from "@/assets/svgs/locationIcon.svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiCall } from "~/utils/api";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Verify from "@/assets/svgs/verify.svg";
+import defaultProfile from "@/assets/images/default-profile.png";
 
 type Order = {
   id: string;
@@ -57,47 +59,75 @@ type User = {
   id: string;
   name: string;
   email: string;
-  phone: string;
+  password: string;
   dob: string;
+  user_type: string;
   address: string;
-  city: string;
-  zip: string;
-  image: string | any;
-  balance: string;
+  postal: string;
+  image: string;
+  phone: string;
   gender: string;
   lat: string;
   lng: string;
+  country: string;
   state: string;
+  city: string;
   status: string;
+  company_number: string;
+  secondary_email: string;
+  tax_number: string;
+  company_category: string;
+  company_code: string;
+  iqama_id: string;
+  documents: string;
+  online_status: string;
+  company_verified: string;
+  platform_status: string;
+  balance: string;
+  social_token: string;
+  company_id: string;
   timestamp: string;
-  user_type: string;
 };
 
 export default function ViewProfile() {
   const [showAllOrders, setShowAllOrders] = useState<boolean>(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [accountType, setAccountType] = useState("");
   const navigation = useNavigation();
   const router = useRouter();
-
   const [user, setUser] = useState<User>({
     id: "",
     name: "",
     email: "",
-    phone: "",
+    password: "",
     dob: "",
+    user_type: "",
     address: "",
-    city: "",
-    zip: "",
+    postal: "",
     image: "",
-    balance: "0",
+    phone: "",
     gender: "",
     lat: "",
     lng: "",
+    country: "",
     state: "",
+    city: "",
     status: "",
+    company_number: "",
+    secondary_email: "",
+    tax_number: "",
+    company_category: "",
+    company_code: "",
+    iqama_id: "",
+    documents: "",
+    online_status: "",
+    company_verified: "",
+    platform_status: "",
+    balance: "",
+    social_token: "",
+    company_id: "",
     timestamp: "",
-    user_type: "",
   });
 
   useFocusEffect(
@@ -157,45 +187,25 @@ export default function ViewProfile() {
   const fetchUserProfile = async () => {
     try {
       const userId = await AsyncStorage.getItem("user_id");
-      console.log(userId);
-      if (!userId) {
-        console.error("User ID not found");
-        return;
-      }
+      if (!userId) throw new Error("User ID not found");
 
       const formData = new FormData();
       formData.append("type", "profile");
       formData.append("user_id", userId);
 
       const response = await apiCall(formData);
+
       if (response.profile || response.user) {
         const profileData = response.profile || response.user;
-        setUser({
-          id: profileData.id || "",
-          name: profileData.name || "",
-          email: profileData.email || "",
-          phone: profileData.phone || "",
-          dob: profileData.dob !== "0000-00-00" ? profileData.dob : "",
-          address: profileData.address || "",
-          city: profileData.city || "",
-          zip: profileData.postal || "",
-          image: profileData.image || "",
-          balance: profileData.balance || "0",
-          gender: profileData.gender || "",
-          lat: profileData.lat || "",
-          lng: profileData.lng || "",
-          state: profileData.state || "",
-          status: profileData.status || "",
-          timestamp: profileData.timestamp || "",
-          user_type: profileData.user_type || "",
-        });
+        setUser(profileData);
 
-        // After getting user profile, fetch orders
-        fetchOrders(profileData.id);
+        if (profileData.user_type) {
+          setAccountType(profileData.user_type);
+          await AsyncStorage.setItem("account_type", profileData.user_type);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch profile:", err);
-      Alert.alert("Error", "Failed to load profile information");
     }
   };
 
@@ -214,22 +224,21 @@ export default function ViewProfile() {
         <View style={styles.profileContainer}>
           <View style={styles.imageWrapper}>
             <Image
-              source={
-                typeof user.image === "string" && user.image
-                  ? { uri: user.image }
-                  : require("@/assets/images/default-profile.png")
-              }
+              source={user.image ? { uri: user.image } : defaultProfile}
               style={styles.profileImage}
               resizeMode="cover"
+              onError={({ nativeEvent }) => {
+                console.warn("Image failed to load", nativeEvent.error);
+              }}
             />
-            {user.status === "1" && <View style={styles.onlineIndicator} />}
-            {user.user_type === "verified" && (
-              <MaterialIcons
-                style={styles.verifiedIcon}
-                name="verified"
-                size={24}
-                color="#2AB749"
-              />
+            {user.platform_status === "1" &&
+              (accountType === "company" ||
+                (accountType === "employee" &&
+                  user.company_verified === "1")) && (
+                <Verify style={styles.verifiedIcon} />
+              )}
+            {user.online_status === "1" && (
+              <View style={styles.onlineIndicator} />
             )}
           </View>
 
@@ -240,8 +249,22 @@ export default function ViewProfile() {
             <Text style={styles.ratingText}>4.8</Text>
             <Text style={styles.reviewCount}>(120+ reviews)</Text>
           </View>
+          <Text style={styles.userEmail}>
+            Total Earning: SAR {user.balance}
+          </Text>
           <Text style={styles.userEmail}>{user.email}</Text>
-
+          {accountType === "employee" && (
+            <View style={styles.verification}>
+              <Text style={styles.userEmail}>Company Verification:</Text>
+              <Verify />
+            </View>
+          )}
+          {user.platform_status === "1" && (
+            <View style={styles.verification}>
+              <Text style={styles.userEmail}>Platform Verification:</Text>
+              <Verify />
+            </View>
+          )}
           <View style={styles.locationContainer}>
             <LocationIcon />
             <Text style={styles.locationText}>
@@ -296,18 +319,18 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   scrollContainer: {
-    padding: 16,
-    paddingBottom: 160,
+    paddingHorizontal: 24,
   },
   profileContainer: {
     alignItems: "flex-start",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   imageWrapper: {
     borderWidth: 2,
     borderColor: "green",
     borderRadius: 999,
     position: "relative",
+    marginBottom: 16,
   },
   profileImage: {
     height: 96,
@@ -331,10 +354,9 @@ const styles = StyleSheet.create({
     right: 0,
   },
   userName: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 28,
+    fontWeight: "700",
     color: Colors.secondary,
-    marginTop: 12,
   },
   ratingContainer: {
     flexDirection: "row",
@@ -351,11 +373,11 @@ const styles = StyleSheet.create({
   },
   balance: {
     color: Colors.secondary300,
-    fontSize: 18,
+    fontSize: 17,
   },
   userEmail: {
     color: Colors.secondary300,
-    fontSize: 16,
+    fontSize: 17,
     marginTop: 4,
   },
   locationContainer: {
@@ -366,7 +388,12 @@ const styles = StyleSheet.create({
   },
   locationText: {
     color: Colors.secondary300,
-    fontSize: 16,
+    fontSize: 17,
+  },
+  verification: {
+    flexDirection: "row",
+    alignContent: "center",
+    gap: 4,
   },
   orderToggle: {
     flexDirection: "row",

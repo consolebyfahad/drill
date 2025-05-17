@@ -1,99 +1,107 @@
 import { View, Text, Image, StyleSheet, Linking } from "react-native";
-import React from "react";
 import DashedSeparator from "./dashed_seprator";
 import Button from "./button";
 import { Colors } from "../constants/Colors";
 import { router } from "expo-router";
-
-// Define the provider type based on what we've seen in the OrderType
-type ProviderType = {
-  id: string;
-  name: string;
-  phone: string;
-  address: string;
+import Direction from "@/assets/svgs/routing.svg";
+import Call from "@/assets/svgs/Calling.svg";
+import Chat from "@/assets/svgs/Chat.svg";
+// Define types based on the API response structure
+type User = {
+  id?: any;
+  name?: string;
   image?: string;
-  email?: string;
-  gender?: string;
-  // Add other properties as needed
+  phone?: string;
+  // Add other user properties as needed
 };
 
-type ProviderCardProps = {
-  provider: ProviderType;
+type Order = {
+  id?: any;
+  order_no?: string;
+  status?: any;
+  amount?: string;
+  discount?: string;
+  created_at?: string;
+  timestamp?: string;
+  payment_method?: string;
+  payment_status?: string;
+  address?: string;
+  description?: string;
   image_url?: string;
+  package_id?: string;
+  user?: User;
+  order?: any;
+  // Add other order properties as needed
 };
 
-export default function ProviderCard({
-  provider,
-  image_url,
-}: ProviderCardProps) {
+interface ProviderCardProps {
+  order?: Order;
+}
+
+export default function ProviderCard({ order }: ProviderCardProps) {
+  // Get customer data from the order.user property
+  const customer = order?.user;
+  console.log("cus", customer);
+  if (!customer) {
+    return (
+      <View style={styles.noProviderContainer}>
+        <Text style={styles.noProviderText}>
+          No customer information available.
+        </Text>
+      </View>
+    );
+  }
+
   const handleCall = () => {
-    if (provider.phone) {
-      const phoneNumber = `tel:${provider.phone}`;
+    if (customer.phone) {
+      const phoneNumber = `tel:${customer.phone}`;
       Linking.openURL(phoneNumber);
     } else {
-      console.warn("No phone number available for provider.");
+      console.warn("No phone number available for customer.");
     }
   };
 
   const handleChat = () => {
-    router.push("/order/order_place");
-  };
-
-  const handleTrack = () => {
-    const providerJson = JSON.stringify(provider);
+    // Navigate to the chat tab
     router.push({
-      pathname: "/order/track",
-      params: {
-        provider: providerJson,
-        image_url: image_url || "",
-      },
+      pathname: "/order/order_place",
+      params: { orderId: order.id, tab: "Chat" },
     });
   };
 
-  // Get provider initials for fallback avatar
-  const getInitials = () => {
-    if (!provider.name) return "P";
-    return provider.name.charAt(0).toUpperCase();
+  const handleTrack = () => {
+    // Navigate to the tracking screen
+    router.push({
+      pathname: "/order/track",
+      params: { orderId: order.id },
+    });
   };
 
-  // Get provider image or use fallback
-  const getProviderImage = () => {
-    if (provider.image && image_url && provider.image !== "undefined") {
-      return { uri: `${image_url}${provider.image}` };
-    }
-    return require("../assets/images/user.png"); // Make sure this path is correct
-  };
+  // Get customer profile image
+  const customerImage =
+    customer.image && order.image_url
+      ? { uri: `${order.image_url}${customer.image}` }
+      : require("../assets/images/default-profile.png");
 
-  // Calculate rating - this would normally come from the API
-  // For now, we'll just provide a placeholder
+  // Sample rating data (you might want to get this from the API)
   const rating = "4.9";
   const reviewCount = "120+";
 
   return (
     <View style={styles.providerContainer}>
       <View style={styles.providerHeader}>
-        {/* Provider image */}
-        {provider.image && image_url && provider.image !== "undefined" ? (
-          <Image source={getProviderImage()} style={styles.providerImage} />
-        ) : (
-          <View
-            style={[styles.providerImage, styles.providerInitialsContainer]}
-          >
-            <Text style={styles.providerInitials}>{getInitials()}</Text>
-          </View>
-        )}
+        {/* Customer image */}
+        <Image source={customerImage} style={styles.providerImage} />
 
-        {/* Provider info */}
+        {/* Customer info */}
         <View style={styles.providerInfo}>
           <Text style={styles.providerName}>
-            {provider.name || "Unknown Provider"}
+            {customer.name || "Unknown Customer"}
           </Text>
           <Text style={styles.grayText}>
-            ⭐ {rating} ({reviewCount} reviews) | Provider
+            ⭐ {rating} ({reviewCount} reviews)
           </Text>
-          {provider.phone && (
-            <Text style={styles.providerContact}>{provider.phone}</Text>
-          )}
+          <Text style={styles.providerContact}>Customer</Text>
         </View>
       </View>
 
@@ -102,11 +110,7 @@ export default function ProviderCard({
       {/* Action buttons */}
       <View style={styles.buttonRow}>
         <Button
-          Icon={
-            <View style={styles.iconContainer}>
-              <Text style={styles.iconText}>📞</Text>
-            </View>
-          }
+          Icon={<Call />}
           fullWidth={false}
           width={"30%"}
           title="Call"
@@ -117,32 +121,24 @@ export default function ProviderCard({
           onPress={handleCall}
         />
         <Button
-          Icon={
-            <View style={styles.iconContainer}>
-              <Text style={styles.iconText}>💬</Text>
-            </View>
-          }
+          Icon={<Chat />}
           fullWidth={false}
           width={"30%"}
           title="Chat"
-          textSize={13}
-          paddingvertical={12}
-          variant="primary"
-          onPress={handleChat}
-        />
-        <Button
-          Icon={
-            <View style={styles.iconContainer}>
-              <Text style={styles.iconText}>🗺️</Text>
-            </View>
-          }
-          fullWidth={false}
-          width={"30%"}
-          title="Directions"
           bgColor="white"
           textSize={13}
           paddingvertical={12}
           variant="secondary"
+          onPress={handleChat}
+        />
+        <Button
+          Icon={<Direction />}
+          fullWidth={false}
+          width={"30%"}
+          title="Directions"
+          textSize={13}
+          paddingvertical={12}
+          variant="primary"
           onPress={handleTrack}
         />
       </View>
@@ -153,7 +149,7 @@ export default function ProviderCard({
 const styles = StyleSheet.create({
   providerContainer: {
     padding: 16,
-    backgroundColor: Colors.primary300,
+    backgroundColor: Colors.gray100,
     borderRadius: 12,
     marginTop: 8,
     marginBottom: 24,
@@ -166,16 +162,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-  },
-  providerInitialsContainer: {
-    backgroundColor: Colors.secondary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  providerInitials: {
-    color: Colors.white,
-    fontSize: 24,
-    fontWeight: "bold",
   },
   providerInfo: {
     marginLeft: 16,
@@ -209,5 +195,19 @@ const styles = StyleSheet.create({
   },
   iconText: {
     fontSize: 12,
+  },
+  noProviderContainer: {
+    padding: 16,
+    backgroundColor: Colors.primary300,
+    borderRadius: 12,
+    marginBottom: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 100,
+  },
+  noProviderText: {
+    color: Colors.secondary,
+    textAlign: "center",
+    fontWeight: "500",
   },
 });

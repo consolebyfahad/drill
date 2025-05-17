@@ -173,7 +173,7 @@ export default function EditProfile() {
           documents: parsedDocuments,
           user_type: profileData.user_type || userType || "individual",
           // Company fields
-          companyNumber: profileData.company_number || "",
+          companyNumber: profileData.company_code || "",
           companyCategory: profileData.company_category || "",
           commercialRegistrationNumber:
             profileData.commercial_registration_number || "",
@@ -633,59 +633,6 @@ export default function EditProfile() {
               error={errors.name}
             />
 
-            {/* Company specific fields */}
-            {isCompanyAccount && (
-              <>
-                <Inputfield
-                  label="Commercial Registration Number"
-                  placeholder="Enter commercial registration number"
-                  IconComponent={<Building />}
-                  value={user.commercialRegistrationNumber}
-                  onChangeText={(text) =>
-                    handleInputChange("commercialRegistrationNumber", text)
-                  }
-                  error={errors.commercialRegistrationNumber}
-                />
-                <Inputfield
-                  label="Company Category"
-                  placeholder="Enter company category"
-                  IconComponent={<Building />}
-                  value={user.companyCategory}
-                  onChangeText={(text) =>
-                    handleInputChange("companyCategory", text)
-                  }
-                  error={errors.companyCategory}
-                />
-              </>
-            )}
-
-            {/* Common fields */}
-            <Inputfield
-              label="Email Address"
-              placeholder="Enter your email"
-              IconComponent={<Email />}
-              value={user.email}
-              onChangeText={(text) => handleInputChange("email", text)}
-              keyboardType="email-address"
-              error={errors.email}
-            />
-
-            {/* Secondary email for company */}
-            {isCompanyAccount && (
-              <Inputfield
-                label="Secondary Email"
-                placeholder="Enter secondary email (Optional)"
-                IconComponent={<Email />}
-                value={user.secondaryEmail}
-                onChangeText={(text) =>
-                  handleInputChange("secondaryEmail", text)
-                }
-                keyboardType="email-address"
-                required={false}
-                error={errors.secondaryEmail}
-              />
-            )}
-
             <Inputfield
               label="Phone Number"
               placeholder="Enter your phone"
@@ -728,6 +675,33 @@ export default function EditProfile() {
               </View>
             </View>
 
+            {/* Common fields */}
+            <Inputfield
+              label="Email Address"
+              placeholder="Enter your email"
+              IconComponent={<Email />}
+              value={user.email}
+              onChangeText={(text) => handleInputChange("email", text)}
+              keyboardType="email-address"
+              error={errors.email}
+            />
+
+            {/* Secondary email for company */}
+            {isCompanyAccount && (
+              <Inputfield
+                label="Secondary Email"
+                placeholder="Enter secondary email (Optional)"
+                IconComponent={<Email />}
+                value={user.secondaryEmail}
+                onChangeText={(text) =>
+                  handleInputChange("secondaryEmail", text)
+                }
+                keyboardType="email-address"
+                required={false}
+                error={errors.secondaryEmail}
+              />
+            )}
+
             {/* Individual specific fields */}
             {!isCompanyAccount && (
               <>
@@ -752,15 +726,27 @@ export default function EditProfile() {
 
             {/* Company specific tax field */}
             {isCompanyAccount && (
-              <Inputfield
-                label="Tax Number"
-                placeholder="Enter tax number (Optional)"
-                IconComponent={<Tax />}
-                value={user.taxNumber}
-                onChangeText={(text) => handleInputChange("taxNumber", text)}
-                required={false}
-                error={errors.taxNumber}
-              />
+              <>
+                <Inputfield
+                  label="Tax Number"
+                  placeholder="Enter tax number (Optional)"
+                  IconComponent={<Tax />}
+                  value={user.taxNumber}
+                  onChangeText={(text) => handleInputChange("taxNumber", text)}
+                  required={false}
+                  error={errors.taxNumber}
+                />
+                <Inputfield
+                  label="Company Category"
+                  placeholder="Enter company category"
+                  IconComponent={<Building />}
+                  value={user.companyCategory}
+                  onChangeText={(text) =>
+                    handleInputChange("companyCategory", text)
+                  }
+                  error={errors.companyCategory}
+                />
+              </>
             )}
 
             {/* Document Upload Section (only for individual) */}
