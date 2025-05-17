@@ -7,8 +7,10 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  Linking,
+  Platform,
 } from "react-native";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import Header from "@/components/header";
@@ -22,12 +24,15 @@ import About from "@/assets/svgs/info.svg";
 import Support from "@/assets/svgs/profile/support.svg";
 import Language from "@/assets/svgs/language.svg";
 import Verify from "@/assets/svgs/verify.svg";
-import Employee from "@/assets/svgs/profile/Card.svg"; // Using Card icon for Employee, replace with actual Employee icon
+import Card from "@/assets/svgs/profile/Card.svg";
+import Employee from "@/assets/svgs/employee.svg";
 import Logout from "@/assets/svgs/Logout.svg";
 import { apiCall } from "~/utils/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import defaultProfile from "@/assets/images/default-profile.png";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { requestFCMPermission } from "~/utils/notification";
+import messaging from "@react-native-firebase/messaging";
 
 type User = {
   id: string;
@@ -79,6 +84,7 @@ export default function Account() {
     useCallback(() => {
       fetchAccountType();
       fetchUserProfile();
+      checkNotificationPermission();
     }, [])
   );
 
@@ -94,12 +100,123 @@ export default function Account() {
     }
   };
 
+  // Check if notification permissions are granted
+  const checkNotificationPermission = async () => {
+    try {
+      const authStatus = await messaging().hasPermission();
+      console.log("Notification permission status:", authStatus);
+
+      // For both iOS and Android: AUTHORIZED(1) or PROVISIONAL(2) means enabled
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+      setNotificationsEnabled(enabled);
+    } catch (error) {
+      console.error("Error checking notification permission:", error);
+      setNotificationsEnabled(false);
+    }
+  };
+
   const handleNotificationToggle = async (value: boolean) => {
-    console.log("first", value);
+    if (value) {
+      // User wants to enable notifications
+      try {
+        // First check current permission status
+        const authStatus = await messaging().hasPermission();
+
+        // If permission is not determined (never asked), request it
+        if (authStatus === messaging.AuthorizationStatus.NOT_DETERMINED) {
+          const permissionGranted = await requestFCMPermission();
+          if (permissionGranted) {
+            setNotificationsEnabled(true);
+            await updateNotificationSettings(true);
+          } else {
+            // Permission denied in the system dialog
+            setNotificationsEnabled(false);
+          }
+        }
+        // If permission was denied before, show settings alert
+        else if (authStatus === messaging.AuthorizationStatus.DENIED) {
+          showSettingsAlert();
+        }
+        // If already authorized, just update UI and settings
+        else {
+          setNotificationsEnabled(true);
+          await updateNotificationSettings(true);
+        }
+      } catch (error) {
+        console.error("Error toggling notifications:", error);
+        setNotificationsEnabled(false);
+      }
+    } else {
+      // User wants to disable notifications
+      setNotificationsEnabled(false);
+      await updateNotificationSettings(false);
+      showDisableNotificationsInfo();
+    }
+  };
+
+  const updateNotificationSettings = async (enabled: boolean) => {
+    try {
+      const userId = await AsyncStorage.getItem("user_id");
+      if (!userId) return;
+
+      const formData = new FormData();
+      formData.append("type", "update_notification_settings");
+      formData.append("user_id", userId);
+      formData.append("notifications_enabled", enabled ? "1" : "0");
+
+      const response = await apiCall(formData);
+      console.log("Notification settings updated:", response);
+    } catch (error) {
+      console.error("Failed to update notification settings:", error);
+    }
+  };
+
+  const showSettingsAlert = () => {
+    Alert.alert(
+      "Notifications Permission",
+      "To receive notifications, please enable permission in your device settings.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Open Settings",
+          onPress: () => {
+            Platform.OS === "ios"
+              ? Linking.openURL("app-settings:")
+              : Linking.openSettings();
+          },
+        },
+      ]
+    );
+  };
+
+  const showDisableNotificationsInfo = () => {
+    Alert.alert(
+      "Notifications Disabled",
+      "You have disabled notifications. To change this, you can go to your device settings.",
+      [
+        { text: "OK", style: "cancel" },
+        {
+          text: "Open Settings",
+          onPress: () => {
+            Platform.OS === "ios"
+              ? Linking.openURL("app-settings:")
+              : Linking.openSettings();
+          },
+        },
+      ]
+    );
   };
 
   const fetchUserProfile = async () => {
     try {
+      const keys = await AsyncStorage.getAllKeys();
+      const items = await AsyncStorage.multiGet(keys);
+      const allData = Object.fromEntries(items);
+
+      console.log("All AsyncStorage data:", allData);
       const userId = await AsyncStorage.getItem("user_id");
       if (!userId) throw new Error("User ID not found");
 
@@ -136,6 +253,11 @@ export default function Account() {
           setAccountType(profileData.user_type);
           await AsyncStorage.setItem("account_type", profileData.user_type);
         }
+
+        // Get notification preferences from backend if available
+        if (profileData.notifications_enabled) {
+          setNotificationsEnabled(profileData.notifications_enabled === "1");
+        }
       }
     } catch (err) {
       console.error("Failed to fetch profile:", err);
@@ -144,17 +266,10 @@ export default function Account() {
 
   const handleNavigation = (title: string) => {
     switch (title) {
-      // case "Favourite Buyer":
-      //   router.push("/account/favourite_buyer");
-      //   break;
       case "Employees":
         router.push("/account/employee");
         break;
-      // case "Change Password":
-      //   router.push("/account/change_password");
-      //   break;
       case "Rate Us":
-        // Open rating modal or external link
         break;
       case "About App":
         router.push("/account/about");
@@ -210,12 +325,23 @@ export default function Account() {
     });
   };
 
+  // Render notification icon with visual indication of permission status
+  const renderNotificationIcon = () => {
+    return (
+      <View style={{ position: "relative" }}>
+        <Notification />
+        {!notificationsEnabled && (
+          <View style={styles.notificationDisabledIndicator} />
+        )}
+      </View>
+    );
+  };
+
   // Update the icon map to include the Employee icon
   const iconMap: { [key: string]: JSX.Element } = {
     Account: <AccountStatus />,
-    // FavBuyer: <Favourite />,
     Employee: <Employee />,
-    Notification: <Notification />,
+    Notification: renderNotificationIcon(),
     "Rate Us": <Rating />,
     "About App": <About />,
     Support: <Support />,
@@ -404,6 +530,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingVertical: 8,
   },
   rowLeft: {
     flexDirection: "row",
@@ -421,5 +548,16 @@ const styles = StyleSheet.create({
   },
   itemRightText: {
     fontSize: 14,
+  },
+  notificationDisabledIndicator: {
+    position: "absolute",
+    top: 0,
+    right: -2,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.danger,
+    borderWidth: 1,
+    borderColor: Colors.white,
   },
 });

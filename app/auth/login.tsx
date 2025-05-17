@@ -15,7 +15,7 @@ import ModalSelector from "react-native-modal-selector";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "~/constants/Colors";
 import { apiCall } from "~/utils/api";
-
+import Flag from "@/assets/svgs/flag.svg";
 type CountryCode = {
   key: number;
   label: string;
@@ -93,10 +93,11 @@ export default function Login() {
           onPress={() => modalRef.current.open()}
           style={styles.countrySelector}
         >
-          <Image
+          {/* <Image
             source={require("@/assets/images/saudia.png")}
             style={styles.countryFlag}
-          />
+          /> */}
+          <Flag width={25} height={25} />
           <Text style={styles.countryText}>{countryCode.label}</Text>
           <Ionicons name="chevron-down" size={20} />
         </TouchableOpacity>

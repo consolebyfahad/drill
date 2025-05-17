@@ -21,6 +21,7 @@ type ButtonProps = {
   textSize?: number;
   paddingvertical?: number;
   disabled?: boolean;
+  style?: any;
 };
 
 export default function Button({
@@ -35,6 +36,7 @@ export default function Button({
   textSize,
   paddingvertical,
   disabled,
+  style,
 }: ButtonProps) {
   const [loading, setLoading] = useState(false);
 
@@ -48,6 +50,7 @@ export default function Button({
   return (
     <TouchableOpacity
       style={[
+        style,
         styles.button,
         fullWidth
           ? styles.fullWidth
@@ -111,5 +114,8 @@ const styles = StyleSheet.create({
   },
   textSecondary: {
     color: "#333333",
+  },
+  disabledButton: {
+    backgroundColor: Colors.secondary200,
   },
 });

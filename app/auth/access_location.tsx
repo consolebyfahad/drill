@@ -31,6 +31,10 @@ export default function AccessLocation() {
   };
 
   const getDeviceInfo = async () => {
+    const keys = await AsyncStorage.getAllKeys();
+    const items = await AsyncStorage.multiGet(keys);
+    const allData = Object.fromEntries(items);
+    console.log("allData", allData);
     try {
       // Get device model
       let deviceModel = "unknown";

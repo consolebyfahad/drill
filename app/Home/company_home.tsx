@@ -7,34 +7,29 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Alert,
-  Dimensions,
+  StatusBar,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "~/constants/Colors";
 import { apiCall } from "~/utils/api";
 import { useRouter } from "expo-router";
-
-// Get screen dimensions
-const { width, height } = Dimensions.get("window");
-
+import Clipboard from "@react-native-clipboard/clipboard";
+import Orderbreakdown from "@/assets/svgs/orderbreakdown.svg";
 type User = {
   id: string;
   name: string;
-  email: string;
-  phone: string;
-  dob: string;
-  address: string;
-  city: string;
-  zip: string;
-  iqamaId: string;
   image: string;
   verified: boolean;
   company_number: string;
   company_code: string;
   user_type: string;
+};
+
+type OrderStats = {
+  active: number;
+  completed: number;
+  cancelled: number;
 };
 
 type Order = {
@@ -49,22 +44,18 @@ type Order = {
   status?: "active" | "completed" | "cancelled";
 };
 
-type OrderStats = {
-  active: number;
-  completed: number;
-  cancelled: number;
-};
-
 const CompanyHome = () => {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [copied, setCopied] = useState(false);
   const [orderStats, setOrderStats] = useState<OrderStats>({
     active: 0,
     completed: 0,
     cancelled: 0,
   });
+
   const [imageBaseUrl, setImageBaseUrl] = useState<string>(
     "https://7tracking.com/saudiservices/images/"
   );
@@ -72,7 +63,7 @@ const CompanyHome = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        await Promise.all([fetchUserProfile(), fetchOrders()]);
+        await Promise.all([fetchCompanyProfile(), fetchOrders()]);
       } finally {
         setLoading(false);
       }
@@ -81,64 +72,55 @@ const CompanyHome = () => {
     loadData();
   }, []);
 
-  const fetchUserProfile = async () => {
+  const fetchCompanyProfile = async () => {
     try {
       const storedUserId = await AsyncStorage.getItem("user_id");
       if (!storedUserId) throw new Error("User ID not found");
 
       const formData = new FormData();
-      formData.append("type", "company");
+      formData.append("type", "company_dashboard");
       formData.append("user_id", storedUserId);
 
       const response = await apiCall(formData);
 
-      if (response.profile || response.user) {
-        const profileData = response.profile || response.user;
-
+      if (response.user) {
+        const profileData = response.user;
         setUser({
           id: profileData.id || "",
           name: profileData.name || "",
-          email: profileData.email || "",
-          phone: profileData.phone || "",
-          dob: profileData.dob !== "0000-00-00" ? profileData.dob : "",
-          address: profileData.address || "",
-          city: profileData.city || "",
-          zip: profileData.postal || "",
-          iqamaId: profileData.iqama_id || "",
           image: profileData.image || "",
           verified: profileData.company_verified === "1",
           company_number: profileData.company_number || "",
           company_code: profileData.company_code || "",
           user_type: profileData.user_type || "",
         });
+
+        // Set order stats
+        setOrderStats({
+          active: parseInt(response.active_orders) || 0,
+          completed: parseInt(response.completed_orders) || 0,
+          cancelled: parseInt(response.cancelled_orders) || 0,
+        });
       }
-    } catch (err: any) {
-      console.error("Error fetching profile:", err);
+    } catch (err) {
+      console.error("Error fetching company profile:", err);
     }
   };
 
   const fetchOrders = async () => {
-    const userId = await AsyncStorage.getItem("user_id");
-    if (!userId) return;
-
-    const formData = new FormData();
-    formData.append("type", "get_data");
-    formData.append("table_name", "orders");
-    formData.append("company_id", userId);
-
     try {
+      const userId = await AsyncStorage.getItem("user_id");
+      if (!userId) return;
+
+      const formData = new FormData();
+      formData.append("type", "get_data");
+      formData.append("table_name", "orders");
+      formData.append("company_id", userId);
+
       const response = await apiCall(formData);
+
       if (response && response.data && response.data.length > 0) {
-        let activeCount = 0;
-        let completedCount = 0;
-        let cancelledCount = 0;
-
         const transformedOrders = response.data.map((order: any) => {
-          // Count orders by status
-          if (order.status === "pending") activeCount++;
-          else if (order.status === "completed") completedCount++;
-          else if (order.status === "cancelled") cancelledCount++;
-
           // Get image from category if available
           const categoryImage =
             order.category && order.category.image
@@ -161,11 +143,6 @@ const CompanyHome = () => {
           };
         });
 
-        setOrderStats({
-          active: activeCount,
-          completed: completedCount,
-          cancelled: cancelledCount,
-        });
         setOrders(transformedOrders);
       }
     } catch (error) {
@@ -179,26 +156,31 @@ const CompanyHome = () => {
     return imageBaseUrl + imagePath;
   };
 
-  const copyCompanyNumber = () => {
+  const copyCompanyNumber = async () => {
     if (user?.company_code) {
-      // In a real app, you'd use Clipboard.setString(user.company_code);
-      Alert.alert("Copied", "Company number copied to clipboard");
+      try {
+        await Clipboard.setString(user.company_code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (error) {
+        console.error("Failed to copy to clipboard:", error);
+      }
     }
   };
 
   const handleOrderPress = (order: Order) => {
-    // Navigate to order details screen
-    router.push({
-      pathname: "/order_place",
-      params: { orderId: order.id },
-    });
+    // router.push({
+    //   pathname: "/order_place",
+    //   params: { orderId: order.id },
+    // });
   };
 
   // Component for the order breakdown stats
   const OrderBreakdown = ({ stats }: { stats: OrderStats }) => (
     <View style={styles.orderBreakdownContainer}>
       <View style={styles.orderBreakdownHeader}>
-        <MaterialIcons name="inventory" size={24} color={Colors.primary} />
+        {/* <MaterialIcons name="inventory" size={24} color={Colors.primary} /> */}
+        <Orderbreakdown />
         <Text style={styles.orderBreakdownTitle}>Orders Breakdown</Text>
       </View>
 
@@ -260,6 +242,7 @@ const CompanyHome = () => {
 
   return (
     <View style={styles.container}>
+      <StatusBar backgroundColor={Colors.primary} barStyle="light-content" />
       {loading ? (
         <ActivityIndicator size="large" color={Colors.primary} />
       ) : (
@@ -286,25 +269,37 @@ const CompanyHome = () => {
               </View>
 
               <View style={styles.profileInfo}>
-                <Text style={styles.companyName}>
-                  {user?.name || "Your Company"}
-                </Text>
-
-                <View style={styles.companyNumberContainer}>
-                  <Text style={styles.companyNumberLabel}>
-                    Company# {user?.company_number || "N/A"}
+                <View>
+                  <Text style={styles.companyName}>
+                    {user?.name || "Your Company"}
                   </Text>
 
-                  <TouchableOpacity onPress={copyCompanyNumber}>
-                    <Ionicons name="copy-outline" size={20} color="#FFFFFF" />
-                  </TouchableOpacity>
+                  <Text style={styles.companyNumberLabel}>
+                    Company# {user?.company_code || "N/A"}
+                  </Text>
                 </View>
+
+                {copied ? (
+                  <Text style={styles.copiedText}>Copied!</Text>
+                ) : (
+                  <TouchableOpacity
+                    onPress={copyCompanyNumber}
+                    style={styles.copy}
+                  >
+                    <Ionicons
+                      name="copy-outline"
+                      size={20}
+                      color="#FFFFFF"
+                      style={{ transform: [{ scaleX: -1 }] }}
+                    />
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
 
             {/* Ratings */}
             <View style={styles.ratingsContainer}>
-              <Ionicons name="star" size={24} color="#FFC107" />
+              <Ionicons name="star" size={22} color="#ffff" />
               <Text style={styles.ratingsText}>4.9 (120+ review)</Text>
             </View>
           </View>
@@ -342,7 +337,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   scrollContainer: {
-    flex: 1,
+    flexGrow: 1,
     paddingBottom: 20,
   },
   profileHeaderContainer: {
@@ -354,9 +349,9 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   profileHeader: {
-    backgroundColor: "#1c3d87", // Darker blue
+    backgroundColor: "#002f9c",
     borderRadius: 20,
-    padding: 16,
+    padding: 24,
     flexDirection: "row",
     alignItems: "center",
   },
@@ -384,21 +379,30 @@ const styles = StyleSheet.create({
   },
   profileInfo: {
     flex: 1,
-  },
-  companyName: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
-  companyNumberContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
+  companyName: {
+    color: Colors.white,
+    fontSize: 30,
+    fontWeight: 800,
+    marginBottom: 5,
+  },
   companyNumberLabel: {
     color: "#a6b3d6",
     fontSize: 14,
+  },
+  copiedText: {
+    color: "#4CAF50",
+    fontSize: 14,
+    fontStyle: "italic",
+  },
+  copy: {
+    backgroundColor: "#3359b0",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 25,
   },
   ratingsContainer: {
     flexDirection: "row",
@@ -430,8 +434,9 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   orderBreakdownTitle: {
-    fontSize: 16,
-    fontWeight: "500",
+    color: Colors.secondary,
+    fontSize: 18,
+    fontWeight: "400",
     marginLeft: 10,
   },
   statsContainer: {

@@ -1,5 +1,5 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
-import { useNavigation } from "expo-router";
+import { router, useNavigation } from "expo-router";
 import BackArrow from "@/assets/svgs/Arrow.svg";
 import ChatSupport from "@/assets/svgs/chatSupport.svg";
 import { Colors } from "~/constants/Colors";
@@ -13,6 +13,7 @@ type HeaderProps = {
   support?: boolean;
   backBtn?: boolean;
   onpress?: any;
+  backAddress?: any;
 };
 
 export default function Header({
@@ -23,17 +24,23 @@ export default function Header({
   support = false,
   backBtn,
   onpress,
+  backAddress,
 }: HeaderProps) {
   const navigation = useNavigation();
+
+  const handleGoBack = () => {
+    if (backAddress) {
+      router.push(backAddress);
+    } else {
+      navigation.goBack();
+    }
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.leftSection}>
         {backBtn && (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
             <BackArrow />
           </TouchableOpacity>
         )}

@@ -13,7 +13,9 @@ import { useEffect, useState } from "react";
 import {
   Alert,
   Image,
+  KeyboardAvoidingView,
   LogBox,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -265,11 +267,6 @@ export default function CreateAccount() {
       }
     } else {
       // Company specific validation
-      if (!user.commercialRegistrationNumber?.trim()) {
-        newErrors.commercialRegistrationNumber =
-          "Commercial registration number is required";
-        isValid = false;
-      }
 
       if (!user.companyNumber?.trim()) {
         newErrors.companyNumber = "Company number is required";
@@ -313,7 +310,7 @@ export default function CreateAccount() {
       formData.append("postal", user.zip);
       formData.append("city", user.city);
       formData.append("user_type", userType);
-      formData.append("company_number", user.companyNumber || "");
+      formData.append("company_code", user.companyNumber || "");
 
       // Add image if uploaded
       if (uploadedFiles.image) {
@@ -350,14 +347,9 @@ export default function CreateAccount() {
         formData.append("secondary_email", "");
         formData.append("tax_number", "");
         formData.append("company_category", "");
-        formData.append("commercial_registration_number", "");
       }
       // Company specific fields
       else {
-        // formData.append(
-        //   "commercial_registration_number",
-        //   user.commercialRegistrationNumber || ""
-        // );
         formData.append("company_category", user.companyCategory || "");
         formData.append("secondary_email", user.secondaryEmail || "");
         formData.append("tax_number", user.taxNumber || "");
@@ -365,14 +357,7 @@ export default function CreateAccount() {
         formData.append("iqama_id", "");
         formData.append("dob", "");
       }
-
-      // Ensure these required fields are always present with a default value if empty
-      formData.append("gender", ""); // Not in your form but in the API schema
-      formData.append("platform_status", "0");
-      formData.append("online_status", "0");
-      formData.append("company_verified", "0");
       console.log(formData);
-      // Send the data to the API
       const response = await apiCall(formData);
 
       if (response.result) {
@@ -391,353 +376,351 @@ export default function CreateAccount() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
+      <KeyboardAvoidingView
+        style={styles.keyboardConatiner}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.push("/auth/login")}>
-            <Arrow />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Create Account</Text>
-          <View style={{ width: 24 }} />
-        </View>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.push("/auth/login")}>
+              <Arrow />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Create Account</Text>
+            <View style={{ width: 24 }} />
+          </View>
 
-        {/* Title & Subtitle */}
-        <Text style={styles.title}>Verify Your {"\n"}Identity!</Text>
-        <Text style={styles.subtitle}>
-          Kindly provide correct details for signing up as service provider
-        </Text>
+          {/* Title & Subtitle */}
+          <Text style={styles.title}>Verify Your {"\n"}Identity!</Text>
+          <Text style={styles.subtitle}>
+            Kindly provide correct details for signing up as service provider
+          </Text>
 
-        {/* Tab Selection */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={
-              activeTab === "Individual" ? styles.activeTab : styles.inactiveTab
-            }
-            onPress={handleIndividualScreen}
-          >
-            <Text
+          {/* Tab Selection */}
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
               style={
                 activeTab === "Individual"
-                  ? styles.activeTabText
-                  : styles.inactiveTabText
+                  ? styles.activeTab
+                  : styles.inactiveTab
               }
+              onPress={handleIndividualScreen}
             >
-              Individual
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={
-              activeTab === "Company" ? styles.activeTab : styles.inactiveTab
-            }
-            onPress={handleActiveCompany}
-          >
-            <Text
+              <Text
+                style={
+                  activeTab === "Individual"
+                    ? styles.activeTabText
+                    : styles.inactiveTabText
+                }
+              >
+                Individual
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
               style={
-                activeTab === "Company"
-                  ? styles.activeTabText
-                  : styles.inactiveTabText
+                activeTab === "Company" ? styles.activeTab : styles.inactiveTab
               }
+              onPress={handleActiveCompany}
             >
-              Company
-            </Text>
-          </TouchableOpacity>
-        </View>
+              <Text
+                style={
+                  activeTab === "Company"
+                    ? styles.activeTabText
+                    : styles.inactiveTabText
+                }
+              >
+                Company
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* Profile Image Picker */}
-        <View style={styles.profileContainer}>
-          <TouchableOpacity
-            style={styles.imageWrapper}
-            onPress={() => openImagePicker("image")}
-          >
-            {user.image ? (
-              <Image
-                source={{ uri: user.image }}
-                style={styles.profileImage}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={styles.profileImagePlaceholder}>
-                <Profile width={40} height={40} />
+          {/* Profile Image Picker */}
+          <View style={styles.profileContainer}>
+            <TouchableOpacity
+              style={styles.imageWrapper}
+              onPress={() => openImagePicker("image")}
+            >
+              {user.image ? (
+                <Image
+                  source={{ uri: user.image }}
+                  style={styles.profileImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.profileImagePlaceholder}>
+                  <Profile width={40} height={40} />
+                </View>
+              )}
+              <View style={styles.imageIconWrapper}>
+                <Camera />
               </View>
-            )}
-            <View style={styles.imageIconWrapper}>
-              <Camera />
-            </View>
-          </TouchableOpacity>
-        </View>
-        {!individualScreen && (
+            </TouchableOpacity>
+          </View>
+
+          {/* Common User Details Fields */}
           <CustomInputField
-            label="Commercial Registration Number"
-            placeholder="Enter commercial registration number"
+            label="Company Number"
+            placeholder="Enter company number"
             IconComponent={<Building />}
-            value={user.commercialRegistrationNumber}
-            onChangeText={(text) =>
-              handleInputChange("commercialRegistrationNumber", text)
-            }
-            fieldName="commercialRegistrationNumber"
-            error={errors.commercialRegistrationNumber}
+            value={user.companyNumber}
+            onChangeText={(text) => handleInputChange("companyNumber", text)}
+            fieldName="companyNumber"
+            error={errors.companyNumber}
           />
-        )}
-
-        {/* Common User Details Fields */}
-        <CustomInputField
-          label="Company Number"
-          placeholder="Enter company number"
-          IconComponent={<Building />}
-          value={user.companyNumber}
-          onChangeText={(text) => handleInputChange("companyNumber", text)}
-          fieldName="companyNumber"
-          error={errors.companyNumber}
-        />
-        <CustomInputField
-          label={individualScreen ? "Full Name" : "Company Name"}
-          placeholder={
-            individualScreen ? "Enter your name" : "Enter company name"
-          }
-          IconComponent={<Profile />}
-          value={user.name}
-          onChangeText={(text) => handleInputChange("name", text)}
-          fieldName="name"
-          error={errors.name}
-        />
-
-        {/* Company fields */}
-        {!individualScreen && (
-          <>
-            <CustomInputField
-              label="Company Category"
-              placeholder="Enter company category"
-              IconComponent={<Building />}
-              value={user.companyCategory}
-              onChangeText={(text) =>
-                handleInputChange("companyCategory", text)
-              }
-              fieldName="companyCategory"
-              error={errors.companyCategory}
-            />
-          </>
-        )}
-
-        <CustomInputField
-          label="Email Address"
-          placeholder="Enter your email"
-          IconComponent={<Email />}
-          value={user.email}
-          keyboardType="email-address"
-          onChangeText={(text) => handleInputChange("email", text)}
-          fieldName="email"
-          error={errors.email}
-        />
-
-        {!individualScreen && (
           <CustomInputField
-            label="Secondary Email"
-            placeholder="Enter secondary email (Optional)"
-            IconComponent={<Email />}
-            value={user.secondaryEmail}
-            keyboardType="email-address"
-            onChangeText={(text) => handleInputChange("secondaryEmail", text)}
-            fieldName="secondaryEmail"
-            required={false}
-            error={errors.secondaryEmail}
+            label={individualScreen ? "Full Name" : "Company Name"}
+            placeholder={
+              individualScreen ? "Enter your name" : "Enter company name"
+            }
+            IconComponent={<Profile />}
+            value={user.name}
+            onChangeText={(text) => handleInputChange("name", text)}
+            fieldName="name"
+            error={errors.name}
           />
-        )}
 
-        <CustomInputField
-          label="Phone Number"
-          placeholder="Enter your phone number"
-          IconComponent={<Phone />}
-          value={user.phone}
-          keyboardType="phone-pad"
-          onChangeText={(text) => handleInputChange("phone", text)}
-          fieldName="phone"
-          error={errors.phone}
-          numbersOnly
-          maxLength={15}
-        />
+          <CustomInputField
+            label="Phone Number"
+            placeholder="Enter your phone number"
+            IconComponent={<Phone />}
+            value={user.phone}
+            keyboardType="phone-pad"
+            onChangeText={(text) => handleInputChange("phone", text)}
+            fieldName="phone"
+            error={errors.phone}
+            numbersOnly
+            maxLength={15}
+          />
 
-        <CustomInputField
-          label="Address"
-          placeholder="Enter your address"
-          IconComponent={<Profile />}
-          value={user.address}
-          onChangeText={(text) => handleInputChange("address", text)}
-          fieldName="address"
-          error={errors.address}
-        />
+          <CustomInputField
+            label="Address"
+            placeholder="Enter your address"
+            IconComponent={<Profile />}
+            value={user.address}
+            onChangeText={(text) => handleInputChange("address", text)}
+            fieldName="address"
+            error={errors.address}
+          />
 
-        <View style={styles.rowContainer}>
-          <View style={styles.flexItem}>
-            <CustomInputField
-              label="City"
-              placeholder="Enter city"
-              IconComponent={<Profile />}
-              value={user.city}
-              onChangeText={(text) => handleInputChange("city", text)}
-              fieldName="city"
-              error={errors.city}
-            />
-          </View>
-          <View style={styles.flexItem}>
-            <CustomInputField
-              label="Zip Code"
-              placeholder="Enter zip code"
-              IconComponent={<Profile />}
-              value={user.zip}
-              onChangeText={(text) => handleInputChange("zip", text)}
-              fieldName="zip"
-              error={errors.zip}
-              numbersOnly
-              maxLength={10}
-            />
-          </View>
-        </View>
-
-        {/* Individual-specific fields */}
-        {individualScreen ? (
-          <>
-            <CustomInputField
-              label="Date of Birth"
-              placeholder="YYYY-MM-DD"
-              IconComponent={<DOB />}
-              value={user.dob}
-              onChangeText={(text) => handleInputChange("dob", text)}
-              fieldName="dob"
-              error={errors.dob}
-            />
-            <CustomInputField
-              label="Iqama ID"
-              placeholder="Enter your KSA iqama ID /number"
-              IconComponent={<Building />}
-              value={user.iqamaId}
-              onChangeText={(text) => handleInputChange("iqamaId", text)}
-              fieldName="iqamaId"
-              error={errors.iqamaId}
-              numbersOnly
-            />
-          </>
-        ) : (
-          // Company-specific tax field
-          <>
-            <CustomInputField
-              label="Tax Number"
-              placeholder="Enter tax number (Optional)"
-              IconComponent={<Tax />}
-              value={user.taxNumber}
-              onChangeText={(text) => handleInputChange("taxNumber", text)}
-              fieldName="taxNumber"
-              required={false}
-              error={errors.taxNumber}
-              numbersOnly
-            />
-          </>
-        )}
-
-        {/* Document Upload Section */}
-        {individualScreen && (
-          <View style={styles.documentSection}>
-            <View style={styles.separatorContainer}>
-              <View style={styles.separator} />
-              <Text style={styles.separatorText}>Upload Document</Text>
-              <View style={styles.separator} />
+          <View style={styles.rowContainer}>
+            <View style={styles.flexItem}>
+              <CustomInputField
+                label="City"
+                placeholder="Enter city"
+                IconComponent={<Profile />}
+                value={user.city}
+                onChangeText={(text) => handleInputChange("city", text)}
+                fieldName="city"
+                error={errors.city}
+              />
             </View>
-
-            <Text style={styles.sectionLabel}>Select Document type</Text>
-            <RadioButton
-              options={["Passport", "Driving licence"]}
-              selectedOption={user.documentType}
-              onSelect={(option) => setUser({ ...user, documentType: option })}
-            />
-
-            <Text style={styles.sectionLabel}>
-              Front Side of {individualScreen ? "Card" : "Document"}
-              <Text style={{ color: "red" }}>*</Text>
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.uploadBox,
-                errors.documentFront ? styles.uploadBoxError : null,
-              ]}
-              onPress={() => openImagePicker("documentFront")}
-            >
-              {user.documentFront ? (
-                <Image
-                  source={{ uri: user.documentFront }}
-                  style={styles.documentImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={styles.uploadContent}>
-                  <View
-                    style={{
-                      backgroundColor: Colors.primary300,
-                      padding: 6,
-                      borderRadius: 99,
-                      marginBottom: 6,
-                    }}
-                  >
-                    <Gallery />
-                  </View>
-                  <Text style={styles.uploadText}>
-                    Click to Upload Front Side of{" "}
-                    {individualScreen ? "Card" : "Document"}
-                  </Text>
-                  <Text style={{ fontSize: 12 }}> (Max. File size: 25 MB)</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-            {errors.documentFront && (
-              <Text style={styles.errorText}>{errors.documentFront}</Text>
-            )}
-
-            <Text style={styles.sectionLabel}>
-              Back Side of {individualScreen ? "Card" : "Document"}
-              <Text style={{ color: "red" }}>*</Text>
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.uploadBox,
-                errors.documentBack ? styles.uploadBoxError : null,
-              ]}
-              onPress={() => openImagePicker("documentBack")}
-            >
-              {user.documentBack ? (
-                <Image
-                  source={{ uri: user.documentBack }}
-                  style={styles.documentImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={styles.uploadContent}>
-                  <View
-                    style={{
-                      backgroundColor: Colors.primary300,
-                      padding: 6,
-                      borderRadius: 99,
-                      marginBottom: 6,
-                    }}
-                  >
-                    <Gallery />
-                  </View>
-                  <Text style={styles.uploadText}>
-                    Click to Upload Back Side of{" "}
-                    {individualScreen ? "Card" : "Document"}
-                  </Text>
-                  <Text style={{ fontSize: 12 }}> (Max. File size: 25 MB)</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-            {errors.documentBack && (
-              <Text style={styles.errorText}>{errors.documentBack}</Text>
-            )}
+            <View style={styles.flexItem}>
+              <CustomInputField
+                label="Zip Code"
+                placeholder="Enter zip code"
+                IconComponent={<Profile />}
+                value={user.zip}
+                onChangeText={(text) => handleInputChange("zip", text)}
+                fieldName="zip"
+                error={errors.zip}
+                numbersOnly
+                maxLength={10}
+              />
+            </View>
           </View>
-        )}
 
-        <View style={{ height: 80 }} />
-      </ScrollView>
+          <CustomInputField
+            label="Email Address"
+            placeholder="Enter your email"
+            IconComponent={<Email />}
+            value={user.email}
+            keyboardType="email-address"
+            onChangeText={(text) => handleInputChange("email", text)}
+            fieldName="email"
+            error={errors.email}
+          />
+
+          {!individualScreen && (
+            <CustomInputField
+              label="Secondary Email"
+              placeholder="Enter secondary email (Optional)"
+              IconComponent={<Email />}
+              value={user.secondaryEmail}
+              keyboardType="email-address"
+              onChangeText={(text) => handleInputChange("secondaryEmail", text)}
+              fieldName="secondaryEmail"
+              required={false}
+              error={errors.secondaryEmail}
+            />
+          )}
+
+          {/* Individual-specific fields */}
+          {individualScreen ? (
+            <>
+              <CustomInputField
+                label="Date of Birth"
+                placeholder="YYYY-MM-DD"
+                IconComponent={<DOB />}
+                value={user.dob}
+                onChangeText={(text) => handleInputChange("dob", text)}
+                fieldName="dob"
+                error={errors.dob}
+              />
+              <CustomInputField
+                label="Iqama ID"
+                placeholder="Enter your KSA iqama ID /number"
+                IconComponent={<Building />}
+                value={user.iqamaId}
+                onChangeText={(text) => handleInputChange("iqamaId", text)}
+                fieldName="iqamaId"
+                error={errors.iqamaId}
+                numbersOnly
+              />
+            </>
+          ) : (
+            // Company-specific tax field
+            <>
+              <CustomInputField
+                label="Tax Number"
+                placeholder="Enter tax number (Optional)"
+                IconComponent={<Tax />}
+                value={user.taxNumber}
+                onChangeText={(text) => handleInputChange("taxNumber", text)}
+                fieldName="taxNumber"
+                required={false}
+                error={errors.taxNumber}
+                numbersOnly
+              />
+
+              <CustomInputField
+                label="Company Category"
+                placeholder="Enter company category"
+                IconComponent={<Building />}
+                value={user.companyCategory}
+                onChangeText={(text) =>
+                  handleInputChange("companyCategory", text)
+                }
+                fieldName="companyCategory"
+                error={errors.companyCategory}
+              />
+            </>
+          )}
+
+          {/* Document Upload Section */}
+          {individualScreen && (
+            <View style={styles.documentSection}>
+              <View style={styles.separatorContainer}>
+                <View style={styles.separator} />
+                <Text style={styles.separatorText}>Upload Document</Text>
+                <View style={styles.separator} />
+              </View>
+
+              <Text style={styles.sectionLabel}>Select Document type</Text>
+              <RadioButton
+                options={["Passport", "Driving licence"]}
+                selectedOption={user.documentType}
+                onSelect={(option) =>
+                  setUser({ ...user, documentType: option })
+                }
+              />
+
+              <Text style={styles.sectionLabel}>
+                Front Side of {individualScreen ? "Card" : "Document"}
+                <Text style={{ color: "red" }}>*</Text>
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.uploadBox,
+                  errors.documentFront ? styles.uploadBoxError : null,
+                ]}
+                onPress={() => openImagePicker("documentFront")}
+              >
+                {user.documentFront ? (
+                  <Image
+                    source={{ uri: user.documentFront }}
+                    style={styles.documentImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.uploadContent}>
+                    <View
+                      style={{
+                        backgroundColor: Colors.primary300,
+                        padding: 6,
+                        borderRadius: 99,
+                        marginBottom: 6,
+                      }}
+                    >
+                      <Gallery />
+                    </View>
+                    <Text style={styles.uploadText}>
+                      Click to Upload Front Side of{" "}
+                      {individualScreen ? "Card" : "Document"}
+                    </Text>
+                    <Text style={{ fontSize: 12 }}>
+                      {" "}
+                      (Max. File size: 25 MB)
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              {errors.documentFront && (
+                <Text style={styles.errorText}>{errors.documentFront}</Text>
+              )}
+
+              <Text style={styles.sectionLabel}>
+                Back Side of {individualScreen ? "Card" : "Document"}
+                <Text style={{ color: "red" }}>*</Text>
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.uploadBox,
+                  errors.documentBack ? styles.uploadBoxError : null,
+                ]}
+                onPress={() => openImagePicker("documentBack")}
+              >
+                {user.documentBack ? (
+                  <Image
+                    source={{ uri: user.documentBack }}
+                    style={styles.documentImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.uploadContent}>
+                    <View
+                      style={{
+                        backgroundColor: Colors.primary300,
+                        padding: 6,
+                        borderRadius: 99,
+                        marginBottom: 6,
+                      }}
+                    >
+                      <Gallery />
+                    </View>
+                    <Text style={styles.uploadText}>
+                      Click to Upload Back Side of{" "}
+                      {individualScreen ? "Card" : "Document"}
+                    </Text>
+                    <Text style={{ fontSize: 12 }}>
+                      {" "}
+                      (Max. File size: 25 MB)
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              {errors.documentBack && (
+                <Text style={styles.errorText}>{errors.documentBack}</Text>
+              )}
+            </View>
+          )}
+
+          <View style={{ height: 80 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Fixed Button at Bottom */}
       <View style={styles.buttonContainer}>
@@ -756,7 +739,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.white,
   },
-  scrollContainer: {
+  keyboardConatiner: {
+    flex: 1,
     padding: 16,
   },
   header: {
@@ -894,7 +878,7 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 4, // Reduced to make room for error text
+    marginBottom: 4,
     overflow: "hidden",
   },
   uploadBoxError: {

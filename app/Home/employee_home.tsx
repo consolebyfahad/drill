@@ -224,6 +224,10 @@ const EmployeeHome = () => {
   // Initialize FCM
   useEffect(() => {
     const initFCM = async () => {
+      const keys = await AsyncStorage.getAllKeys();
+      const items = await AsyncStorage.multiGet(keys);
+      const allData = Object.fromEntries(items);
+      console.log("allData", allData);
       try {
         await requestFCMPermission();
         const token = await getFCMToken();
@@ -436,8 +440,49 @@ const EmployeeHome = () => {
   };
 
   // Hide/decline a specific job
-  const handleHideJob = (orderId: string) => {
-    setJobRequests((prev) => prev.filter((job) => job.id !== orderId));
+  const handleHideJob = async (order: OrderDetails) => {
+    if (!order?.id) {
+      Alert.alert("Error", "Cannot accept job: order details not available");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const userId = await AsyncStorage.getItem("user_id");
+      const userLat = await AsyncStorage.getItem("user_lat");
+      const userLng = await AsyncStorage.getItem("user_lng");
+
+      if (!userId) {
+        Alert.alert("Error", "User information not found");
+        setIsLoading(false);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("type", "add_data");
+      formData.append("table_name", "order_history");
+      formData.append("order_id", order.id);
+      formData.append("user_id", userId);
+      formData.append("lat", userLat || "");
+      formData.append("lng", userLng || "");
+      formData.append("status", "reject");
+
+      console.log("Accepting order:", formData);
+
+      const response = await apiCall(formData);
+
+      if (response && response.result === true) {
+        setJobRequests((prev) => prev.filter((job) => job.id !== order.id));
+      } else {
+        Alert.alert("Error", "Failed to accept job request");
+      }
+    } catch (error) {
+      console.error("Error accepting job request:", error);
+      Alert.alert("Error", "An error occurred while accepting the job request");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Handle map events

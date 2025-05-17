@@ -16,6 +16,7 @@ interface InputFieldProps {
   required?: boolean;
   keyboardType?: KeyboardTypeOptions;
   onChangeText: (text: string) => void;
+  error?: any;
 }
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -26,10 +27,16 @@ const InputField: React.FC<InputFieldProps> = ({
   onChangeText,
   keyboardType,
   required,
+  error,
 }) => {
   return (
     <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && (
+        <Text style={styles.label}>
+          {label}
+          <Text style={styles.errorText}>{required ? "*" : ""}</Text>
+        </Text>
+      )}
       <View style={styles.inputContainer}>
         {IconComponent && <View>{IconComponent}</View>}
         <TextInput
@@ -41,6 +48,7 @@ const InputField: React.FC<InputFieldProps> = ({
           keyboardType={keyboardType}
         />
       </View>
+      {error ? <Text style={styles.errorText}>{error}</Text> : " "}
     </View>
   );
 };
@@ -67,6 +75,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: Colors.secondary,
+  },
+
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
 });
 

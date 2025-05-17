@@ -10,8 +10,9 @@ export default function Splash() {
     const checkUser = async () => {
       try {
         const userId = await AsyncStorage.getItem("user_id");
+        const verified = await AsyncStorage.getItem("company_verified");
         setTimeout(() => {
-          if (userId) {
+          if (userId && verified) {
             router.replace("/(tabs)");
           } else {
             router.replace("/welcome");

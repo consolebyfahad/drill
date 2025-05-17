@@ -369,13 +369,16 @@ const AddEmployee = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="Add Employee" backBtn={true} />
+      <Header
+        title="Add Employee"
+        backBtn={true}
+        backAddress={"/(tabs)/account"}
+      />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
       >
         {/* Profile Image */}
-        // Replace the profile container section with this updated code
         <View style={styles.profileContainer}>
           <TouchableOpacity onPress={() => openImagePicker("image")}>
             <View style={styles.imageWrapper}>

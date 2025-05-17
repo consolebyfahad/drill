@@ -3,7 +3,8 @@ import { View } from "react-native";
 import { Colors } from "@/constants/Colors";
 import Home from "@/assets/svgs/home.svg";
 import HomeFill from "@/assets/svgs/homeFill.svg";
-import Packages from "@/assets/svgs/packages.svg";
+import Notification from "@/assets/svgs/Notification.svg";
+import NotificationFill from "@/assets/svgs/fillednotification.svg";
 import Orders from "@/assets/svgs/orders.svg";
 import OrdersFill from "@/assets/svgs/orderFill.svg";
 import Profile from "@/assets/svgs/profileIcon.svg";
@@ -45,26 +46,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="notification"
-        options={{
-          title: "Notification",
-          tabBarIcon: ({ focused }) => (
-            <View
-              style={{
-                alignItems: "center",
-                borderTopWidth: focused ? 3 : 0,
-                borderTopColor: Colors.secondary,
-                borderRadius: 2,
-                paddingTop: 6,
-                paddingBottom: 9,
-              }}
-            >
-              <Packages />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="orders"
         options={{
           title: "Orders",
@@ -80,6 +61,26 @@ export default function TabLayout() {
               }}
             >
               {focused ? <OrdersFill /> : <Orders />}
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="notification"
+        options={{
+          title: "Notification",
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                alignItems: "center",
+                borderTopWidth: focused ? 3 : 0,
+                borderTopColor: Colors.secondary,
+                borderRadius: 2,
+                paddingTop: 6,
+                paddingBottom: 9,
+              }}
+            >
+              {focused ? <NotificationFill /> : <Notification />}
             </View>
           ),
         }}
