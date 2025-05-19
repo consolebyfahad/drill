@@ -125,11 +125,8 @@ export default function Track() {
 
   useEffect(() => {
     if (location && customerLocation) {
-      // const currentLat = location.coords.latitude;
-      // const currentLng = location.coords.longitude;
-
-      const currentLat = 25.276851;
-      const currentLng = 55.296292;
+      const currentLat = location.coords.latitude;
+      const currentLng = location.coords.longitude;
       const customerLat = customerLocation.latitude;
       const customerLng = customerLocation.longitude;
       console.log(customerLat, customerLng);
@@ -438,7 +435,7 @@ export default function Track() {
                 <View style={styles.statusItem}>
                   <Accepted width={40} height={40} />
                   <Text style={styles.statusText}>Order</Text>
-                  <Text style={styles.statusText}>Accepted</Text>
+                  <Text style={styles.statusText2}>Accepted</Text>
                 </View>
                 <View style={styles.line} />
                 <View style={styles.statusItem}>
@@ -552,6 +549,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 14,
   },
+  statusText2: {
+    fontSize: 12,
+    color: Colors.gray300,
+    textAlign: "center",
+  },
   activeStatusText: {
     color: Colors.primary,
     fontWeight: "bold",
@@ -582,6 +584,7 @@ const styles = StyleSheet.create({
     elevation: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -3 },
+    paddingBottom: 50,
     shadowOpacity: 0.1,
     shadowRadius: 6,
     overflow: "hidden",
@@ -647,7 +650,7 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 22,
+    paddingVertical: 50,
     gap: 20,
   },
   arrivedTitle: {

@@ -71,7 +71,7 @@ export default function ServiceDetailsCard({
               ]}
             >
               <Text style={[styles.statusText, { color: statusStyle.color }]}>
-                {order.status === "accepted" ? "In-Progress" : order?.status}
+                {order.status}
               </Text>
             </View>
           </View>
@@ -105,7 +105,7 @@ export default function ServiceDetailsCard({
         <View style={styles.detailsRow}>
           <Text style={styles.label}>Order Status</Text>
           <Text style={[styles.value, { color: statusStyle.color }]}>
-            {order.status === "accepted" ? "In-Progress" : order?.status}
+            {order.status}
           </Text>
         </View>
         <DashedSeprator />

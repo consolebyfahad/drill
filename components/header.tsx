@@ -49,7 +49,7 @@ export default function Header({
         ) : (
           <View style={styles.userContainer}>
             <Image
-              source={require("@/assets/images/logo.png")}
+              source={require("@/assets/images/applogo.png")}
               style={styles.userImage}
             />
             <View>

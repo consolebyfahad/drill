@@ -83,10 +83,6 @@ export default function ProviderCard({ order }: ProviderCardProps) {
       ? { uri: `${order.image_url}${customer.image}` }
       : require("../assets/images/default-profile.png");
 
-  // Sample rating data (you might want to get this from the API)
-  const rating = "4.9";
-  const reviewCount = "120+";
-
   return (
     <View style={styles.providerContainer}>
       <View style={styles.providerHeader}>
@@ -99,7 +95,7 @@ export default function ProviderCard({ order }: ProviderCardProps) {
             {customer.name || "Unknown Customer"}
           </Text>
           <Text style={styles.grayText}>
-            ⭐ {rating} ({reviewCount} reviews)
+            ⭐ {customer.rating} ({customer.reviews})
           </Text>
           <Text style={styles.providerContact}>Customer</Text>
         </View>

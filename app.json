@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "drill-service",
+    "name": "Drill Provider",
     "slug": "drill-service",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/appLogo.png",
+    "icon": "./assets/images/applogo.png",
     "scheme": "drillservice",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,9 +14,7 @@
       "bundleIdentifier": "sa.com.drill.service",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "We need your location to show your position on the map.",
-        "UIBackgroundModes": [
-          "remote-notification"
-        ]
+        "UIBackgroundModes": ["remote-notification"]
       },
       "entitlements": {
         "aps-environment": "production"
@@ -24,7 +22,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/appLogo.png",
+        "foregroundImage": "./assets/images/applogo.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -34,6 +32,10 @@
         "googleMaps": {
           "apiKey": "AIzaSyAQiilQ_i4LRPFyMhfLB5ZT3UGMTIxqL0Y"
         }
+      },
+      "androidNavigationBar": {
+        "visible": "immersive",
+        "translucent": true
       }
     },
     "web": {
@@ -55,7 +57,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/appLogo.png",
+          "image": "./assets/images/applogo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
