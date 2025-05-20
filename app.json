@@ -32,16 +32,12 @@
         "googleMaps": {
           "apiKey": "AIzaSyAQiilQ_i4LRPFyMhfLB5ZT3UGMTIxqL0Y"
         }
-      },
-      "androidNavigationBar": {
-        "visible": "immersive",
-        "translucent": true
       }
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/applogo.png"
     },
     "plugins": [
       "@react-native-firebase/app",
@@ -74,6 +70,10 @@
       "eas": {
         "projectId": "7530f98d-2a55-4d88-bf73-dec9d7fb6d53"
       }
+    },
+    "androidNavigationBar": {
+      "barStyle": "dark-content",
+      "backgroundColor": "#FFFFFF"
     }
   }
 }
