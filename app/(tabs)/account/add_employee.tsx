@@ -626,11 +626,11 @@ export default AddEmployee;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 12,
     backgroundColor: Colors.white,
   },
   scrollContainer: {
-    paddingBottom: 30,
+    paddingBottom: 54,
   },
   profileContainer: {
     alignItems: "center",

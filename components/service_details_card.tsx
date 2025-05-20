@@ -79,7 +79,7 @@ export default function ServiceDetailsCard({
             Order ID: <Text style={styles.orderIdValue}>{order.order_no}</Text>
           </Text>
           <Text style={styles.amount}>
-            SAR {order.amount || "0.00"}{" "}
+            SAR {order.amount || "0.00 "}
             {order.discount && parseInt(order.discount) > 0 && (
               <Text style={styles.discount}>({order.discount}% off)</Text>
             )}
@@ -118,7 +118,6 @@ export default function ServiceDetailsCard({
         </View>
         {order.status === "completed" && (
           <>
-            {" "}
             <DashedSeprator />
             <View style={styles.detailsRow}>
               <Text style={styles.label}>Rating</Text>

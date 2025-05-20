@@ -91,7 +91,7 @@ export default function Orders() {
   const fetchOrders = async () => {
     setIsLoading(true);
     const userId = await AsyncStorage.getItem("user_id");
-
+    console.log(userId);
     if (!userId) {
       setIsLoading(false);
       throw new Error("User ID not found");

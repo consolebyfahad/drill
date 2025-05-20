@@ -885,7 +885,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   scrollContainer: {
-    paddingBottom: 80,
+    paddingBottom: 34,
   },
   profileContainer: {
     alignItems: "center",

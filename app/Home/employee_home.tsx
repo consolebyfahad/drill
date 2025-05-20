@@ -92,7 +92,7 @@ const EmployeeHome = () => {
   const [greeting, setGreeting] = useState("Good Afternoon!");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [isOn, setIsOn] = useState(false);
+  const [isOn, setIsOn] = useState(true);
   const [location, setLocation] = useState<LocationState>({
     latitude: 37.7749,
     longitude: -122.4194,
@@ -338,8 +338,8 @@ const EmployeeHome = () => {
     }
   };
 
-  const handleHideJob = async (order: OrderDetails) => {
-    if (!order?.id) {
+  const handleHideJob = async (orderId: string) => {
+    if (!orderId) {
       Alert.alert("Error", "Cannot accept job: order details not available");
       return;
     }
@@ -360,7 +360,7 @@ const EmployeeHome = () => {
       const formData = new FormData();
       formData.append("type", "add_data");
       formData.append("table_name", "order_history");
-      formData.append("order_id", order.id);
+      formData.append("order_id", orderId);
       formData.append("user_id", userId);
       formData.append("lat", userLat || "");
       formData.append("lng", userLng || "");
@@ -371,7 +371,7 @@ const EmployeeHome = () => {
       const response = await apiCall(formData);
 
       if (response && response.result === true) {
-        setJobRequests((prev) => prev.filter((job) => job.id !== order.id));
+        setJobRequests((prev) => prev.filter((job) => job.id !== orderId));
       } else {
         Alert.alert("Error", "Failed to accept job request");
       }
@@ -419,7 +419,7 @@ const EmployeeHome = () => {
       setIsLoading(false);
     }
   };
-
+  console.log(jobRequests);
   return (
     <SafeAreaView style={styles.container}>
       {isLoading ? (
@@ -451,9 +451,11 @@ const EmployeeHome = () => {
             moveOnMarkerPress={false}
             onMapReady={handleMapReady}
           />
-          <View style={styles.onlineIcon}>
-            {isOn ? <OnlineIcon /> : <OfflineIcon />}
-          </View>
+          {jobRequests.length === 0 && (
+            <View style={styles.onlineIcon}>
+              {isOn ? <OnlineIcon /> : <OfflineIcon />}
+            </View>
+          )}
         </>
       )}
 
@@ -482,9 +484,9 @@ const EmployeeHome = () => {
                 userName={item.provider?.name || "Client"}
                 serviceTitle={item.category?.name || "Service"}
                 packageTitle={item.package_id}
-                distance={`${item.distance || "N/A"}km`}
-                duration={item.estimatedDuration || "N/A"}
-                jobLocation={item.provider?.address || "Address unavailable"}
+                distance={`${item.distance || "N/A"}`}
+                duration={item.reach_time || "N/A"}
+                jobLocation={item.user?.address || "Address unavailable"}
                 currentLocation={location.address}
                 onDecline={() => handleHideJob(item.id)}
                 onAccept={() => handleAcceptJob(item)}

@@ -83,6 +83,8 @@ export default function Track() {
       if (response && response.data && response.data.length > 0) {
         const orderData = response.data[0];
         setOrder(orderData);
+        setStatus(orderData?.status);
+        console.log("orderData?.status", orderData);
       } else {
         console.log("No order details found");
         setOrder(null);
@@ -98,13 +100,12 @@ export default function Track() {
 
   // Get the customer location from the order
   const customerLocation = useMemo(() => {
-    if (order?.user?.lat && order?.user?.lng) {
+    if (order?.lat && order?.lng) {
       return {
-        latitude: parseFloat(order.user.lat),
-        longitude: parseFloat(order.user.lng),
+        latitude: parseFloat(order.lat),
+        longitude: parseFloat(order.lng),
       };
     }
-    return { latitude: 25.276987, longitude: 55.296249 };
   }, [order]);
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -325,7 +326,10 @@ export default function Track() {
       formData.append("status", "on-way");
 
       const response = await apiCall(formData);
-
+      router.push({
+        pathname: "/order/order_place",
+        params: { orderId: orderId },
+      });
       if (response && response.result === true) {
       } else {
         Alert.alert("Error", "Failed to accept job request");
@@ -460,7 +464,9 @@ export default function Track() {
                   <Text
                     style={[
                       styles.statusText,
-                      status === "Arrived" ? styles.activeStatusText : {},
+                      status === "Arrived" || "Started"
+                        ? styles.activeStatusText
+                        : {},
                     ]}
                   >
                     Arrived

@@ -25,6 +25,7 @@ import {
   setupNotificationListeners,
 } from "~/utils/notification";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useToast } from "~/components/ToastProvider";
 
 type PopupType = "timeup" | "tipup" | "orderComplete" | "review";
 
@@ -35,6 +36,7 @@ interface NotificationData {
 }
 
 const OrderPlace: React.FC = () => {
+  const { showToast } = useToast();
   const { orderId, tab } = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState<string>(
     tab ? String(tab) : "Details"
@@ -122,12 +124,12 @@ const OrderPlace: React.FC = () => {
 
         setOrder(orderData);
       } else {
-        Alert.alert("Error", "No order details found");
+        showToast("Error", "No order details found");
         setOrder(null);
       }
     } catch (error) {
       console.error("Failed to fetch order details", error);
-      Alert.alert("Error", "Failed to fetch order details");
+      showToast("Error", "Failed to fetch order details");
       setOrder(null);
     } finally {
       setIsLoading(false);
@@ -139,7 +141,7 @@ const OrderPlace: React.FC = () => {
 
     // Show appropriate notifications based on status changes
     if (newStatus === "started") {
-      Alert.alert("Order Started", "The customer has started the order.");
+      toas("Order Started", "The customer has started the order.");
     } else if (newStatus === "completed") {
       setPopupType("review");
     } else if (newStatus === "tipped") {
@@ -152,7 +154,7 @@ const OrderPlace: React.FC = () => {
 
   const handleCancel = async () => {
     // Display confirmation dialog
-    Alert.alert("Cancel Order", "Are you sure you want to cancel this order?", [
+    showToast("Cancel Order", "Are you sure you want to cancel this order?", [
       {
         text: "No",
         style: "cancel",
@@ -172,14 +174,14 @@ const OrderPlace: React.FC = () => {
             try {
               const response = await apiCall(formData);
               if (response && response.result === true) {
-                Alert.alert("Success", "Order has been cancelled");
+                showToast("Success", "Order has been cancelled");
                 router.replace("/(tabs)");
               } else {
-                Alert.alert("Error", "Failed to cancel order");
+                showToast("Error", "Failed to cancel order");
               }
             } catch (error) {
               console.error("Error cancelling order:", error);
-              Alert.alert(
+              showToast(
                 "Error",
                 "An error occurred while cancelling the order"
               );
@@ -207,13 +209,13 @@ const OrderPlace: React.FC = () => {
     try {
       const response = await apiCall(formData);
       if (response && response.result === true) {
-        Alert.alert("Success", "Alert sent to customer");
+        showToast("Success", "Alert sent to customer");
       } else {
-        Alert.alert("Error", "Failed to send alert");
+        showToast("Error", "Failed to send alert");
       }
     } catch (error) {
       console.error("Error sending alert:", error);
-      Alert.alert("Error", "An error occurred while sending alert");
+      showToast("Error", "An error occurred while sending alert");
     } finally {
       setIsLoading(false);
     }
@@ -237,11 +239,11 @@ const OrderPlace: React.FC = () => {
         // After marking as complete, show review popup
         setPopupType("review");
       } else {
-        Alert.alert("Error", "Failed to complete order");
+        showToast("Error", "Failed to complete order");
       }
     } catch (error) {
       console.error("Error completing order:", error);
-      Alert.alert("Error", "An error occurred while completing the order");
+      showToast("Error", "An error occurred while completing the order");
     } finally {
       setIsLoading(false);
     }
@@ -343,38 +345,39 @@ const OrderPlace: React.FC = () => {
         )}
       </View>
 
-      {activeTab === "Details" && (
-        <View style={styles.footerButtons}>
-          {order?.status === "arrived" || order?.status === "started" ? (
-            <View style={styles.buttonContainer}>
+      {activeTab === "Details" ||
+        (order?.status !== "completed" && (
+          <View style={styles.footerButtons}>
+            {order?.status === "arrived" || order?.status === "started" ? (
+              <View style={styles.buttonContainer}>
+                <Button
+                  title="Cancel"
+                  variant="secondary"
+                  fullWidth={false}
+                  width="48%"
+                  onPress={handleCancel}
+                />
+                <Button
+                  title={order.status === "arrived" ? "Send Alert" : "Complete"}
+                  variant="primary"
+                  fullWidth={false}
+                  width="48%"
+                  onPress={
+                    order.status === "arrived" ? handleAlert : handleComplete
+                  }
+                />
+              </View>
+            ) : (
               <Button
-                title="Cancel"
-                variant="secondary"
-                fullWidth={false}
-                width="48%"
-                onPress={handleCancel}
-              />
-              <Button
-                title={order.status === "arrived" ? "Send Alert" : "Complete"}
+                title="Cancel Order"
                 variant="primary"
                 fullWidth={false}
-                width="48%"
-                onPress={
-                  order.status === "arrived" ? handleAlert : handleComplete
-                }
+                width="100%"
+                onPress={handleCancel}
               />
-            </View>
-          ) : (
-            <Button
-              title="Cancel Order"
-              variant="primary"
-              fullWidth={false}
-              width="100%"
-              onPress={handleCancel}
-            />
-          )}
-        </View>
-      )}
+            )}
+          </View>
+        ))}
 
       {/* Popup with Background Overlay */}
       {showPopup && (

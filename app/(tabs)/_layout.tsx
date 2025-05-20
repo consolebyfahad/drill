@@ -20,15 +20,16 @@ export default function TabLayout() {
         headerShown: false,
         tabBarShowLabel: true,
         tabBarStyle: {
-          height: Platform.OS === "ios" ? 60 + insets.bottom : 60,
-          paddingBottom: Platform.OS === "ios" ? insets.bottom : 10,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom,
           borderTopWidth: 1,
+          borderTopColor: "#eee",
           position: "absolute",
-          bottom: 40,
           left: 0,
           right: 0,
           elevation: 0,
           zIndex: 10,
+          backgroundColor: "#fff",
         },
         tabBarLabelStyle: {
           color: Colors.secondary,
@@ -42,16 +43,7 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ focused }) => (
-            <View
-              style={{
-                alignItems: "center",
-                borderTopWidth: focused ? 3 : 0,
-                borderTopColor: Colors.secondary,
-                borderRadius: 2,
-                paddingTop: 6,
-                paddingBottom: 9,
-              }}
-            >
+            <View style={iconContainerStyle(focused)}>
               {focused ? <HomeFill /> : <Home />}
             </View>
           ),
@@ -62,16 +54,7 @@ export default function TabLayout() {
         options={{
           title: "Orders",
           tabBarIcon: ({ focused }) => (
-            <View
-              style={{
-                alignItems: "center",
-                borderTopWidth: focused ? 3 : 0,
-                borderTopColor: Colors.secondary,
-                borderRadius: 2,
-                paddingTop: 6,
-                paddingBottom: 9,
-              }}
-            >
+            <View style={iconContainerStyle(focused)}>
               {focused ? <OrdersFill /> : <Orders />}
             </View>
           ),
@@ -82,16 +65,7 @@ export default function TabLayout() {
         options={{
           title: "Notification",
           tabBarIcon: ({ focused }) => (
-            <View
-              style={{
-                alignItems: "center",
-                borderTopWidth: focused ? 3 : 0,
-                borderTopColor: Colors.secondary,
-                borderRadius: 2,
-                paddingTop: 6,
-                paddingBottom: 9,
-              }}
-            >
+            <View style={iconContainerStyle(focused)}>
               {focused ? <NotificationFill /> : <Notification />}
             </View>
           ),
@@ -102,16 +76,7 @@ export default function TabLayout() {
         options={{
           title: "Account",
           tabBarIcon: ({ focused }) => (
-            <View
-              style={{
-                alignItems: "center",
-                borderTopWidth: focused ? 3 : 0,
-                borderTopColor: Colors.secondary,
-                borderRadius: 2,
-                paddingTop: 6,
-                paddingBottom: 9,
-              }}
-            >
+            <View style={iconContainerStyle(focused)}>
               {focused ? <ProfileFill /> : <Profile />}
             </View>
           ),
@@ -120,3 +85,12 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const iconContainerStyle = (focused: boolean) => ({
+  alignItems: "center",
+  borderTopWidth: focused ? 3 : 0,
+  borderTopColor: Colors.secondary,
+  borderRadius: 2,
+  paddingTop: 6,
+  paddingBottom: 6, // consistent padding
+});

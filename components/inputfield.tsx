@@ -9,7 +9,7 @@ import React from "react";
 import { Colors } from "@/constants/Colors";
 
 interface InputFieldProps {
-  label?: string;
+  label?: any;
   placeholder?: string;
   IconComponent?: React.ReactNode;
   value?: string;
@@ -48,7 +48,11 @@ const InputField: React.FC<InputFieldProps> = ({
           keyboardType={keyboardType}
         />
       </View>
-      {error ? <Text style={styles.errorText}>{error}</Text> : " "}
+      {error ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : (
+        <Text style={styles.errorText}> </Text>
+      )}
     </View>
   );
 };
