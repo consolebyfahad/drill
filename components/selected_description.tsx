@@ -1,6 +1,7 @@
 import { View, Text, TextInput, StyleSheet } from "react-native";
 import React from "react";
 import { Colors } from "@/constants/Colors";
+import { FONTS } from "~/constants/Fonts";
 
 export default function SelectedDescription() {
   return (
@@ -18,7 +19,7 @@ export default function SelectedDescription() {
 const styles = StyleSheet.create({
   title: {
     fontSize: 18,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     marginBottom: 8,
     color: Colors.secondary,
   },

@@ -18,6 +18,7 @@ import defaultAvatar from "~/assets/images/default-profile.png";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiCall } from "~/utils/api";
+import { FONTS } from "~/constants/Fonts";
 
 // Employee type definition
 type Employee = {
@@ -344,7 +345,7 @@ const styles = StyleSheet.create({
   },
   filterLabel: {
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
     marginBottom: 8,
     marginLeft: 4,
@@ -374,6 +375,7 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     fontSize: 16,
+    fontFamily: FONTS.medium,
     color: Colors.secondary,
   },
   dropdownPlaceholder: {
@@ -391,6 +393,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
+    fontFamily: FONTS.medium,
     color: Colors.secondary,
   },
   errorContainer: {
@@ -405,6 +408,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 16,
     marginTop: 8,
+    fontFamily: FONTS.regular,
   },
   retryButton: {
     backgroundColor: Colors.primary,
@@ -415,7 +419,7 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     color: "white",
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     fontSize: 16,
   },
   emptyContainer: {
@@ -427,7 +431,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: "500",
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
     marginTop: 12,
   },
@@ -436,6 +440,7 @@ const styles = StyleSheet.create({
     color: Colors.secondary300,
     textAlign: "center",
     marginTop: 8,
+    fontFamily: FONTS.regular,
   },
   employeeCard: {
     flexDirection: "row",
@@ -465,7 +470,7 @@ const styles = StyleSheet.create({
   },
   employeeName: {
     fontSize: 18,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     color: Colors.secondary,
     marginBottom: 4,
   },
@@ -476,16 +481,19 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: Colors.secondary,
     marginLeft: 4,
   },
   employeeCode: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: Colors.secondary300,
     marginBottom: 4,
   },
   employeeStatus: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: Colors.secondary300,
   },
   activeStatus: {
@@ -506,12 +514,13 @@ const styles = StyleSheet.create({
   },
   pendingLabel: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: Colors.secondary300,
   },
   pendingText: {
     fontSize: 14,
     color: Colors.primary,
-    fontWeight: "500",
+    fontFamily: FONTS.medium,
   },
   verificationContainer: {
     position: "absolute",
@@ -527,7 +536,7 @@ const styles = StyleSheet.create({
   verifiedText: {
     color: Colors.success,
     fontSize: 12,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
   },
   pendingBadge: {
     backgroundColor: "#fff8e1",
@@ -538,7 +547,7 @@ const styles = StyleSheet.create({
   pendingBadgeText: {
     color: "#ffa000",
     fontSize: 12,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
   },
   rejectedBadge: {
     backgroundColor: "#ffebee",
@@ -549,7 +558,7 @@ const styles = StyleSheet.create({
   rejectedText: {
     color: Colors.danger,
     fontSize: 12,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
   },
   arrowContainer: {
     position: "absolute",
@@ -562,5 +571,6 @@ const styles = StyleSheet.create({
     padding: 16,
     color: Colors.secondary300,
     fontSize: 14,
+    fontFamily: FONTS.regular,
   },
 });

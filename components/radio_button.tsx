@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Colors } from "~/constants/Colors";
+import { FONTS } from "~/constants/Fonts";
 
 type RadioButtonProps = {
   options: string[];
@@ -80,6 +81,7 @@ const styles = StyleSheet.create({
   label: {
     marginLeft: 8,
     fontSize: 16,
+    fontFamily: FONTS.regular,
   },
 });
 

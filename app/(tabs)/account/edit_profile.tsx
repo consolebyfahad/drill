@@ -31,6 +31,7 @@ import Button from "~/components/button";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { FONTS } from "~/constants/Fonts";
 
 type User = {
   name: string;
@@ -921,7 +922,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 24,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     color: Colors.secondary,
     marginTop: 12,
   },
@@ -953,12 +954,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     color: Colors.secondary300,
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
   },
   sectionLabel: {
     fontSize: 16,
     color: Colors.secondary,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     marginBottom: 8,
     marginTop: 16,
   },
@@ -985,6 +986,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.secondary300,
     textAlign: "center",
+    fontFamily: FONTS.regular,
   },
   documentImage: {
     width: "100%",

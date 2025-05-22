@@ -33,6 +33,7 @@ import {
   showImagePickerAlert,
   uploadImage,
 } from "~/utils/uploadData";
+import { FONTS } from "~/constants/Fonts";
 
 // Suppress the specific warning about MediaTypeOptions
 LogBox.ignoreLogs(["[expo-image-picker] `ImagePicker.MediaTypeOptions`"]);
@@ -379,7 +380,6 @@ export default function CreateAccount() {
       <KeyboardAvoidingView
         style={styles.keyboardConatiner}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -723,13 +723,11 @@ export default function CreateAccount() {
       </KeyboardAvoidingView>
 
       {/* Fixed Button at Bottom */}
-      <View style={styles.buttonContainer}>
-        <Button
-          title={isLoading ? "Please wait..." : "Submit"}
-          onPress={handleFormSubmit}
-          disabled={isLoading}
-        />
-      </View>
+      <Button
+        title={isLoading ? "Please wait..." : "Submit"}
+        onPress={handleFormSubmit}
+        disabled={isLoading}
+      />
     </SafeAreaView>
   );
 }
@@ -737,11 +735,11 @@ export default function CreateAccount() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 12,
     backgroundColor: Colors.white,
   },
   keyboardConatiner: {
     flex: 1,
-    padding: 16,
   },
   header: {
     flexDirection: "row",
@@ -751,13 +749,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     textAlign: "center",
     color: Colors.secondary,
   },
   title: {
     fontSize: 32,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     marginBottom: 8,
     color: Colors.secondary,
   },
@@ -765,6 +763,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.secondary100,
     marginBottom: 24,
+    fontFamily: FONTS.medium,
   },
   tabContainer: {
     flexDirection: "row",
@@ -774,7 +773,7 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     padding: 16,
     backgroundColor: Colors.secondary,
     borderRadius: 25,
@@ -785,12 +784,12 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: Colors.white,
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FONTS.bold,
   },
   inactiveTabText: {
     color: Colors.secondary300,
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FONTS.medium,
   },
   inactiveTab: {
     fontSize: 16,
@@ -860,12 +859,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     color: Colors.secondary300,
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FONTS.bold,
   },
   sectionLabel: {
     fontSize: 16,
     color: Colors.secondary,
-    fontWeight: "500",
+    fontFamily: FONTS.bold,
     marginBottom: 8,
     marginTop: 16,
   },
@@ -892,16 +891,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.secondary300,
     textAlign: "center",
+    fontFamily: FONTS.regular,
   },
   documentImage: {
     width: "100%",
     height: "100%",
-  },
-  buttonContainer: {
-    position: "absolute",
-    bottom: 20,
-    left: 20,
-    right: 20,
   },
   rowContainer: {
     flexDirection: "row",
@@ -917,5 +911,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
+    fontFamily: FONTS.medium,
   },
 });

@@ -21,6 +21,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiCall } from "~/utils/api";
 import { useFocusEffect } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { FONTS } from "~/constants/Fonts";
 
 // Define a simpler emoji picker array instead of using the library
 const EMOJI_LIST = [
@@ -581,6 +582,7 @@ const styles = StyleSheet.create({
   messageText: {
     color: Colors.secondary,
     fontSize: 16,
+    fontFamily: FONTS.regular,
   },
   messageImage: {
     width: 200,
@@ -614,6 +616,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 8,
     fontSize: 16,
+    fontFamily: FONTS.regular,
     maxHeight: 100,
   },
   sendButton: {
@@ -640,13 +643,13 @@ const styles = StyleSheet.create({
   },
   emojiPickerTitle: {
     fontSize: 18,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     color: Colors.secondary,
   },
   closeButton: {
     color: Colors.primary,
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
   },
   emojiScrollView: {
     flex: 1,
@@ -666,6 +669,7 @@ const styles = StyleSheet.create({
   },
   emojiText: {
     fontSize: 24,
+    fontFamily: FONTS.regular,
   },
   modalOverlay: {
     flex: 1,
@@ -685,6 +689,7 @@ const styles = StyleSheet.create({
   mediaOptionText: {
     fontSize: 18,
     color: Colors.primary,
+    fontFamily: FONTS.regular,
   },
   mediaDivider: {
     height: 1,
@@ -696,7 +701,7 @@ const styles = StyleSheet.create({
   cancelText: {
     fontSize: 18,
     color: "red",
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
   },
   inlineAttachmentContainer: {
     position: "relative",
@@ -721,7 +726,7 @@ const styles = StyleSheet.create({
   removeButtonText: {
     color: Colors.white,
     fontSize: 14,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
   },
   noMessagesContainer: {
     flex: 1,
@@ -732,6 +737,7 @@ const styles = StyleSheet.create({
   noMessagesText: {
     color: Colors.gray,
     fontSize: 16,
+    fontFamily: FONTS.regular,
   },
   loadingOverlay: {
     position: "absolute",

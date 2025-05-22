@@ -16,6 +16,7 @@ import {
 } from "~/utils/notification";
 import OnlineIcon from "@/assets/svgs/online.svg";
 import OfflineIcon from "@/assets/svgs/offline.svg";
+import { FONTS } from "~/constants/Fonts";
 
 // Define provider type
 interface Provider {
@@ -517,6 +518,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: "#000080",
+    fontFamily: FONTS.medium,
   },
   errorContainer: {
     flex: 1,
@@ -529,6 +531,7 @@ const styles = StyleSheet.create({
     color: "red",
     textAlign: "center",
     padding: 20,
+    fontFamily: FONTS.regular,
   },
   overlay: {
     position: "absolute",
@@ -540,7 +543,7 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     color: "#000080",
     marginBottom: 10,
   },
@@ -557,6 +560,7 @@ const styles = StyleSheet.create({
     marginLeft: 5,
     flex: 1,
     flexWrap: "wrap",
+    fontFamily: FONTS.regular,
   },
   toggleContainer: {
     alignItems: "center",

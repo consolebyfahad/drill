@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "~/constants/Colors";
+import { FONTS } from "~/constants/Fonts";
 export default function Welcome() {
   const router = useRouter();
   const handleGetStarted = () => {
@@ -55,13 +56,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     marginBottom: 8,
     color: Colors.secondary,
   },
   subtitle: {
     fontSize: 24,
-    fontWeight: "600",
+    fontFamily: FONTS.semiBold,
     marginBottom: 12,
     color: Colors.secondary,
   },
@@ -69,6 +70,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 18,
     color: Colors.secondary100,
+    fontFamily: FONTS.regular,
   },
   buttonContainer: {
     paddingHorizontal: 12,

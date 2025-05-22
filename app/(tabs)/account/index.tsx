@@ -33,6 +33,7 @@ import defaultProfile from "@/assets/images/default-profile.png";
 import { SafeAreaView } from "react-native-safe-area-context";
 // import { requestFCMPermission } from "~/utils/notification";
 import messaging from "@react-native-firebase/messaging";
+import { FONTS } from "~/constants/Fonts";
 
 type User = {
   id: string;
@@ -561,17 +562,17 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 28,
-    fontWeight: "700",
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
   },
   userEmail: {
     fontSize: 17,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     color: Colors.secondary300,
   },
   companyCode: {
     fontSize: 17,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     color: Colors.secondary300,
     marginTop: 4,
   },
@@ -597,10 +598,11 @@ const styles = StyleSheet.create({
   itemText: {
     fontSize: 15,
     color: Colors.secondary,
-    fontWeight: "500",
+    fontFamily: FONTS.medium,
   },
   itemRightText: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
   },
   // notificationDisabledIndicator: {
   //   position: "absolute",

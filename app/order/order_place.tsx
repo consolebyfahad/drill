@@ -26,6 +26,7 @@ import {
 } from "~/utils/notification";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useToast } from "~/components/ToastProvider";
+import { FONTS } from "~/constants/Fonts";
 
 type PopupType = "timeup" | "tipup" | "orderComplete" | "review";
 
@@ -71,17 +72,29 @@ const OrderPlace: React.FC = () => {
         // Refresh order details when notification is received
         await getOrderDetails();
 
+        // Show toast notification for the received status
+        if (data?.status && data?.message) {
+          showToast(data.message, "info");
+        }
+
         // Handle different status notifications
         if (data?.status === "tipped" && data.message) {
           const tipMatch = data.message.match(/\$(\d+(\.\d+)?)/);
           if (tipMatch) {
             setTipAmount(tipMatch[1]);
             setPopupType("tipup");
+            showToast(`You received a tip of $${tipMatch[1]}!`, "success");
           }
         } else if (data?.status === "completed") {
           setPopupType("review");
+          showToast("Order has been completed by customer", "success");
         } else if (data?.status === "time_exceeded") {
           setPopupType("timeup");
+          showToast("Time limit exceeded for this order", "warning");
+        } else if (data?.status === "started") {
+          showToast("Customer has started the service", "info");
+        } else if (data?.status === "cancelled") {
+          showToast("Order has been cancelled by customer", "warning");
         }
       }
     };
@@ -102,7 +115,6 @@ const OrderPlace: React.FC = () => {
       return () => {};
     }, [orderId])
   );
-
   const getOrderDetails = async () => {
     if (!orderId) return;
 
@@ -124,12 +136,12 @@ const OrderPlace: React.FC = () => {
 
         setOrder(orderData);
       } else {
-        showToast("Error", "No order details found");
+        showToast("No order details found", "error");
         setOrder(null);
       }
     } catch (error) {
       console.error("Failed to fetch order details", error);
-      showToast("Error", "Failed to fetch order details");
+      showToast("Failed to fetch order details", "error");
       setOrder(null);
     } finally {
       setIsLoading(false);
@@ -141,20 +153,24 @@ const OrderPlace: React.FC = () => {
 
     // Show appropriate notifications based on status changes
     if (newStatus === "started") {
-      toas("Order Started", "The customer has started the order.");
+      showToast("Customer has started the service", "info");
     } else if (newStatus === "completed") {
       setPopupType("review");
+      showToast("Order has been completed", "success");
     } else if (newStatus === "tipped") {
       // If tip amount is available in the order data, use it
       const tipValue = order?.tip_amount || "0";
       setTipAmount(tipValue);
       setPopupType("tipup");
+      showToast(`You received a tip of $${tipValue}!`, "success");
+    } else if (newStatus === "cancelled") {
+      showToast("Order has been cancelled", "warning");
     }
   };
 
   const handleCancel = async () => {
-    // Display confirmation dialog
-    showToast("Cancel Order", "Are you sure you want to cancel this order?", [
+    // Use Alert instead of showToast for confirmation
+    Alert.alert("Cancel Order", "Are you sure you want to cancel this order?", [
       {
         text: "No",
         style: "cancel",
@@ -174,16 +190,16 @@ const OrderPlace: React.FC = () => {
             try {
               const response = await apiCall(formData);
               if (response && response.result === true) {
-                showToast("Success", "Order has been cancelled");
+                showToast("Order has been cancelled", "success");
                 router.replace("/(tabs)");
               } else {
-                showToast("Error", "Failed to cancel order");
+                showToast("Failed to cancel order", "error");
               }
             } catch (error) {
               console.error("Error cancelling order:", error);
               showToast(
-                "Error",
-                "An error occurred while cancelling the order"
+                "An error occurred while cancelling the order",
+                "error"
               );
             } finally {
               setIsLoading(false);
@@ -209,13 +225,13 @@ const OrderPlace: React.FC = () => {
     try {
       const response = await apiCall(formData);
       if (response && response.result === true) {
-        showToast("Success", "Alert sent to customer");
+        showToast("Alert sent to customer", "success");
       } else {
-        showToast("Error", "Failed to send alert");
+        showToast("Failed to send alert", "error");
       }
     } catch (error) {
       console.error("Error sending alert:", error);
-      showToast("Error", "An error occurred while sending alert");
+      showToast("An error occurred while sending alert", "error");
     } finally {
       setIsLoading(false);
     }
@@ -420,7 +436,7 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     padding: 16,
     backgroundColor: Colors.secondary,
     borderRadius: 25,
@@ -431,15 +447,16 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: Colors.white,
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
   },
   inactiveTabText: {
     color: Colors.secondary300,
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
   },
   inactiveTab: {
     fontSize: 16,
+    fontFamily: FONTS.regular,
     padding: 16,
     borderRadius: 25,
     width: "50%",
@@ -479,9 +496,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     color: Colors.secondary,
+    fontFamily: FONTS.regular,
   },
   errorText: {
     fontSize: 16,
+    fontFamily: FONTS.regular,
     color: Colors.secondary300,
   },
   buttonContainer: {

@@ -4,6 +4,7 @@ import LocationIcon from "@/assets/svgs/locationIcon.svg";
 import CurrentLocation from "@/assets/svgs/GPS.svg";
 import SearchIcon from "@/assets/svgs/searchIcon.svg";
 import { Colors } from "~/constants/Colors";
+import { FONTS } from "~/constants/Fonts";
 
 export default function Search() {
   return (
@@ -51,6 +52,7 @@ const styles = StyleSheet.create({
     color: Colors.secondary100,
     marginLeft: 8,
     fontSize: 16,
+    fontFamily: FONTS.regular,
   },
   searchButton: {
     backgroundColor: Colors.secondary,

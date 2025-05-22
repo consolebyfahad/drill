@@ -16,6 +16,7 @@ import { apiCall } from "~/utils/api";
 import { useRouter } from "expo-router";
 import Clipboard from "@react-native-clipboard/clipboard";
 import Orderbreakdown from "@/assets/svgs/orderbreakdown.svg";
+import { FONTS } from "~/constants/Fonts";
 type User = {
   id: string;
   name: string;
@@ -375,7 +376,7 @@ const styles = StyleSheet.create({
   profileImagePlaceholderText: {
     color: "#fff",
     fontSize: 24,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
   },
   profileInfo: {
     flex: 1,
@@ -386,17 +387,19 @@ const styles = StyleSheet.create({
   companyName: {
     color: Colors.white,
     fontSize: 30,
-    fontWeight: 800,
+    fontFamily: FONTS.bold,
     marginBottom: 5,
   },
   companyNumberLabel: {
     color: "#a6b3d6",
     fontSize: 14,
+    fontFamily: FONTS.medium,
   },
   copiedText: {
     color: "#4CAF50",
     fontSize: 14,
     fontStyle: "italic",
+    fontFamily: FONTS.regular,
   },
   copy: {
     backgroundColor: "#3359b0",
@@ -411,7 +414,7 @@ const styles = StyleSheet.create({
   },
   ratingsText: {
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     marginLeft: 8,
     color: "#fff",
   },
@@ -436,7 +439,7 @@ const styles = StyleSheet.create({
   orderBreakdownTitle: {
     color: Colors.secondary,
     fontSize: 18,
-    fontWeight: "400",
+    fontFamily: FONTS.medium,
     marginLeft: 10,
   },
   statsContainer: {
@@ -448,12 +451,13 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     fontSize: 28,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
   },
   statLabel: {
     fontSize: 14,
     color: "#666",
+    fontFamily: FONTS.regular,
   },
   recentOrdersHeader: {
     flexDirection: "row",
@@ -464,7 +468,7 @@ const styles = StyleSheet.create({
   },
   recentOrdersTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontFamily: FONTS.semiBold,
     color: Colors.secondary,
   },
   viewAllButton: {
@@ -509,20 +513,21 @@ const styles = StyleSheet.create({
   },
   orderNumber: {
     fontSize: 15,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     color: Colors.secondary,
   },
   employeeName: {
     fontSize: 14,
     color: "#666",
     marginTop: 4,
+    fontFamily: FONTS.regular,
   },
   packageContainer: {
     padding: 8,
   },
   packageType: {
     fontSize: 14,
-    fontWeight: "bold",
+    fontFamily: FONTS.semiBold,
   },
   noOrdersContainer: {
     paddingVertical: 40,
@@ -532,6 +537,7 @@ const styles = StyleSheet.create({
   noOrdersText: {
     fontSize: 16,
     color: "#666",
+    fontFamily: FONTS.medium,
   },
 });
 

@@ -17,6 +17,7 @@ import Seprator from "~/components/seprator";
 import Button from "~/components/button";
 import { apiCall } from "~/utils/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { FONTS } from "~/constants/Fonts";
 
 // SVG Icons (simulated with components)
 const CameraIcon = () => (
@@ -263,7 +264,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 600,
+    fontFamily: FONTS.bold,
     marginBottom: 16,
     color: Colors.secondary,
   },
@@ -287,6 +288,7 @@ const styles = StyleSheet.create({
   },
   uploadText: {
     fontSize: 16,
+    fontFamily: FONTS.regular,
     color: Colors.secondary300,
   },
   descriptionInput: {
@@ -296,6 +298,7 @@ const styles = StyleSheet.create({
     height: 120,
     textAlignVertical: "top",
     fontSize: 16,
+    fontFamily: FONTS.regular,
   },
   priceInputContainer: {
     backgroundColor: Colors.primary300,
@@ -307,12 +310,14 @@ const styles = StyleSheet.create({
   currencyText: {
     fontSize: 16,
     marginRight: 8,
+    fontFamily: FONTS.regular,
     color: Colors.secondary300,
   },
   priceInput: {
     flex: 1,
     padding: 16,
     fontSize: 16,
+    fontFamily: FONTS.regular,
   },
   paymentOptions: {
     gap: 12,
@@ -335,6 +340,7 @@ const styles = StyleSheet.create({
   paymentText: {
     fontSize: 16,
     color: "#424242",
+    fontFamily: FONTS.regular,
   },
   radioButton: {
     width: 24,

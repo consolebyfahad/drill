@@ -20,6 +20,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "~/constants/Colors";
 import { apiCall } from "~/utils/api";
 import Feather from "@expo/vector-icons/Feather";
+import { FONTS } from "~/constants/Fonts";
 
 type User = {
   company_verified: string;
@@ -99,7 +100,8 @@ export default function VerifiedScreen() {
   };
 
   const handleAddEmployee = () => {
-    router.push("/(tabs)/account/add_employee");
+    // router.push("/(tabs)/account/add_employee");
+    router.push("/auth/access_location");
   };
 
   const handleLater = () => {
@@ -215,7 +217,7 @@ export default function VerifiedScreen() {
         <View style={styles.buttonContainer}>
           {/* Allow Location Button */}
           <Button
-            title={"Add Employee"}
+            title={"Continue"}
             onPress={handleAddEmployee}
             disabled={!isVerified}
             style={!isVerified ? styles.disabledButton : {}}
@@ -259,7 +261,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     marginBottom: 8,
     color: Colors.secondary,
   },
@@ -269,6 +271,7 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
     marginBottom: 32,
     lineHeight: 22,
+    fontFamily: FONTS.medium,
   },
   inputContainer: {
     width: "100%",
@@ -287,7 +290,7 @@ const styles = StyleSheet.create({
   },
   verificationText: {
     color: Colors.secondary,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
   },
   verificationStatus: {
     borderRadius: 99,
@@ -309,7 +312,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     width: "100%",
     alignItems: "center",
-    marginBottom: 16, // Added bottom margin
+    marginBottom: 16,
   },
   laterContainer: {
     flexDirection: "row",
@@ -317,12 +320,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   laterBaseText: {
-    fontSize: 15, // Match size with laterText
+    fontSize: 15,
+    fontFamily: FONTS.regular,
     color: Colors.secondary,
   },
   laterText: {
     color: Colors.primary,
-    fontWeight: "bold",
+    fontFamily: FONTS.semiBold,
     fontSize: 15,
   },
   loader: {

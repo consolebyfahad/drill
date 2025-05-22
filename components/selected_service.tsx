@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
 import React from "react";
 import Edit from "@/assets/svgs/edit.svg";
 import { Colors } from "@/constants/Colors";
+import { FONTS } from "~/constants/Fonts";
 
 export default function SelectedService() {
   return (
@@ -48,14 +49,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     color: Colors.secondary,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
   },
   date: {
     fontSize: 12,
+    fontFamily: FONTS.regular,
     color: Colors.secondary300,
   },
   dateValue: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: Colors.secondary,
   },
 });

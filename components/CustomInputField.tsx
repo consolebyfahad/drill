@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 import { Colors } from "~/constants/Colors";
+import { FONTS } from "~/constants/Fonts";
 
 interface CustomInputFieldProps {
   label: string;
@@ -77,7 +78,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     color: Colors.secondary,
     marginBottom: 8,
   },
@@ -98,12 +99,14 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: Colors.secondary,
+    fontFamily: FONTS.regular,
   },
   errorText: {
     color: "red",
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
+    fontFamily: FONTS.medium,
   },
 });
 

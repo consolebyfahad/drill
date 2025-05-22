@@ -31,6 +31,8 @@ import { OrderType } from "~/types/dataTypes";
 import { apiCall } from "~/utils/api";
 import ArrivedLocation from "@/assets/svgs/arrived.svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { FONTS } from "~/constants/Fonts";
+
 type LocationStateType = {
   coords: {
     latitude: number;
@@ -47,6 +49,12 @@ type LocationStateType = {
   lat2: any;
   lon2: any;
   remove: any;
+};
+
+// Default location (you can set this to your city's coordinates)
+const DEFAULT_LOCATION = {
+  latitude: 37.78825,
+  longitude: -122.4324,
 };
 
 export default function Track() {
@@ -66,7 +74,7 @@ export default function Track() {
     () => params.orderId?.toString() || "",
     [params.orderId]
   );
-  const locationSubscriptionRef = useRef(null);
+  const locationSubscriptionRef = useRef<any>(null);
 
   const getOrderDetails = useCallback(async () => {
     if (isOrderLoaded || !orderId) return;
@@ -83,46 +91,67 @@ export default function Track() {
       if (response && response.data && response.data.length > 0) {
         const orderData = response.data[0];
         setOrder(orderData);
-        setStatus(orderData?.status);
+        setStatus(orderData?.status || "OnTheWay");
         console.log("orderData?.status", orderData);
       } else {
         console.log("No order details found");
         setOrder(null);
+        setErrorMsg("Order details not found");
       }
     } catch (error) {
       console.error("Failed to fetch order details", error);
       setOrder(null);
+      setErrorMsg("Failed to load order details. Please try again.");
     } finally {
       setIsLoading(false);
-      setIsOrderLoaded(true); // Mark as loaded to prevent refetching
+      setIsOrderLoaded(true);
     }
   }, [orderId, isOrderLoaded]);
 
-  // Get the customer location from the order
+  // Get the customer location from the order with proper error handling
   const customerLocation = useMemo(() => {
     if (order?.lat && order?.lng) {
-      return {
-        latitude: parseFloat(order.lat),
-        longitude: parseFloat(order.lng),
-      };
+      const lat = parseFloat(order.lat);
+      const lng = parseFloat(order.lng);
+
+      // Validate coordinates
+      if (
+        !isNaN(lat) &&
+        !isNaN(lng) &&
+        lat >= -90 &&
+        lat <= 90 &&
+        lng >= -180 &&
+        lng <= 180
+      ) {
+        return {
+          latitude: lat,
+          longitude: lng,
+        };
+      }
     }
+    return null;
   }, [order]);
 
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371e3; // Earth's radius in meters
-    const φ1 = (lat1 * Math.PI) / 180;
-    const φ2 = (lat2 * Math.PI) / 180;
-    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+  const calculateDistance = useCallback(
+    (lat1: number, lon1: number, lat2: number, lon2: number) => {
+      if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
 
-    const a =
-      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c; // distance in meters
+      const R = 6371e3; // Earth's radius in meters
+      const φ1 = (lat1 * Math.PI) / 180;
+      const φ2 = (lat2 * Math.PI) / 180;
+      const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+      const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-    return distance;
-  };
+      const a =
+        Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+        Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c; // distance in meters
+
+      return distance;
+    },
+    []
+  );
 
   useEffect(() => {
     if (location && customerLocation) {
@@ -130,7 +159,8 @@ export default function Track() {
       const currentLng = location.coords.longitude;
       const customerLat = customerLocation.latitude;
       const customerLng = customerLocation.longitude;
-      console.log(customerLat, customerLng);
+
+      console.log("Customer location:", customerLat, customerLng);
       const distance = calculateDistance(
         currentLat,
         currentLng,
@@ -144,7 +174,7 @@ export default function Track() {
         setStatus("Arrived");
       }
     }
-  }, [location, customerLocation]);
+  }, [location, customerLocation, calculateDistance]);
 
   useEffect(() => {
     if (orderId && !isOrderLoaded) {
@@ -160,7 +190,6 @@ export default function Track() {
       useNativeDriver: true,
     }).start();
 
-    // Get current location and subscribe to updates
     let isMounted = true;
 
     const setupLocationTracking = async () => {
@@ -183,12 +212,12 @@ export default function Track() {
           setLocation(currentLocation);
         }
 
-        // Subscribe to location updates - properly store the subscription
+        // Subscribe to location updates
         const subscription = await Location.watchPositionAsync(
           {
             accuracy: Location.Accuracy.BestForNavigation,
-            distanceInterval: 5, // Update every 5 meters
-            timeInterval: 5000, // Or every 5 seconds
+            distanceInterval: 5,
+            timeInterval: 5000,
           },
           (newLocation) => {
             if (isMounted) {
@@ -197,13 +226,13 @@ export default function Track() {
           }
         );
 
-        // Store the subscription reference
         locationSubscriptionRef.current = subscription;
       } catch (error) {
         console.error("Error getting location:", error);
         if (isMounted) {
-          setErrorMsg("Failed to get your location");
-          setIsLoading(false);
+          setErrorMsg(
+            "Failed to get your location. Please check your GPS settings."
+          );
         }
       }
     };
@@ -212,7 +241,6 @@ export default function Track() {
 
     return () => {
       isMounted = false;
-      // Use the ref for cleanup instead of the variable
       if (locationSubscriptionRef.current) {
         locationSubscriptionRef.current.remove();
       }
@@ -241,20 +269,48 @@ export default function Track() {
 
       // Set loading to false since we have both locations
       setIsLoading(false);
+    } else if (location && !customerLocation && order) {
+      // We have location but no customer location, still show map
+      setIsLoading(false);
     }
-  }, [location, customerLocation]);
+  }, [location, customerLocation, order]);
 
   const handleAlert = useCallback(() => {
-    // Implement alert functionality
     console.log("Alert sent to customer");
     Alert.alert("Success", "Alert sent to customer");
   }, []);
 
+  // Show loading screen
   if (isLoading && !errorMsg && !order) {
     return (
       <View style={styles.fullScreenLoading}>
         <ActivityIndicator size="large" color={Colors.primary} />
         <Text style={styles.loadingText}>Loading order details...</Text>
+      </View>
+    );
+  }
+
+  // Show error screen
+  if (errorMsg && !order) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{errorMsg}</Text>
+        <Button
+          title="Retry"
+          onPress={() => {
+            setErrorMsg(null);
+            setIsOrderLoaded(false);
+            getOrderDetails();
+          }}
+          variant="primary"
+          paddingvertical={12}
+        />
+        <Button
+          title="Go Back"
+          onPress={() => router.back()}
+          variant="secondary"
+          paddingvertical={12}
+        />
       </View>
     );
   }
@@ -326,11 +382,12 @@ export default function Track() {
       formData.append("status", "on-way");
 
       const response = await apiCall(formData);
-      router.push({
-        pathname: "/order/order_place",
-        params: { orderId: orderId },
-      });
+
       if (response && response.result === true) {
+        router.push({
+          pathname: "/order/order_place",
+          params: { orderId: orderId },
+        });
       } else {
         Alert.alert("Error", "Failed to accept job request");
       }
@@ -342,6 +399,32 @@ export default function Track() {
     }
   };
 
+  // Determine the initial region for the map
+  const getInitialRegion = () => {
+    if (location) {
+      return {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+    } else if (customerLocation) {
+      return {
+        latitude: customerLocation.latitude,
+        longitude: customerLocation.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+    } else {
+      return {
+        latitude: DEFAULT_LOCATION.latitude,
+        longitude: DEFAULT_LOCATION.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+    }
+  };
+
   return (
     <SafeAreaProvider style={styles.container}>
       {/* Map View */}
@@ -350,42 +433,29 @@ export default function Track() {
           <ActivityIndicator size="large" color={Colors.primary} />
           <Text style={styles.loadingText}>Getting location...</Text>
         </View>
-      ) : errorMsg ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{errorMsg}</Text>
-          <Button
-            title="Go Back"
-            onPress={() => router.back()}
-            variant="primary"
-            paddingvertical={12}
-          />
-        </View>
       ) : (
         <MapView
           ref={mapRef}
           style={styles.map}
           provider={PROVIDER_GOOGLE}
-          initialRegion={{
-            latitude: location?.coords.latitude || customerLocation.latitude,
-            longitude: location?.coords.longitude || customerLocation.longitude,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
-          }}
+          initialRegion={getInitialRegion()}
           showsUserLocation={true}
           showsMyLocationButton={false}
         >
-          {/* Customer marker */}
-          <Marker
-            coordinate={customerLocation}
-            title={order?.user?.name || "Customer"}
-            description={order?.user?.address || "Customer location"}
-          >
-            <View style={styles.markerContainer}>
-              <Ionicons name="person" size={20} color="#fff" />
-            </View>
-          </Marker>
+          {/* Customer marker - only show if customerLocation exists */}
+          {customerLocation && (
+            <Marker
+              coordinate={customerLocation}
+              title={order?.user?.name || "Customer"}
+              description={order?.user?.address || "Customer location"}
+            >
+              <View style={styles.markerContainer}>
+                <Ionicons name="person" size={20} color="#fff" />
+              </View>
+            </Marker>
+          )}
 
-          {/* Route line */}
+          {/* Route line - only show if we have both locations */}
           {routeCoordinates.length > 0 && (
             <Polyline
               coordinates={routeCoordinates}
@@ -425,7 +495,6 @@ export default function Track() {
           </View>
         ) : (
           <>
-            {" "}
             <View style={styles.contentHeader}>
               <Profile />
               <Text style={styles.title}>
@@ -464,7 +533,7 @@ export default function Track() {
                   <Text
                     style={[
                       styles.statusText,
-                      status === "Arrived" || "Started"
+                      status === "Arrived" || status === "Started"
                         ? styles.activeStatusText
                         : {},
                     ]}
@@ -484,6 +553,7 @@ export default function Track() {
                   </Text>
                 </View>
               )}
+
               {order?.status === "accepted" && (
                 <View>
                   <Button title="On the way" onPress={handleOnway} />
@@ -519,6 +589,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
+    fontFamily: FONTS.regular,
     color: Colors.primary,
   },
   errorContainer: {
@@ -526,10 +597,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    gap: 16,
   },
   errorText: {
     fontSize: 16,
     color: "red",
+    fontFamily: FONTS.regular,
     textAlign: "center",
     marginBottom: 20,
   },
@@ -553,12 +626,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.gray300,
     textAlign: "center",
+    fontFamily: FONTS.regular,
     marginTop: 14,
   },
   statusText2: {
     fontSize: 12,
     color: Colors.gray300,
     textAlign: "center",
+    fontFamily: FONTS.regular,
   },
   activeStatusText: {
     color: Colors.primary,
@@ -594,7 +669,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     overflow: "hidden",
-    maxHeight: "60%", // Prevent overflow
+    maxHeight: "60%",
   },
   contentHeader: {
     backgroundColor: Colors.primary,
@@ -610,6 +685,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
     maxWidth: "80%",
+    fontFamily: FONTS.regular,
   },
   content: {
     paddingHorizontal: 16,
@@ -651,6 +727,7 @@ const styles = StyleSheet.create({
   noOrderText: {
     fontSize: 16,
     color: Colors.gray300,
+    fontFamily: FONTS.regular,
   },
   arrived: {
     width: "100%",
@@ -662,13 +739,14 @@ const styles = StyleSheet.create({
   arrivedTitle: {
     fontSize: 22,
     color: Colors.secondary,
-    fontWeight: "700",
+    fontFamily: FONTS.bold,
     marginTop: 12,
   },
   arrivedText: {
     fontSize: 17,
     paddingHorizontal: 16,
     marginBottom: 12,
+    fontFamily: FONTS.regular,
     textAlign: "center",
   },
 });

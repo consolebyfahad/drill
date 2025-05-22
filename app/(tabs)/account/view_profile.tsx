@@ -23,6 +23,7 @@ import { apiCall } from "~/utils/api";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Verify from "@/assets/svgs/verify.svg";
 import defaultProfile from "@/assets/images/default-profile.png";
+import { FONTS } from "~/constants/Fonts";
 
 type Order = {
   id: string;
@@ -355,7 +356,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 28,
-    fontWeight: "700",
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
   },
   ratingContainer: {
@@ -370,14 +371,17 @@ const styles = StyleSheet.create({
   reviewCount: {
     color: Colors.gray300,
     fontSize: 12,
+    fontFamily: FONTS.regular,
   },
   balance: {
     color: Colors.secondary300,
     fontSize: 17,
+    fontFamily: FONTS.regular,
   },
   userEmail: {
     color: Colors.secondary300,
     fontSize: 17,
+    fontFamily: FONTS.regular,
     marginTop: 4,
   },
   locationContainer: {
@@ -389,6 +393,7 @@ const styles = StyleSheet.create({
   locationText: {
     color: Colors.secondary300,
     fontSize: 17,
+    fontFamily: FONTS.regular,
   },
   verification: {
     flexDirection: "row",
@@ -406,7 +411,7 @@ const styles = StyleSheet.create({
   orderCount: {
     fontSize: 14,
     color: Colors.secondary300,
-    fontWeight: "normal",
+    fontFamily: FONTS.regular,
   },
   loadingText: {
     textAlign: "center",

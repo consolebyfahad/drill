@@ -10,6 +10,7 @@ import React, { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { Colors } from "@/constants/Colors";
 import Camera from "@/assets/svgs/camera.svg";
+import { FONTS } from "~/constants/Fonts";
 
 export default function SelectedImage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -83,7 +84,7 @@ export default function SelectedImage() {
 const styles = StyleSheet.create({
   title: {
     fontSize: 18,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     marginBottom: 8,
     color: Colors.secondary,
   },

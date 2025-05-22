@@ -4,6 +4,7 @@ import BackArrow from "@/assets/svgs/Arrow.svg";
 import ChatSupport from "@/assets/svgs/chatSupport.svg";
 import { Colors } from "~/constants/Colors";
 import Add from "@/assets/svgs/add.svg";
+import { FONTS } from "~/constants/Fonts";
 
 type HeaderProps = {
   userName?: string;
@@ -96,7 +97,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: "600",
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
   },
   userContainer: {
@@ -111,12 +112,12 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 22,
-    fontWeight: "600",
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
   },
   userName: {
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     color: Colors.secondary100,
   },
 });

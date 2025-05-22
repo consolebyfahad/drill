@@ -18,6 +18,7 @@ import Button from "./button";
 import { router } from "expo-router";
 import { apiCall } from "~/utils/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { FONTS } from "~/constants/Fonts";
 
 type PopupType = "timeup" | "tipup" | "orderComplete" | "review";
 
@@ -286,7 +287,7 @@ const styles = StyleSheet.create({
   title: {
     color: Colors.secondary,
     fontSize: 22,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     textAlign: "center",
     marginBottom: 8,
   },
@@ -296,6 +297,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 16,
     paddingHorizontal: 10,
+    fontFamily: FONTS.regular,
   },
   input: {
     width: "100%",
@@ -305,6 +307,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 10,
     textAlign: "center",
+    fontFamily: FONTS.regular,
   },
   starsContainer: {
     flexDirection: "row",
@@ -320,7 +323,7 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     color: Colors.black,
     textAlign: "center",
     marginTop: 5,
@@ -332,6 +335,7 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: 16,
     marginTop: 10,
+    fontFamily: FONTS.regular,
     textAlignVertical: "top",
     height: 100,
   },

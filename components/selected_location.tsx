@@ -3,6 +3,7 @@ import React from "react";
 import { router } from "expo-router";
 import Location from "@/assets/svgs/locationIcon.svg";
 import { Colors } from "@/constants/Colors";
+import { FONTS } from "~/constants/Fonts";
 
 export default function SelectedLocation() {
   const handleLocation = () => {
@@ -39,11 +40,12 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     color: Colors.secondary,
   },
   changeText: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: Colors.primary,
   },
   locationContainer: {

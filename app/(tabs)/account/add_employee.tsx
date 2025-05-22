@@ -30,6 +30,7 @@ import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DropDownPicker from "react-native-dropdown-picker";
+import { FONTS } from "~/constants/Fonts";
 
 type Employee = {
   name: string;
@@ -677,7 +678,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: 24,
-    fontWeight: "500",
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
     marginTop: 12,
   },
@@ -692,7 +693,7 @@ const styles = StyleSheet.create({
   },
   dropdownLabel: {
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
     marginBottom: 8,
   },
@@ -703,6 +704,7 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: Colors.secondary,
   },
   dropdownList: {
@@ -727,7 +729,7 @@ const styles = StyleSheet.create({
   },
   uploadDocumentTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
     marginBottom: 16,
     textAlign: "center",
@@ -735,7 +737,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 16,
     color: Colors.secondary,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     marginBottom: 8,
     marginTop: 16,
   },
@@ -768,12 +770,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.secondary300,
     textAlign: "center",
-    fontWeight: "500",
+    fontFamily: FONTS.medium,
   },
   uploadSizeText: {
     fontSize: 12,
     color: Colors.secondary300,
     marginTop: 4,
+    fontFamily: FONTS.regular,
   },
   documentImage: {
     width: "100%",
@@ -787,5 +790,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
+    fontFamily: FONTS.regular,
   },
 });

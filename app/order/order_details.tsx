@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import ProviderCard from "../../components/provider_card";
 import { OrderType } from "~/types/dataTypes";
 import OrderDetailsSection from "~/components/order_details";
+import { FONTS } from "~/constants/Fonts";
 
 export default function OrderDetails({ order }: OrderType) {
   const [showOrderDetails, setShowOrderDetails] = useState(false);
@@ -62,7 +63,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "500",
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
   },
   noImage: {

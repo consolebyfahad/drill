@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "~/constants/Colors";
+import { FONTS } from "~/constants/Fonts";
 import { apiCall } from "~/utils/api";
 
 type InputRef = TextInput | null;
@@ -175,13 +176,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     textAlign: "center",
     color: Colors.secondary,
   },
   title: {
     fontSize: 36,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     marginBottom: 8,
     color: Colors.secondary,
   },
@@ -189,6 +190,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: Colors.secondary100,
     marginBottom: 24,
+    fontFamily: FONTS.medium,
   },
   otpContainer: {
     alignItems: "center",
@@ -215,6 +217,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.gray200,
     textAlign: "center",
     fontSize: 20,
+    fontFamily: FONTS.medium,
   },
   otpInputError: {
     borderColor: "red",
@@ -225,13 +228,15 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 12,
     textAlign: "center",
+    fontFamily: FONTS.medium,
   },
   resendText: {
     fontSize: 16,
     color: Colors.secondary100,
+    fontFamily: FONTS.medium,
   },
   resendLink: {
-    fontWeight: "500",
+    fontFamily: FONTS.medium,
     color: Colors.primary,
   },
 });

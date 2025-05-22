@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import DashedSeparator from "@/components/dashed_seprator";
 import { Colors } from "@/constants/Colors";
 import Tick from "@/assets/svgs/tick.svg";
+import { FONTS } from "~/constants/Fonts";
 interface StepperProps {
   step?: boolean;
 }
@@ -83,6 +84,7 @@ const styles = StyleSheet.create({
   stepText: {
     fontSize: 10,
     marginTop: 4,
+    fontFamily: FONTS.regular,
   },
   separator: {
     marginHorizontal: 14,

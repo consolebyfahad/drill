@@ -8,6 +8,7 @@ import {
   DimensionValue,
 } from "react-native";
 import { Colors } from "~/constants/Colors";
+import { FONTS } from "~/constants/Fonts";
 
 type ButtonProps = {
   title?: string;
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: FONTS.semiBold,
     textAlign: "center",
   },
   textPrimary: {

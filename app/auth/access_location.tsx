@@ -21,6 +21,7 @@ import {
   setupNotificationListeners,
 } from "~/utils/notification";
 import * as Device from "expo-device";
+import { FONTS } from "~/constants/Fonts";
 
 export default function AccessLocation() {
   const router = useRouter();
@@ -192,7 +193,7 @@ const styles = StyleSheet.create({
   },
   headerText: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     textAlign: "center",
     color: Colors.secondary,
   },
@@ -211,7 +212,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     marginBottom: 16,
     color: Colors.secondary,
   },
@@ -220,12 +221,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: Colors.secondary,
     marginBottom: 32,
-    lineHeight: 22, // Improved readability
+    lineHeight: 22,
+    fontFamily: FONTS.medium,
   },
   buttonContainer: {
     width: "100%",
     alignItems: "center",
-    marginBottom: 16, // Added bottom margin
+    marginBottom: 16,
   },
   laterContainer: {
     flexDirection: "row",
@@ -233,12 +235,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   laterBaseText: {
-    fontSize: 15, // Match size with laterText
+    fontSize: 15,
+    fontFamily: FONTS.regular,
     color: Colors.secondary,
   },
   laterText: {
     color: Colors.primary,
-    fontWeight: "bold",
+    fontFamily: FONTS.semiBold,
     fontSize: 15,
   },
   loader: {

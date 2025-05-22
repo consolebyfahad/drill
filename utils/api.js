@@ -19,6 +19,7 @@ export const apiCall = async (payload, method = "POST") => {
     console.log("✅ API Response:", JSON.stringify(data));
     return data;
   } catch (error) {
+    console.log("📡 API Request:", { BASE_URL });
     console.error("❌ API Error:", error.message);
     throw error;
   }

@@ -10,6 +10,7 @@ import Orders from "@/assets/svgs/orders.svg";
 import OrdersFill from "@/assets/svgs/orderFill.svg";
 import Profile from "@/assets/svgs/profileIcon.svg";
 import ProfileFill from "@/assets/svgs/profileFill.svg";
+import { FONTS } from "~/constants/Fonts";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -34,6 +35,7 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           color: Colors.secondary,
           fontSize: 12,
+          fontFamily: FONTS.regular,
           marginBottom: 5,
         },
       }}

@@ -4,7 +4,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
 import {
-  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -16,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "~/constants/Colors";
 import { apiCall } from "~/utils/api";
 import Flag from "@/assets/svgs/flag.svg";
+import { FONTS } from "~/constants/Fonts";
 type CountryCode = {
   key: number;
   label: string;
@@ -93,10 +93,6 @@ export default function Login() {
           onPress={() => modalRef.current.open()}
           style={styles.countrySelector}
         >
-          {/* <Image
-            source={require("@/assets/images/saudia.png")}
-            style={styles.countryFlag}
-          /> */}
           <Flag width={25} height={25} />
           <Text style={styles.countryText}>{countryCode.label}</Text>
           <Ionicons name="chevron-down" size={20} />
@@ -144,7 +140,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 36,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     marginBottom: 8,
     color: Colors.secondary,
   },
@@ -152,6 +148,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: Colors.secondary100,
     marginBottom: 32,
+    fontFamily: FONTS.medium,
   },
   inputContainer: {
     borderWidth: 1,
@@ -173,6 +170,7 @@ const styles = StyleSheet.create({
   countryText: {
     fontSize: 18,
     color: Colors.secondary,
+    fontFamily: FONTS.medium,
   },
   divider: {
     borderTopWidth: 1,
@@ -181,11 +179,12 @@ const styles = StyleSheet.create({
   input: {
     padding: 16,
     fontSize: 18,
+    fontFamily: FONTS.regular,
   },
   privacyText: {
     textAlign: "center",
     fontSize: 14,
-    fontWeight: "bold",
+    fontFamily: FONTS.semiBold,
     color: Colors.secondary,
     marginBottom: 24,
   },
@@ -198,5 +197,6 @@ const styles = StyleSheet.create({
     marginTop: -20,
     marginBottom: 16,
     paddingLeft: 12,
+    fontFamily: FONTS.semiBold,
   },
 });

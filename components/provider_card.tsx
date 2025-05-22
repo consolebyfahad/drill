@@ -6,6 +6,7 @@ import { router } from "expo-router";
 import Direction from "@/assets/svgs/routing.svg";
 import Call from "@/assets/svgs/Calling.svg";
 import Chat from "@/assets/svgs/Chat.svg";
+import { FONTS } from "~/constants/Fonts";
 // Define types based on the API response structure
 type User = {
   id?: any;
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   providerName: {
-    fontWeight: "600",
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
     fontSize: 18,
     marginBottom: 4,
@@ -172,11 +173,13 @@ const styles = StyleSheet.create({
   providerContact: {
     color: Colors.secondary300,
     fontSize: 14,
+    fontFamily: FONTS.regular,
     marginTop: 2,
   },
   grayText: {
     color: Colors.secondary,
     fontSize: 14,
+    fontFamily: FONTS.regular,
   },
   buttonRow: {
     flexDirection: "row",
@@ -191,6 +194,7 @@ const styles = StyleSheet.create({
   },
   iconText: {
     fontSize: 12,
+    fontFamily: FONTS.regular,
   },
   noProviderContainer: {
     padding: 16,

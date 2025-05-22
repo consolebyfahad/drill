@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View, Image, TouchableOpacity } from "react-native";
 import React from "react";
 import { FontAwesome } from "@expo/vector-icons";
+import { FONTS } from "~/constants/Fonts";
 
 export default function BuyerCard({ buyer }) {
   return (
@@ -46,7 +47,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: FONTS.bold,
     marginTop: 10,
     marginBottom: 5,
     textAlign: "center",
@@ -65,5 +66,6 @@ const styles = StyleSheet.create({
   reviewCount: {
     color: "#777",
     fontSize: 12,
+    fontFamily: FONTS.regular,
   },
 });

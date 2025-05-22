@@ -2,6 +2,7 @@ import { View, Text, Image, StyleSheet } from "react-native";
 import React from "react";
 import Star from "@/assets/svgs/Star.svg";
 import { Colors } from "~/constants/Colors";
+import { FONTS } from "~/constants/Fonts";
 
 type ServiceCardProps = {
   item: {
@@ -76,7 +77,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: "600",
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
     width: 112,
     lineHeight: 22,
@@ -93,6 +94,7 @@ const styles = StyleSheet.create({
   },
   reviews: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: Colors.secondary300,
   },
   price: {
@@ -102,7 +104,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     borderRadius: 24,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
   },
   providerContainer: {
     flexDirection: "row",
@@ -115,11 +117,12 @@ const styles = StyleSheet.create({
   },
   providerName: {
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     color: Colors.secondary,
   },
   providerLabel: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: Colors.secondary300,
   },
 });

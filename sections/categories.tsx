@@ -10,6 +10,7 @@ import { router } from "expo-router";
 import { Colors } from "~/constants/Colors";
 import CategoryCard from "@/components/category_card";
 import Plumber from "@/assets/images/default-profile.png";
+import { FONTS } from "~/constants/Fonts";
 
 type Category = {
   id: string;
@@ -76,7 +77,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
   },
   seeAllText: {

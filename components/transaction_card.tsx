@@ -2,6 +2,7 @@ import { View, Text, StyleSheet } from "react-native";
 import React from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { Colors } from "@/constants/Colors";
+import { FONTS } from "~/constants/Fonts";
 
 interface TransactionCardProps {
   type: string;
@@ -68,16 +69,17 @@ const styles = StyleSheet.create({
   },
   typeText: {
     fontSize: 16,
-    fontWeight: "500",
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
   },
   timeText: {
     fontSize: 14,
+    fontFamily: FONTS.regular,
     color: "#9CA3AF",
   },
   amountText: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: FONTS.bold,
   },
   positive: {
     color: "#10B981",

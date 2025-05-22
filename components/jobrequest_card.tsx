@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "~/constants/Colors";
 import Button from "./button";
+import { FONTS } from "~/constants/Fonts";
 
 interface JobRequestCardProps {
   userName?: string;
@@ -139,7 +140,7 @@ const styles = StyleSheet.create({
   },
   header: {
     fontSize: 15,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     color: "#333",
     marginBottom: 16,
     textAlign: "left",
@@ -176,13 +177,14 @@ const styles = StyleSheet.create({
   },
   serviceTitle: {
     color: Colors.white,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
     fontSize: 13,
     marginBottom: 4,
   },
   packageTitle: {
     color: Colors.white,
     fontSize: 11,
+    fontFamily: FONTS.regular,
   },
   mapContainer: {
     borderWidth: 1,
@@ -211,6 +213,7 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 12,
     color: "#333",
+    fontFamily: FONTS.regular,
   },
   locationContainer: {
     backgroundColor: "white",
@@ -232,11 +235,12 @@ const styles = StyleSheet.create({
     color: Colors.secondary300,
     fontSize: 12,
     marginBottom: 4,
+    fontFamily: FONTS.regular,
   },
   locationAddress: {
     color: Colors.secondary,
     fontSize: 14,
-    fontWeight: "500",
+    fontFamily: FONTS.semiBold,
   },
   divider: {
     height: 1,

@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { FONTS } from "~/constants/Fonts";
 import { apiCall } from "~/utils/api";
 
 export type OrderApiResponse = {
@@ -220,6 +221,7 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     fontSize: 16,
+    fontFamily: FONTS.regular,
     color: Colors.secondary,
   },
   dropdownList: {
@@ -245,6 +247,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
+    fontFamily: FONTS.regular,
     color: Colors.secondary,
   },
   noOrdersContainer: {
@@ -254,6 +257,7 @@ const styles = StyleSheet.create({
   },
   noOrdersText: {
     fontSize: 16,
+    fontFamily: FONTS.regular,
     color: Colors.secondary300,
   },
 });

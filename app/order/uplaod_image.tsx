@@ -15,6 +15,7 @@ import Verify from "@/assets/svgs/grayTick.svg";
 import Verified from "@/assets/svgs/doubletickicon.svg";
 import { apiCall } from "~/utils/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { FONTS } from "~/constants/Fonts";
 
 export default function UploadImage() {
   const router = useRouter();
@@ -161,12 +162,13 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 22,
-    fontWeight: 600,
+    fontFamily: FONTS.bold,
     color: Colors.secondary,
     marginVertical: 10,
   },
   subText: {
     fontSize: 17,
+    fontFamily: FONTS.regular,
     color: Colors.secondary100,
     marginBottom: 40,
     textAlign: "center",
