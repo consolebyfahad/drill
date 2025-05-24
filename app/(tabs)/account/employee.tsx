@@ -20,17 +20,28 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiCall } from "~/utils/api";
 import { FONTS } from "~/constants/Fonts";
 
-// Employee type definition
+// Updated Employee type definition to match API response
 type Employee = {
   id: string;
   name: string;
+  email: string;
   image: string | null;
-  rating: number;
-  reviewCount: number;
-  employeeCode: string;
-  status: "Active" | "In-Active" | "NA";
-  verificationStatus: "Verified" | "Pending" | "Rejected";
+  thumb?: string;
+  image_url: string;
+  phone: string;
+  address: string;
+  city: string;
+  iqama_id: string;
+  dob: string;
+  status: string; // "1" or "0"
+  online_status: string; // "1" or "0"
+  company_verified: string; // "1" or "0"
+  platform_status: string; // "1" or "0"
+  rating?: number;
+  review?: number;
+  employeeCode?: string;
   pendingApproval?: string;
+  timestamp: string;
 };
 
 // Filter options for the dropdown
@@ -38,8 +49,10 @@ const filterOptions = [
   { label: "All", value: "all" },
   { label: "Active", value: "active" },
   { label: "Inactive", value: "inactive" },
-  { label: "Pending", value: "pending" },
+  { label: "Online", value: "online" },
+  { label: "Offline", value: "offline" },
   { label: "Verified", value: "verified" },
+  { label: "Pending Verification", value: "pending" },
 ];
 
 export default function Employee() {
@@ -82,20 +95,22 @@ export default function Employee() {
 
     switch (filter) {
       case "active":
-        filtered = employees.filter((emp) => emp.status === "Active");
+        filtered = employees.filter((emp) => emp.status === "1");
         break;
       case "inactive":
-        filtered = employees.filter((emp) => emp.status === "In-Active");
+        filtered = employees.filter((emp) => emp.status === "0");
         break;
-      case "pending":
-        filtered = employees.filter(
-          (emp) => emp.verificationStatus === "Pending"
-        );
+      case "online":
+        filtered = employees.filter((emp) => emp.online_status === "1");
+        break;
+      case "offline":
+        filtered = employees.filter((emp) => emp.online_status === "0");
         break;
       case "verified":
-        filtered = employees.filter(
-          (emp) => emp.verificationStatus === "Verified"
-        );
+        filtered = employees.filter((emp) => emp.company_verified === "1");
+        break;
+      case "pending":
+        filtered = employees.filter((emp) => emp.company_verified === "0");
         break;
       default:
         filtered = employees;
@@ -117,18 +132,16 @@ export default function Employee() {
       }
 
       const formData = new FormData();
-      formData.append("type", "data");
-      formData.append("table_name", "user");
+      formData.append("type", "get_data");
+      formData.append("table_name", "users");
       formData.append("user_type", "employee");
       formData.append("company_id", userId);
 
       const response = await apiCall(formData);
 
-      if (!response || !Array.isArray(response)) {
-        throw new Error("Invalid response from server");
-      }
-
-      setEmployees(response);
+      // Handle the response structure based on your API
+      const employeeData = response.data || response;
+      setEmployees(employeeData);
     } catch (err: any) {
       console.error("Failed to fetch employees:", err);
       setError(err.message || "Failed to fetch employees");
@@ -146,10 +159,10 @@ export default function Employee() {
 
   // Navigate to employee profile
   const handleViewProfile = (employeeId: string) => {
-    router.push({
-      pathname: "/account/view_profile",
-      params: { employeeId },
-    });
+    // router.push({
+    //   pathname: "/account/view_profile",
+    //   params: { employeeId },
+    // });
   };
 
   // Add a new employee
@@ -157,97 +170,99 @@ export default function Employee() {
     router.push("/account/add_employee");
   };
 
-  // Employee card component
-  const EmployeeCard = ({ employee }: { employee: Employee }) => (
-    <TouchableOpacity
-      style={styles.employeeCard}
-      onPress={() => handleViewProfile(employee.id)}
-      activeOpacity={0.7}
-    >
-      {/* Employee image */}
-      <View style={styles.employeeImageContainer}>
-        <Image
-          source={employee.image ? { uri: employee.image } : defaultAvatar}
-          style={styles.employeeImage}
-          resizeMode="cover"
-          defaultSource={defaultAvatar}
-        />
-      </View>
-
-      {/* Employee details */}
-      <View style={styles.employeeDetails}>
-        <Text
-          style={styles.employeeName}
-          numberOfLines={1}
-          ellipsizeMode="tail"
-        >
-          {employee.name}
-        </Text>
-
-        {employee.rating > 0 && (
-          <View style={styles.ratingContainer}>
-            <Ionicons name="star" size={16} color="#FFC107" />
-            <Text style={styles.ratingText}>
-              {employee.rating.toFixed(1)} ({employee.reviewCount}+ review)
-            </Text>
-          </View>
-        )}
-
-        <Text style={styles.employeeCode} numberOfLines={1}>
-          Employee Code: {employee.employeeCode}
-        </Text>
-
-        <Text style={styles.employeeStatus}>
-          Status:{" "}
-          <Text style={getStatusStyle(employee.status)}>{employee.status}</Text>
-        </Text>
-
-        {employee.pendingApproval && (
-          <View style={styles.pendingContainer}>
-            <Text style={styles.pendingLabel}>Action: </Text>
-            <Text style={styles.pendingText}>{employee.pendingApproval}</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Verification status */}
-      <View style={styles.verificationContainer}>
-        {employee.verificationStatus === "Verified" ? (
-          <View style={styles.verifiedBadge}>
-            <Text style={styles.verifiedText}>Verified</Text>
-          </View>
-        ) : employee.verificationStatus === "Pending" ? (
-          <View style={styles.pendingBadge}>
-            <Text style={styles.pendingBadgeText}>Pending</Text>
-          </View>
-        ) : employee.verificationStatus === "Rejected" ? (
-          <View style={styles.rejectedBadge}>
-            <Text style={styles.rejectedText}>Rejected</Text>
-          </View>
-        ) : null}
-      </View>
-
-      {/* Arrow indicator for navigation */}
-      <View style={styles.arrowContainer}>
-        <Ionicons
-          name="chevron-forward"
-          size={20}
-          color={Colors.secondary300}
-        />
-      </View>
-    </TouchableOpacity>
-  );
-
-  // Get style based on employee status
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case "Active":
-        return styles.activeStatus;
-      case "In-Active":
-        return styles.inactiveStatus;
-      default:
-        return styles.naStatus;
+  // Helper function to get employee image URL
+  const getEmployeeImageUrl = (employee: Employee) => {
+    if (employee.thumb) {
+      return employee.thumb;
+    } else if (employee.image && employee.image_url) {
+      return employee.image_url + employee.image;
     }
+    return null;
+  };
+
+  // Helper function to get status text and style
+  const getEmployeeStatus = (employee: Employee) => {
+    const isActive = employee.status === "1";
+    const isOnline = employee.online_status === "1";
+
+    if (isActive && isOnline)
+      return { text: "Active & Online", style: styles.activeStatus };
+    if (isActive && !isOnline)
+      return { text: "Active & Offline", style: styles.activeOfflineStatus };
+    return { text: "Inactive", style: styles.inactiveStatus };
+  };
+
+  // Helper function to get verification status
+  const getVerificationStatus = (employee: Employee) => {
+    return employee.company_verified === "1" && employee.platform_status === "1"
+      ? "Verified"
+      : "Pending";
+  };
+
+  // Employee card component
+  const EmployeeCard = ({ employee }: { employee: Employee }) => {
+    const statusInfo = getEmployeeStatus(employee);
+    const verificationStatus = getVerificationStatus(employee);
+    const imageUrl = getEmployeeImageUrl(employee);
+
+    return (
+      <TouchableOpacity
+        style={styles.employeeCard}
+        onPress={() => handleViewProfile(employee.id)}
+        activeOpacity={0.7}
+      >
+        {/* Employee image */}
+        <View style={styles.employeeImageContainer}>
+          <Image
+            source={imageUrl ? { uri: imageUrl } : defaultAvatar}
+            style={styles.employeeImage}
+            resizeMode="cover"
+            defaultSource={defaultAvatar}
+          />
+          {/* Online status indicator */}
+          {employee.online_status === "1" && (
+            <View style={styles.onlineIndicator} />
+          )}
+        </View>
+
+        {/* Employee details */}
+        <View style={styles.employeeDetails}>
+          <Text
+            style={styles.employeeName}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {employee.name}
+          </Text>
+
+          {employee?.rating && (
+            <Text style={styles.employeeEmail} numberOfLines={1}>
+              {employee?.rating} ( {employee?.review})
+            </Text>
+          )}
+
+          <Text style={styles.employeePhone} numberOfLines={1}>
+            Employee Code: {employee?.code}
+          </Text>
+          <Text style={styles.employeeStatus}>
+            Status: <Text style={statusInfo.style}>{statusInfo.text}</Text>
+          </Text>
+        </View>
+
+        {/* Verification status */}
+        <View style={styles.verificationContainer}>
+          {verificationStatus === "Verified" ? (
+            <View style={styles.verifiedBadge}>
+              <Text style={styles.verifiedText}>Verified</Text>
+            </View>
+          ) : (
+            <View style={styles.pendingBadge}>
+              <Text style={styles.pendingBadgeText}>1/2 Pending</Text>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -261,7 +276,6 @@ export default function Employee() {
 
       {/* Filter dropdown */}
       <View style={styles.dropdownContainer}>
-        <Text style={styles.filterLabel}>Filter Employees:</Text>
         <DropDownPicker
           open={open}
           value={filterValue}
@@ -351,13 +365,12 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   dropdownContainer: {
-    marginHorizontal: 16,
     marginTop: 16,
-    marginBottom: 16,
+    marginBottom: 26,
     zIndex: 100,
   },
   dropdown: {
-    borderColor: "#e0e0e0",
+    borderColor: "#f5f5f5",
     borderRadius: 8,
     backgroundColor: "#f5f5f5",
     borderWidth: 1,
@@ -382,7 +395,6 @@ const styles = StyleSheet.create({
     color: "#aaa",
   },
   listContainer: {
-    // paddingBottom: 80,
     flexGrow: 1,
   },
   loadingContainer: {
@@ -457,33 +469,47 @@ const styles = StyleSheet.create({
   },
   employeeImageContainer: {
     marginRight: 16,
+    position: "relative",
   },
   employeeImage: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#f0f0f0", // Placeholder background
+    backgroundColor: "#f0f0f0",
+  },
+  onlineIndicator: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#4CAF50",
+    borderWidth: 2,
+    borderColor: "white",
   },
   employeeDetails: {
     flex: 1,
+    gap: 3,
     justifyContent: "center",
   },
   employeeName: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: FONTS.semiBold,
     color: Colors.secondary,
     marginBottom: 4,
   },
-  ratingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  ratingText: {
+  employeeEmail: {
     fontSize: 14,
     fontFamily: FONTS.regular,
-    color: Colors.secondary,
-    marginLeft: 4,
+    color: Colors.secondary300,
+    marginBottom: 2,
+  },
+  employeePhone: {
+    fontSize: 14,
+    fontFamily: FONTS.regular,
+    color: Colors.secondary300,
+    marginBottom: 2,
   },
   employeeCode: {
     fontSize: 14,
@@ -500,32 +526,18 @@ const styles = StyleSheet.create({
     color: Colors.success,
     fontWeight: "500",
   },
+  activeOfflineStatus: {
+    color: "#FF9800",
+    fontWeight: "500",
+  },
   inactiveStatus: {
     color: Colors.danger,
     fontWeight: "500",
   },
-  naStatus: {
-    color: Colors.secondary300,
-    fontWeight: "500",
-  },
-  pendingContainer: {
-    flexDirection: "row",
-    marginTop: 4,
-  },
-  pendingLabel: {
-    fontSize: 14,
-    fontFamily: FONTS.regular,
-    color: Colors.secondary300,
-  },
-  pendingText: {
-    fontSize: 14,
-    color: Colors.primary,
-    fontFamily: FONTS.medium,
-  },
   verificationContainer: {
     position: "absolute",
     top: 16,
-    right: 36, // Make space for the arrow
+    right: 10,
   },
   verifiedBadge: {
     backgroundColor: "#e8f5e9",
@@ -539,23 +551,11 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.semiBold,
   },
   pendingBadge: {
-    backgroundColor: "#fff8e1",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 16,
+    backgroundColor: Colors.danger100,
+    padding: 12,
+    borderRadius: 8,
   },
   pendingBadgeText: {
-    color: "#ffa000",
-    fontSize: 12,
-    fontFamily: FONTS.semiBold,
-  },
-  rejectedBadge: {
-    backgroundColor: "#ffebee",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 16,
-  },
-  rejectedText: {
     color: Colors.danger,
     fontSize: 12,
     fontFamily: FONTS.semiBold,

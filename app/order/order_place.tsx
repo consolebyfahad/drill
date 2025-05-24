@@ -36,6 +36,12 @@ interface NotificationData {
   message?: string;
 }
 
+interface UserLocationData {
+  userId: string | null;
+  latitude: string | null;
+  longitude: string | null;
+}
+
 const OrderPlace: React.FC = () => {
   const { showToast } = useToast();
   const { orderId, tab } = useLocalSearchParams();
@@ -46,29 +52,53 @@ const OrderPlace: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [order, setOrder] = useState<OrderType | null>(null);
   const [tipAmount, setTipAmount] = useState("");
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userLocationData, setUserLocationData] = useState<UserLocationData>({
+    userId: null,
+    latitude: null,
+    longitude: null,
+  });
 
   const showPopup = popupType !== null;
 
+  // Single useEffect to initialize all data
   useEffect(() => {
-    const initFCM = async () => {
+    const initializeAppData = async () => {
       try {
+        // Initialize FCM
         await requestFCMPermission();
         const token = await getFCMToken();
         console.log("📲 Provider OrderPlace - User FCM Token:", token);
 
-        // Store user ID for later use
-        const storedUserId = await AsyncStorage.getItem("user_id");
-        setUserId(storedUserId);
+        // Get all required data from AsyncStorage
+        const [storedUserId, storedLatitude, storedLongitude] =
+          await Promise.all([
+            AsyncStorage.getItem("user_id"),
+            AsyncStorage.getItem("latitide"), // Note: keeping original typo to match existing code
+            AsyncStorage.getItem("longitude"),
+          ]);
+
+        // Set user location data
+        setUserLocationData({
+          userId: storedUserId,
+          latitude: storedLatitude,
+          longitude: storedLongitude,
+        });
+
+        console.log("📍 User Data:", {
+          userId: storedUserId,
+          latitude: storedLatitude,
+          longitude: storedLongitude,
+        });
       } catch (error) {
-        console.error("Error initializing FCM:", error);
+        console.error("Error initializing app data:", error);
+        showToast("Failed to initialize application data", "error");
       }
     };
 
     const handleNotificationPress = async (data: NotificationData) => {
       console.log("🚨 Provider OrderPlace - Notification received:", data);
 
-      if (data?.order_id === orderId) {
+      if (data?.order_id === String(orderId)) {
         // Refresh order details when notification is received
         await getOrderDetails();
 
@@ -99,13 +129,13 @@ const OrderPlace: React.FC = () => {
       }
     };
 
-    initFCM();
+    initializeAppData();
     const unsubscribe = setupNotificationListeners(handleNotificationPress);
 
     return () => {
       unsubscribe();
     };
-  }, [orderId]);
+  }, [orderId, showToast]);
 
   useFocusEffect(
     useCallback(() => {
@@ -115,6 +145,7 @@ const OrderPlace: React.FC = () => {
       return () => {};
     }, [orderId])
   );
+
   const getOrderDetails = async () => {
     if (!orderId) return;
 
@@ -169,7 +200,11 @@ const OrderPlace: React.FC = () => {
   };
 
   const handleCancel = async () => {
-    // Use Alert instead of showToast for confirmation
+    if (!userLocationData.userId) {
+      showToast("User information not available", "error");
+      return;
+    }
+
     Alert.alert("Cancel Order", "Are you sure you want to cancel this order?", [
       {
         text: "No",
@@ -182,9 +217,12 @@ const OrderPlace: React.FC = () => {
             setIsLoading(true);
 
             const formData = new FormData();
-            formData.append("type", "update_data");
-            formData.append("table_name", "orders");
-            formData.append("id", String(orderId));
+            formData.append("type", "add_data");
+            formData.append("table_name", "order_history");
+            formData.append("user_id", userLocationData.userId || "");
+            formData.append("lat", userLocationData.latitude || "");
+            formData.append("lng", userLocationData.longitude || "");
+            formData.append("order_id", String(orderId));
             formData.append("status", "cancelled");
 
             try {
@@ -211,16 +249,27 @@ const OrderPlace: React.FC = () => {
   };
 
   const handleAlert = async () => {
-    if (!orderId) return;
+    if (!orderId || !userLocationData.userId) {
+      showToast("Required information not available", "error");
+      return;
+    }
 
     setIsLoading(true);
-
-    // Send arrived status notification to customer
     const formData = new FormData();
-    formData.append("type", "update_data");
-    formData.append("table_name", "orders");
-    formData.append("id", String(orderId));
+    formData.append("type", "add_data");
+    formData.append("table_name", "order_history");
+    formData.append("order_id", String(orderId));
+    formData.append("lat", userLocationData.latitude || "");
+    formData.append("lng", userLocationData.longitude || "");
+    formData.append("user_id", userLocationData.userId);
     formData.append("status", "arrived");
+
+    console.log("Alert FormData:", {
+      orderId: String(orderId),
+      lat: userLocationData.latitude,
+      lng: userLocationData.longitude,
+      userId: userLocationData.userId,
+    });
 
     try {
       const response = await apiCall(formData);
@@ -238,15 +287,21 @@ const OrderPlace: React.FC = () => {
   };
 
   const handleComplete = async () => {
-    if (!orderId) return;
+    if (!orderId || !userLocationData.userId) {
+      showToast("Required information not available", "error");
+      return;
+    }
 
     setIsLoading(true);
 
     // Update order status to completed
     const formData = new FormData();
-    formData.append("type", "update_data");
-    formData.append("table_name", "orders");
-    formData.append("id", String(orderId));
+    formData.append("type", "add_data");
+    formData.append("table_name", "order_history");
+    formData.append("order_id", String(orderId));
+    formData.append("lat", userLocationData.latitude || "");
+    formData.append("lng", userLocationData.longitude || "");
+    formData.append("user_id", userLocationData.userId);
     formData.append("status", "completed");
 
     try {
@@ -255,11 +310,11 @@ const OrderPlace: React.FC = () => {
         // After marking as complete, show review popup
         setPopupType("review");
       } else {
-        showToast("Error", "Failed to complete order");
+        showToast("Failed to complete order", "error");
       }
     } catch (error) {
       console.error("Error completing order:", error);
-      showToast("Error", "An error occurred while completing the order");
+      showToast("An error occurred while completing the order", "error");
     } finally {
       setIsLoading(false);
     }
@@ -312,6 +367,8 @@ const OrderPlace: React.FC = () => {
     );
   }
 
+  console.log("Order Status:", order?.status, "Active Tab:", activeTab);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -361,39 +418,38 @@ const OrderPlace: React.FC = () => {
         )}
       </View>
 
-      {activeTab === "Details" ||
-        (order?.status !== "completed" && (
-          <View style={styles.footerButtons}>
-            {order?.status === "arrived" || order?.status === "started" ? (
-              <View style={styles.buttonContainer}>
-                <Button
-                  title="Cancel"
-                  variant="secondary"
-                  fullWidth={false}
-                  width="48%"
-                  onPress={handleCancel}
-                />
-                <Button
-                  title={order.status === "arrived" ? "Send Alert" : "Complete"}
-                  variant="primary"
-                  fullWidth={false}
-                  width="48%"
-                  onPress={
-                    order.status === "arrived" ? handleAlert : handleComplete
-                  }
-                />
-              </View>
-            ) : (
-              <Button
-                title="Cancel Order"
-                variant="primary"
+      {activeTab === "Details" && order?.status !== "completed" && (
+        <View style={styles.footerButtons}>
+          {order?.status === "arrived" || order?.status === "started" ? (
+            <View style={styles.buttonContainer}>
+              {/* <Button
+                title="Cancel"
+                variant="secondary"
                 fullWidth={false}
-                width="100%"
+                width="48%"
                 onPress={handleCancel}
+              /> */}
+              <Button
+                title={order.status === "arrived" ? "Send Alert" : "Complete"}
+                variant="primary"
+                // fullWidth={false}
+                // width="48%"
+                onPress={
+                  order.status === "arrived" ? handleAlert : handleComplete
+                }
               />
-            )}
-          </View>
-        ))}
+            </View>
+          ) : (
+            <Button
+              title="Cancel Order"
+              variant="primary"
+              fullWidth={false}
+              width="100%"
+              onPress={handleCancel}
+            />
+          )}
+        </View>
+      )}
 
       {/* Popup with Background Overlay */}
       {showPopup && (
@@ -407,7 +463,7 @@ const OrderPlace: React.FC = () => {
               <Popup
                 type={popupType as PopupType}
                 setShowPopup={setPopupType}
-                orderId={String(orderId)}
+                orderId={orderId}
                 tipAmount={tipAmount}
                 onComplete={handleOrderCompleted}
               />

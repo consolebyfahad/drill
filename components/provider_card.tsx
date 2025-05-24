@@ -7,6 +7,7 @@ import Direction from "@/assets/svgs/routing.svg";
 import Call from "@/assets/svgs/Calling.svg";
 import Chat from "@/assets/svgs/Chat.svg";
 import { FONTS } from "~/constants/Fonts";
+import { useRoute } from "@react-navigation/native";
 // Define types based on the API response structure
 type User = {
   id?: any;
@@ -43,6 +44,8 @@ export default function ProviderCard({ order }: ProviderCardProps) {
   // Get customer data from the order.user property
   const customer = order?.user;
   console.log("cus", customer);
+  const route = useRoute();
+  const isOnTrackScreen = route.name === "order/track";
   if (!customer) {
     return (
       <View style={styles.noProviderContainer}>
@@ -63,15 +66,19 @@ export default function ProviderCard({ order }: ProviderCardProps) {
   };
 
   const handleChat = () => {
-    // Navigate to the chat tab
     router.push({
       pathname: "/order/order_place",
       params: { orderId: order.id, tab: "Chat" },
     });
   };
 
+  // const handleTrack = () => {
   const handleTrack = () => {
-    // Navigate to the tracking screen
+    if (isOnTrackScreen || order?.status === "completed") {
+      console.log("Track button clicked, but navigation is disabled.");
+      return;
+    }
+
     router.push({
       pathname: "/order/track",
       params: { orderId: order.id },

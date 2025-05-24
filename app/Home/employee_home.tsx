@@ -202,8 +202,8 @@ const EmployeeHome = () => {
 
         const { latitude, longitude } = currentLocation.coords;
 
-        await AsyncStorage.setItem("user_lat", latitude.toString());
-        await AsyncStorage.setItem("user_lng", longitude.toString());
+        await AsyncStorage.setItem("latitude", latitude.toString());
+        await AsyncStorage.setItem("longitude", longitude.toString());
 
         setLocation((prev) => ({
           ...prev,

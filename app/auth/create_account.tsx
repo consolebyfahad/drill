@@ -9,6 +9,7 @@ import Tax from "@/assets/svgs/tax.svg";
 import Profile from "@/assets/svgs/profileIcon.svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -34,6 +35,7 @@ import {
   uploadImage,
 } from "~/utils/uploadData";
 import { FONTS } from "~/constants/Fonts";
+import DropDownPicker from "react-native-dropdown-picker";
 
 // Suppress the specific warning about MediaTypeOptions
 LogBox.ignoreLogs(["[expo-image-picker] `ImagePicker.MediaTypeOptions`"]);
@@ -70,6 +72,9 @@ type UploadedFiles = {
   documentFront: string;
   documentBack: string;
 };
+type Category = {
+  name: string;
+};
 
 export default function CreateAccount() {
   const [activeTab, setActiveTab] = useState<string>("Individual");
@@ -77,7 +82,10 @@ export default function CreateAccount() {
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<FieldError>({});
+  const [categories, setCategories] = useState<Category[]>([]);
 
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState([]);
   // For storing uploaded file names
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFiles>({
     image: "",
@@ -108,6 +116,34 @@ export default function CreateAccount() {
     verified: false,
   });
 
+  const getCategories = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("type", "get_data");
+      formData.append("table_name", "categories");
+
+      const response = await apiCall(formData);
+      if (response.data) {
+        const mappedCategories = response.data.map((item: any) => ({
+          name: item.name,
+        }));
+
+        setCategories(mappedCategories);
+        const dropdownItems = mappedCategories.map((category, index) => ({
+          label: category.name,
+          value: category.name,
+          key: `category-${index}`,
+        }));
+
+        setItems(dropdownItems);
+      } else {
+        console.log(response.message || "Failed to load categories.");
+      }
+    } catch (err) {
+      console.log("Something went wrong. Please try again.");
+    }
+  };
+
   useEffect(() => {
     const fetchUserId = async () => {
       try {
@@ -124,7 +160,9 @@ export default function CreateAccount() {
       }
     };
     fetchUserId();
+    getCategories();
   }, []);
+  console.log(categories);
 
   const handleInputChange = (field: keyof User, value: string) => {
     setUser((prevUser) => ({ ...prevUser, [field]: value }));
@@ -133,6 +171,18 @@ export default function CreateAccount() {
       setErrors((prev) => {
         const updated = { ...prev };
         delete updated[field];
+        return updated;
+      });
+    }
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setUser((prevUser) => ({ ...prevUser, companyCategory: value }));
+    // Clear error when user selects
+    if (errors.companyCategory) {
+      setErrors((prev) => {
+        const updated = { ...prev };
+        delete updated.companyCategory;
         return updated;
       });
     }
@@ -596,17 +646,54 @@ export default function CreateAccount() {
                 numbersOnly
               />
 
-              <CustomInputField
-                label="Company Category"
-                placeholder="Enter company category"
-                IconComponent={<Building />}
-                value={user.companyCategory}
-                onChangeText={(text) =>
-                  handleInputChange("companyCategory", text)
-                }
-                fieldName="companyCategory"
-                error={errors.companyCategory}
-              />
+              <View style={styles.dropdownContainer}>
+                <Text style={styles.dropdownLabel}>
+                  Company Category <Text style={{ color: "red" }}>*</Text>
+                </Text>
+                <View style={styles.dropdownWrapper}>
+                  <DropDownPicker
+                    open={open}
+                    value={user.companyCategory}
+                    items={items}
+                    setOpen={setOpen}
+                    setValue={(callback) => {
+                      const value =
+                        typeof callback === "function"
+                          ? callback(user.companyCategory)
+                          : callback;
+                      handleCategoryChange(value);
+                    }}
+                    setItems={setItems}
+                    style={[
+                      styles.dropdown,
+                      errors.companyCategory ? styles.dropdownError : null,
+                    ]}
+                    dropDownContainerStyle={styles.dropdownList}
+                    placeholderStyle={styles.dropdownPlaceholder}
+                    textStyle={styles.dropdownText}
+                    placeholder="Select company category"
+                    ArrowDownIconComponent={() => (
+                      <Ionicons
+                        name="chevron-down"
+                        size={20}
+                        color={Colors.secondary}
+                      />
+                    )}
+                    ArrowUpIconComponent={() => (
+                      <Ionicons
+                        name="chevron-up"
+                        size={20}
+                        color={Colors.secondary}
+                      />
+                    )}
+                    zIndex={1000}
+                    listMode="SCROLLVIEW"
+                  />
+                </View>
+                {errors.companyCategory && (
+                  <Text style={styles.errorText}>{errors.companyCategory}</Text>
+                )}
+              </View>
             </>
           )}
 
@@ -718,16 +805,15 @@ export default function CreateAccount() {
             </View>
           )}
 
-          <View style={{ height: 80 }} />
+          {/* <View style={{ height: 80 }} /> */}
         </ScrollView>
+        {/* Fixed Button at Bottom */}
+        <Button
+          title={isLoading ? "Please wait..." : "Submit"}
+          onPress={handleFormSubmit}
+          disabled={isLoading}
+        />
       </KeyboardAvoidingView>
-
-      {/* Fixed Button at Bottom */}
-      <Button
-        title={isLoading ? "Please wait..." : "Submit"}
-        onPress={handleFormSubmit}
-        disabled={isLoading}
-      />
     </SafeAreaView>
   );
 }
@@ -911,6 +997,47 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
+    fontFamily: FONTS.medium,
+  },
+  dropdownContainer: {
+    marginBottom: 16,
+    // zIndex: 1000,
+  },
+  dropdownLabel: {
+    fontSize: 16,
+    color: Colors.secondary,
+    fontFamily: FONTS.bold,
+    marginBottom: 8,
+  },
+  dropdownWrapper: {
+    zIndex: 1000,
+  },
+  dropdown: {
+    borderColor: Colors.primary300,
+    borderWidth: 1,
+    borderRadius: 10,
+    backgroundColor: Colors.primary300,
+    paddingHorizontal: 12,
+    height: 50,
+  },
+  dropdownError: {
+    borderColor: "red",
+  },
+  dropdownList: {
+    borderColor: Colors.secondary300,
+    borderWidth: 1,
+    borderRadius: 10,
+    backgroundColor: Colors.white,
+    maxHeight: 200,
+  },
+  dropdownPlaceholder: {
+    color: Colors.secondary300,
+    fontSize: 16,
+    fontFamily: FONTS.regular,
+  },
+  dropdownText: {
+    color: Colors.secondary,
+    fontSize: 16,
     fontFamily: FONTS.medium,
   },
 });

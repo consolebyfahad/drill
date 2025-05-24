@@ -30,7 +30,8 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
         />
         <View>
           <Text style={styles.typeText}>
-            {type} {card && `(${card})`}
+            {type}
+            {/* {card && `(${card})`} */}
           </Text>
           <Text style={styles.timeText}>{time}</Text>
         </View>

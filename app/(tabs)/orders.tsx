@@ -92,6 +92,8 @@ export default function Orders() {
   const fetchOrders = async () => {
     setIsLoading(true);
     const userId = await AsyncStorage.getItem("user_id");
+    const userType = await AsyncStorage.getItem("user_type");
+    console.log(userType);
     console.log(userId);
     if (!userId) {
       setIsLoading(false);
@@ -101,7 +103,7 @@ export default function Orders() {
     const formData = new FormData();
     formData.append("type", "get_data");
     formData.append("table_name", "orders");
-    formData.append("to_id", userId);
+    formData.append(userType === "employee" ? "to_id" : "company_id", userId);
 
     try {
       const response = await apiCall(formData);
