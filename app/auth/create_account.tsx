@@ -619,6 +619,7 @@ export default function CreateAccount() {
                 onChangeText={(text) => handleInputChange("dob", text)}
                 fieldName="dob"
                 error={errors.dob}
+                dateFormat={true}
               />
               <CustomInputField
                 label="Iqama ID"

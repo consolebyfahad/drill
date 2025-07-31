@@ -21,6 +21,7 @@ interface CustomInputFieldProps {
   error?: string;
   maxLength?: number;
   numbersOnly?: boolean;
+  dateFormat?: boolean;
 }
 
 const CustomInputField: React.FC<CustomInputFieldProps> = ({
@@ -35,10 +36,33 @@ const CustomInputField: React.FC<CustomInputFieldProps> = ({
   error,
   maxLength,
   numbersOnly = false,
+  dateFormat = false,
 }) => {
   // For numbers-only input
   const handleTextChange = (text: string) => {
-    if (numbersOnly) {
+    if (dateFormat) {
+      // Remove all non-digits
+      const sanitizedText = text.replace(/[^0-9]/g, "");
+
+      // Format as YYYY-MM-DD
+      let formattedText = sanitizedText;
+      if (sanitizedText.length >= 5) {
+        formattedText =
+          sanitizedText.slice(0, 4) + "-" + sanitizedText.slice(4);
+      }
+      if (sanitizedText.length >= 7) {
+        formattedText =
+          sanitizedText.slice(0, 4) +
+          "-" +
+          sanitizedText.slice(4, 6) +
+          "-" +
+          sanitizedText.slice(6, 8);
+      }
+
+      // Limit to 10 characters (YYYY-MM-DD)
+      formattedText = formattedText.slice(0, 10);
+      onChangeText(formattedText);
+    } else if (numbersOnly) {
       // Replace any non-digit with empty string
       const sanitizedText = text.replace(/[^0-9]/g, "");
       onChangeText(sanitizedText);
