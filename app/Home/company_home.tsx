@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,10 +10,10 @@ import {
   StatusBar,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "~/constants/Colors";
 import { apiCall } from "~/utils/api";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import Clipboard from "@react-native-clipboard/clipboard";
 import Orderbreakdown from "@/assets/svgs/orderbreakdown.svg";
 import { FONTS } from "~/constants/Fonts";
@@ -46,7 +46,6 @@ type Order = {
 };
 
 const CompanyHome = () => {
-  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -57,21 +56,23 @@ const CompanyHome = () => {
     cancelled: 0,
   });
 
-  const [imageBaseUrl, setImageBaseUrl] = useState<string>(
+  const [imageBaseUrl] = useState<string>(
     "https://7tracking.com/saudiservices/images/"
   );
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        await Promise.all([fetchCompanyProfile(), fetchOrders()]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  useFocusEffect(
+    useCallback(() => {
+      const loadData = async () => {
+        try {
+          await Promise.all([fetchCompanyProfile(), fetchOrders()]);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    loadData();
-  }, []);
+      loadData();
+    }, [])
+  );
 
   const fetchCompanyProfile = async () => {
     try {
@@ -245,7 +246,9 @@ const CompanyHome = () => {
     <View style={styles.container}>
       <StatusBar backgroundColor={Colors.primary} barStyle="light-content" />
       {loading ? (
-        <ActivityIndicator size="large" color={Colors.primary} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -336,6 +339,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
   },
   scrollContainer: {
     flexGrow: 1,

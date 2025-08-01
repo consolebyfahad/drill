@@ -10,8 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "googleServicesFile": "./GoogleService-Info.plist",
       "bundleIdentifier": "sa.com.drill.service",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "We need your location to show your position on the map.",
         "UIBackgroundModes": [
@@ -42,7 +42,12 @@
       "favicon": "./assets/images/applogo.png"
     },
     "plugins": [
+      "expo-font",
+      "expo-router",
       "@react-native-firebase/app",
+      "@react-native-firebase/messaging",
+      "expo-localization",
+      "expo-web-browser",
       [
         "expo-build-properties",
         {
@@ -56,14 +61,10 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/applogo.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
+          "resizeMode": "cover",
           "backgroundColor": "#ffffff"
         }
-      ],
-      "expo-localization",
-      "expo-font",
-      "expo-web-browser"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -74,9 +75,6 @@
         "projectId": "7530f98d-2a55-4d88-bf73-dec9d7fb6d53"
       }
     },
-    "androidNavigationBar": {
-      "barStyle": "dark-content",
-      "backgroundColor": "#FFFFFF"
-    }
+    "owner": "fahadurrehman"
   }
 }

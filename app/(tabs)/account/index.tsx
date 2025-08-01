@@ -31,8 +31,6 @@ import { apiCall } from "~/utils/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import defaultProfile from "@/assets/images/default-profile.png";
 import { SafeAreaView } from "react-native-safe-area-context";
-// import { requestFCMPermission } from "~/utils/notification";
-import messaging from "@react-native-firebase/messaging";
 import { FONTS } from "~/constants/Fonts";
 
 type User = {

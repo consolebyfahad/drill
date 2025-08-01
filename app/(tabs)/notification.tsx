@@ -6,13 +6,13 @@ import Header from "@/components/header";
 import AccountIcon from "@/assets/svgs/profileIcon.svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-});
+// Notifications.setNotificationHandler({
+//   handleNotification: async () => ({
+//     shouldShowAlert: true,
+//     shouldPlaySound: false,
+//     shouldSetBadge: false,
+//   }),
+// });
 
 type Notification = {
   id: string;
@@ -28,12 +28,6 @@ const NotificationScreen: React.FC = () => {
       title: "Welcome to the App!",
       message: "Thanks for signing up. Let us know if you need anything.",
       dateTime: "2025-05-08 10:30 AM",
-    },
-    {
-      id: "2",
-      title: "Update Available",
-      message: "A new version of the app is now available.",
-      dateTime: "2025-05-07 3:45 PM",
     },
   ]);
 
