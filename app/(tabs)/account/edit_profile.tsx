@@ -639,7 +639,7 @@ export default function EditProfile() {
                 error={errors.name}
               />
 
-              <Inputfield
+              {/* <Inputfield
                 label="Phone Number"
                 placeholder="Enter your phone"
                 IconComponent={<Phone />}
@@ -647,6 +647,19 @@ export default function EditProfile() {
                 onChangeText={(text) => handleInputChange("phone", text)}
                 keyboardType="phone-pad"
                 error={errors.phone}
+              /> */}
+
+              <CustomInputField
+                label="Phone Number"
+                placeholder="Enter your phone number"
+                IconComponent={<Phone />}
+                value={user.phone}
+                keyboardType="phone-pad"
+                onChangeText={(text) => handleInputChange("phone", text)}
+                fieldName="phone"
+                error={errors.phone}
+                // numbersOnly
+                maxLength={14}
               />
 
               <Inputfield

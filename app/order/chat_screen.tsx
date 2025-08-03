@@ -5,14 +5,13 @@ import {
   TextInput,
   StyleSheet,
   Image,
-  Pressable,
   TouchableOpacity,
   Alert,
-  ActivityIndicator,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import Button from "~/components/button";
 import { Colors } from "~/constants/Colors";
 import Add from "@/assets/svgs/plus.svg";
 import Smile from "@/assets/svgs/smile.svg";
@@ -382,182 +381,199 @@ export default function ChatScreen() {
   }, [messages]);
   console.log(messages);
   return (
-    <View style={styles.chatContainer}>
-      {/* {isLoading && ( */}
-      {/* <View style={styles.loadingOverlay}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View> */}
-      {/* )} */}
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 18}
+    >
+      <View style={styles.chatContainer}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          ref={scrollViewRef}
+          onContentSizeChange={() =>
+            scrollViewRef.current?.scrollToEnd({ animated: true })
+          }
+          contentContainerStyle={styles.scrollViewContent}
+        >
+          {messages && messages.length > 0
+            ? messages.map((message) => (
+                <TouchableOpacity
+                  onLongPress={() => confirmDeleteMessage(message.id)}
+                  key={message.id}
+                  style={
+                    message.sender === "user"
+                      ? styles.userMessage
+                      : styles.providerMessage
+                  }
+                >
+                  {message.msgType === "file" && (
+                    <Image
+                      source={{ uri: message.text }}
+                      style={styles.messageImage}
+                      resizeMode="cover"
+                    />
+                  )}
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        ref={scrollViewRef}
-        onContentSizeChange={() =>
-          scrollViewRef.current?.scrollToEnd({ animated: true })
-        }
-        contentContainerStyle={styles.scrollViewContent}
-      >
-        {messages && messages.length > 0
-          ? messages.map((message) => (
-              <TouchableOpacity
-                onLongPress={() => confirmDeleteMessage(message.id)}
-                key={message.id}
-                style={
-                  message.sender === "user"
-                    ? styles.userMessage
-                    : styles.providerMessage
+                  {message.msgType === "msg" && (
+                    <Text style={styles.messageText}>{message.text}</Text>
+                  )}
+                </TouchableOpacity>
+              ))
+            : !isLoading && (
+                <View style={styles.noMessagesContainer}>
+                  <Text style={styles.noMessagesText}>No messages yet</Text>
+                </View>
+              )}
+        </ScrollView>
+
+        {/* Chat input stays visible */}
+        <View>
+          <View style={styles.chatInputContainer}>
+            <TouchableOpacity onPress={openMediaPicker}>
+              <Add />
+            </TouchableOpacity>
+            <View style={styles.inputFieldContainer}>
+              <TextInput
+                style={styles.chatInput}
+                value={inputMessage}
+                onChangeText={(text) => setInputMessage(text)}
+                placeholder={
+                  attachment ? "Send with image..." : "Type a message..."
                 }
-              >
-                {message.msgType === "file" && (
+                multiline
+              />
+              {attachment && (
+                <View style={styles.inlineAttachmentContainer}>
                   <Image
-                    source={{ uri: message.text }}
-                    style={styles.messageImage}
+                    source={{ uri: attachment }}
+                    style={styles.inlineAttachment}
                     resizeMode="cover"
                   />
-                )}
-
-                {message.msgType === "msg" && (
-                  <Text style={styles.messageText}>{message.text}</Text>
-                )}
+                  <TouchableOpacity
+                    style={styles.removeInlineAttachment}
+                    onPress={() => {
+                      setAttachment(null);
+                      setUploadedFileName(null);
+                    }}
+                  >
+                    <Text style={styles.removeButtonText}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              <TouchableOpacity onPress={() => setIsEmojiPickerVisible(true)}>
+                <Smile />
               </TouchableOpacity>
-            ))
-          : !isLoading && (
-              <View style={styles.noMessagesContainer}>
-                <Text style={styles.noMessagesText}>No messages yet</Text>
-              </View>
-            )}
-      </ScrollView>
-
-      {/* Chat input stays visible */}
-      <View>
-        <View style={styles.chatInputContainer}>
-          <TouchableOpacity onPress={openMediaPicker}>
-            <Add />
-          </TouchableOpacity>
-          <View style={styles.inputFieldContainer}>
-            <TextInput
-              style={styles.chatInput}
-              value={inputMessage}
-              onChangeText={(text) => setInputMessage(text)}
-              placeholder={
-                attachment ? "Send with image..." : "Type a message..."
-              }
-              multiline
-            />
-            {attachment && (
-              <View style={styles.inlineAttachmentContainer}>
-                <Image
-                  source={{ uri: attachment }}
-                  style={styles.inlineAttachment}
-                  resizeMode="cover"
-                />
-                <TouchableOpacity
-                  style={styles.removeInlineAttachment}
-                  onPress={() => {
-                    setAttachment(null);
-                    setUploadedFileName(null);
-                  }}
-                >
-                  <Text style={styles.removeButtonText}>×</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            <TouchableOpacity onPress={() => setIsEmojiPickerVisible(true)}>
-              <Smile />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity
-            onPress={sendMessage}
-            disabled={inputMessage.trim() === "" && !attachment}
-            style={[
-              styles.sendButton,
-              inputMessage.trim() === "" && !attachment
-                ? styles.disabledSendButton
-                : {},
-            ]}
-          >
-            <Send />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Custom Emoji Picker Modal */}
-      <Modal
-        visible={isEmojiPickerVisible}
-        transparent={true}
-        animationType="slide"
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.emojiPickerHeader}>
-            <Text style={styles.emojiPickerTitle}>Select Emoji</Text>
-            <TouchableOpacity onPress={() => setIsEmojiPickerVisible(false)}>
-              <Text style={styles.closeButton}>Close</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView style={styles.emojiScrollView}>
-            <View style={styles.emojiGrid}>
-              {EMOJI_LIST.map((emoji, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.emojiButton}
-                  onPress={() => onEmojiSelected(emoji)}
-                >
-                  <Text style={styles.emojiText}>{emoji}</Text>
-                </TouchableOpacity>
-              ))}
             </View>
-          </ScrollView>
-        </View>
-      </Modal>
-
-      {/* Media Picker Modal */}
-      <Modal
-        visible={isMediaPickerVisible}
-        transparent={true}
-        animationType="slide"
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          onPress={() => setIsMediaPickerVisible(false)}
-          activeOpacity={1}
-        >
-          <View style={styles.mediaPickerContainer}>
             <TouchableOpacity
-              style={styles.mediaOption}
-              onPress={() => pickImage("camera")}
+              onPress={sendMessage}
+              disabled={inputMessage.trim() === "" && !attachment}
+              style={[
+                styles.sendButton,
+                inputMessage.trim() === "" && !attachment
+                  ? styles.disabledSendButton
+                  : {},
+              ]}
             >
-              <Text style={styles.mediaOptionText}>Take Photo</Text>
-            </TouchableOpacity>
-            <View style={styles.mediaDivider} />
-            <TouchableOpacity
-              style={styles.mediaOption}
-              onPress={() => pickImage("gallery")}
-            >
-              <Text style={styles.mediaOptionText}>Choose from Gallery</Text>
-            </TouchableOpacity>
-            <View style={styles.mediaDivider} />
-            <TouchableOpacity
-              style={[styles.mediaOption, styles.cancelButton]}
-              onPress={() => setIsMediaPickerVisible(false)}
-            >
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Send />
             </TouchableOpacity>
           </View>
-        </TouchableOpacity>
-      </Modal>
-    </View>
+        </View>
+
+        {/* Custom Emoji Picker Modal */}
+        <Modal
+          visible={isEmojiPickerVisible}
+          transparent={true}
+          animationType="slide"
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.emojiPickerHeader}>
+              <Text style={styles.emojiPickerTitle}>Select Emoji</Text>
+              <TouchableOpacity onPress={() => setIsEmojiPickerVisible(false)}>
+                <Text style={styles.closeButton}>Close</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.emojiScrollView}>
+              <View style={styles.emojiGrid}>
+                {EMOJI_LIST.map((emoji, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.emojiButton}
+                    onPress={() => onEmojiSelected(emoji)}
+                  >
+                    <Text style={styles.emojiText}>{emoji}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        </Modal>
+
+        {/* Media Picker Modal */}
+        <Modal
+          visible={isMediaPickerVisible}
+          transparent={true}
+          animationType="slide"
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            onPress={() => setIsMediaPickerVisible(false)}
+            activeOpacity={1}
+          >
+            <View style={styles.mediaPickerContainer}>
+              <TouchableOpacity
+                style={styles.mediaOption}
+                onPress={() => pickImage("camera")}
+              >
+                <Text style={styles.mediaOptionText}>Take Photo</Text>
+              </TouchableOpacity>
+              <View style={styles.mediaDivider} />
+              <TouchableOpacity
+                style={styles.mediaOption}
+                onPress={() => pickImage("gallery")}
+              >
+                <Text style={styles.mediaOptionText}>Choose from Gallery</Text>
+              </TouchableOpacity>
+              <View style={styles.mediaDivider} />
+              <TouchableOpacity
+                style={[styles.mediaOption, styles.cancelButton]}
+                onPress={() => setIsMediaPickerVisible(false)}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   chatContainer: {
     flex: 1,
-    paddingTop: 16,
     backgroundColor: Colors.white,
   },
   scrollViewContent: {
     paddingHorizontal: 16,
+    paddingTop: 16,
     flexGrow: 1,
+    paddingBottom: 10, // Add some padding at bottom
+  },
+  inputWrapper: {
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray100,
+  },
+  chatInputContainer: {
+    flexDirection: "row",
+    width: "100%",
+    alignItems: "center",
+    padding: 8,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.white,
   },
   userMessage: {
     alignSelf: "flex-end",
@@ -589,16 +605,6 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 8,
     marginBottom: 8,
-  },
-  chatInputContainer: {
-    flexDirection: "row",
-    width: "100%",
-    alignItems: "center",
-    padding: 8,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: Colors.gray100,
-    backgroundColor: Colors.white,
   },
   inputFieldContainer: {
     flexDirection: "row",

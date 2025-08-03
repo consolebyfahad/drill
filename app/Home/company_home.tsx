@@ -8,6 +8,7 @@ import {
   ScrollView,
   ActivityIndicator,
   StatusBar,
+  RefreshControl,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
@@ -60,18 +61,18 @@ const CompanyHome = () => {
     "https://7tracking.com/saudiservices/images/"
   );
 
+  const loadData = useCallback(async () => {
+    try {
+      await Promise.all([fetchCompanyProfile(), fetchOrders()]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
-      const loadData = async () => {
-        try {
-          await Promise.all([fetchCompanyProfile(), fetchOrders()]);
-        } finally {
-          setLoading(false);
-        }
-      };
-
       loadData();
-    }, [])
+    }, [loadData])
   );
 
   const fetchCompanyProfile = async () => {
@@ -253,6 +254,9 @@ const CompanyHome = () => {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContainer}
+          refreshControl={
+            <RefreshControl refreshing={loading} onRefresh={loadData} />
+          }
         >
           {/* Top Profile Header */}
           <View style={styles.profileHeaderContainer}>
@@ -260,7 +264,7 @@ const CompanyHome = () => {
               <View style={styles.profileImageContainer}>
                 {user?.image ? (
                   <Image
-                    source={{ uri: getImageUrl(user.image) }}
+                    source={{ uri: getImageUrl(user.image) || "" }}
                     style={styles.profileImage}
                   />
                 ) : (

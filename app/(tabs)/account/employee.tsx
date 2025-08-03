@@ -49,10 +49,6 @@ const filterOptions = [
   { label: "All", value: "all" },
   { label: "Active", value: "active" },
   { label: "Inactive", value: "inactive" },
-  { label: "Online", value: "online" },
-  { label: "Offline", value: "offline" },
-  { label: "Verified", value: "verified" },
-  { label: "Pending Verification", value: "pending" },
 ];
 
 export default function Employee() {
@@ -79,7 +75,6 @@ export default function Employee() {
     filterEmployees(filterValue);
   }, [filterValue, employees]);
 
-  // Function to filter employees
   const filterEmployees = (filter: string) => {
     if (!employees || employees.length === 0) {
       setFilteredEmployees([]);
@@ -100,18 +95,6 @@ export default function Employee() {
       case "inactive":
         filtered = employees.filter((emp) => emp.status === "0");
         break;
-      case "online":
-        filtered = employees.filter((emp) => emp.online_status === "1");
-        break;
-      case "offline":
-        filtered = employees.filter((emp) => emp.online_status === "0");
-        break;
-      case "verified":
-        filtered = employees.filter((emp) => emp.company_verified === "1");
-        break;
-      case "pending":
-        filtered = employees.filter((emp) => emp.company_verified === "0");
-        break;
       default:
         filtered = employees;
     }
@@ -126,7 +109,7 @@ export default function Employee() {
 
     try {
       const userId = await AsyncStorage.getItem("user_id");
-
+      console.log(userId);
       if (!userId) {
         throw new Error("User ID not found. Please log in again.");
       }
@@ -141,7 +124,7 @@ export default function Employee() {
 
       // Handle the response structure based on your API
       const employeeData = response.data || response;
-      setEmployees(employeeData);
+      setEmployees(Array.isArray(employeeData) ? employeeData : []);
     } catch (err: any) {
       console.error("Failed to fetch employees:", err);
       setError(err.message || "Failed to fetch employees");
@@ -281,7 +264,11 @@ export default function Employee() {
           value={filterValue}
           items={items}
           setOpen={setOpen}
-          setValue={setFilterValue}
+          setValue={(callback) => {
+            const value =
+              typeof callback === "function" ? callback(filterValue) : callback;
+            setFilterValue(value);
+          }}
           setItems={setItems}
           style={styles.dropdown}
           dropDownContainerStyle={styles.dropdownList}

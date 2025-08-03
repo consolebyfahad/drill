@@ -5,14 +5,14 @@ import Verified from "@/assets/svgs/verified.svg";
 import Button from "@/components/button";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 import {
   StyleSheet,
   Text,
   View,
-  AppState,
   TouchableOpacity,
-  Alert,
+  ScrollView,
+  RefreshControl,
 } from "react-native";
 import Clipboard from "@react-native-clipboard/clipboard";
 
@@ -31,8 +31,8 @@ type User = {
 
 export default function VerifiedScreen() {
   const router = useRouter();
-  const [accountType, setAccountType] = useState("");
   const [copied, setCopied] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState<User>({
     company_verified: "",
     platform_status: "",
@@ -41,7 +41,7 @@ export default function VerifiedScreen() {
   });
 
   // Derived verification status
-  const isPlatformVerified = user.platform_status === "0";
+  const isPlatformVerified = user.platform_status === "1";
   const isCompanyVerified = user.company_verified === "1";
   const isCompanyUser = user.user_type === "company";
   const isIndividualUser = user.user_type === "employee";
@@ -62,6 +62,12 @@ export default function VerifiedScreen() {
     }
     return "pending"; // Default state
   };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchUserProfile();
+    setRefreshing(false);
+  }, []);
 
   const status = getVerificationStatus();
   console.log(isCompanyUser, isPlatformVerified, isCompanyVerified, status);
@@ -150,59 +156,28 @@ export default function VerifiedScreen() {
   };
   return (
     <SafeAreaView style={styles.container}>
-      {/* Image & Content */}
-      <View style={styles.content}>
-        <View>{content.icon}</View>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "space-between" }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Image & Content */}
+        <View style={styles.content}>
+          <View>{content.icon}</View>
 
-        <View style={styles.textContainer}>
-          <Text style={styles.title}>{content.title}</Text>
-          <Text style={styles.subtitle}>{content.message}</Text>
-        </View>
-
-        <View style={styles.inputContainer}>
-          <View style={styles.verificationRow}>
-            <Text style={styles.verificationText}>Verified by Platform</Text>
-            <View
-              style={[
-                styles.verificationStatus,
-                isPlatformVerified
-                  ? styles.verifiedStatus
-                  : styles.pendingStatus,
-              ]}
-            >
-              <Verify />
-            </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.title}>{content.title}</Text>
+            <Text style={styles.subtitle}>{content.message}</Text>
           </View>
 
-          <View style={styles.divider} />
-
-          {isCompanyUser ? (
-            isPlatformVerified ? (
-              <View style={styles.verificationRow}>
-                <Text style={styles.verificationText}>
-                  Company# {user.company_code}
-                </Text>
-                <TouchableOpacity onPress={copyToClipboard}>
-                  {copied ? (
-                    <Feather name="check" size={24} color={Colors.primary} />
-                  ) : (
-                    <Feather
-                      name="copy"
-                      size={24}
-                      color={Colors.primary}
-                      style={{ transform: [{ scaleX: -1 }] }}
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-            ) : null
-          ) : (
+          <View style={styles.inputContainer}>
             <View style={styles.verificationRow}>
-              <Text style={styles.verificationText}>Verified by Company</Text>
+              <Text style={styles.verificationText}>Verified by Platform</Text>
               <View
                 style={[
                   styles.verificationStatus,
-                  isCompanyVerified
+                  isPlatformVerified
                     ? styles.verifiedStatus
                     : styles.pendingStatus,
                 ]}
@@ -210,35 +185,73 @@ export default function VerifiedScreen() {
                 <Verify />
               </View>
             </View>
-          )}
+
+            <View style={styles.divider} />
+
+            {isCompanyUser ? (
+              isPlatformVerified ? (
+                <View style={styles.verificationRow}>
+                  <Text style={styles.verificationText}>
+                    Company# {user.company_code}
+                  </Text>
+                  <TouchableOpacity onPress={copyToClipboard}>
+                    {copied ? (
+                      <Feather name="check" size={24} color={Colors.primary} />
+                    ) : (
+                      <Feather
+                        name="copy"
+                        size={24}
+                        color={Colors.primary}
+                        style={{ transform: [{ scaleX: -1 }] }}
+                      />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              ) : null
+            ) : (
+              <View style={styles.verificationRow}>
+                <Text style={styles.verificationText}>Verified by Company</Text>
+                <View
+                  style={[
+                    styles.verificationStatus,
+                    isCompanyVerified
+                      ? styles.verifiedStatus
+                      : styles.pendingStatus,
+                  ]}
+                >
+                  <Verify />
+                </View>
+              </View>
+            )}
+          </View>
         </View>
-      </View>
-      {user.user_type === "company" ? (
-        <View style={styles.buttonContainer}>
-          {/* Allow Location Button */}
+        {user.user_type === "company" ? (
+          <View style={styles.buttonContainer}>
+            {/* Allow Location Button */}
+            <Button
+              title={"Continue"}
+              onPress={handleAddEmployee}
+              disabled={!isVerified}
+              style={!isVerified ? styles.disabledButton : {}}
+            />
+            {/* "Do it Later" Option */}
+            <View style={styles.laterContainer}>
+              <Text style={styles.laterBaseText}>Do it</Text>
+              <TouchableOpacity onPress={handleLater}>
+                <Text style={styles.laterText}> Later</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
           <Button
-            title={"Continue"}
-            onPress={handleAddEmployee}
+            title={"Browse Home"}
+            onPress={handleLater}
             disabled={!isVerified}
             style={!isVerified ? styles.disabledButton : {}}
           />
-          {/* "Do it Later" Option */}
-          <View style={styles.laterContainer}>
-            <Text style={styles.laterBaseText}>Do it</Text>
-            <TouchableOpacity onPress={handleLater}>
-              <Text style={styles.laterText}> Later</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : (
-        <Button
-          title={"Browse Home"}
-          onPress={handleLater}
-          disabled={!isVerified}
-          style={!isVerified ? styles.disabledButton : {}}
-        />
-      )}
-      {/* Button */}
+        )}
+        {/* Button */}
+      </ScrollView>
     </SafeAreaView>
   );
 }

@@ -74,7 +74,7 @@ export default function ProviderCard({ order }: ProviderCardProps) {
 
   // const handleTrack = () => {
   const handleTrack = () => {
-    if (isOnTrackScreen || order?.status === "completed") {
+    if (isOnTrackScreen || order?.status === "completed" || "started") {
       console.log("Track button clicked, but navigation is disabled.");
       return;
     }
@@ -119,7 +119,7 @@ export default function ProviderCard({ order }: ProviderCardProps) {
           width={"30%"}
           title="Call"
           bgColor="white"
-          textSize={13}
+          textSize={12}
           paddingvertical={12}
           variant="secondary"
           onPress={handleCall}
@@ -130,7 +130,7 @@ export default function ProviderCard({ order }: ProviderCardProps) {
           width={"30%"}
           title="Chat"
           bgColor="white"
-          textSize={13}
+          textSize={12}
           paddingvertical={12}
           variant="secondary"
           onPress={handleChat}
@@ -140,7 +140,7 @@ export default function ProviderCard({ order }: ProviderCardProps) {
           fullWidth={false}
           width={"30%"}
           title="Directions"
-          textSize={13}
+          textSize={12}
           paddingvertical={12}
           variant="primary"
           onPress={handleTrack}

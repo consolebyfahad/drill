@@ -3,7 +3,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import MapView from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import JobRequestCard from "~/components/jobrequest_card";
@@ -70,6 +77,7 @@ interface OrderDetails {
   provider: Provider;
   category: Category;
   estimatedDuration?: string;
+  reach_time?: any;
 }
 
 // Define notification data type
@@ -84,8 +92,11 @@ interface LocationState {
   longitude: number;
   address: string;
 }
-
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const EmployeeHome = () => {
+  const HEADER_HEIGHT = SCREEN_HEIGHT * 0.12; // 12% of screen height
+  const OVERLAY_MAX_HEIGHT = SCREEN_HEIGHT * 0.85; // 85% of screen height
+  const CARD_MAX_HEIGHT = SCREEN_HEIGHT * 0.65; // 65% of screen height for job card
   // Refs
   const mapRef = useRef<MapView | null>(null);
 
@@ -486,12 +497,14 @@ const EmployeeHome = () => {
                 serviceTitle={item.category?.name || "Service"}
                 packageTitle={item.package_id}
                 distance={`${item.distance || "N/A"}`}
-                duration={item.reach_time || "N/A"}
-                jobLocation={item.user?.address || "Address unavailable"}
+                duration={item?.reach_time || "N/A"}
+                jobLocation={item?.address || "Address unavailable"}
                 currentLocation={location.address}
                 onDecline={() => handleHideJob(item.id)}
                 onAccept={() => handleAcceptJob(item)}
                 serviceImage={serviceImageUrl}
+                maxHeight={CARD_MAX_HEIGHT}
+                screenWidth={SCREEN_WIDTH}
               />
             );
           })()}
@@ -535,11 +548,13 @@ const styles = StyleSheet.create({
   },
   overlay: {
     position: "absolute",
-    top: 20,
+    top: SCREEN_HEIGHT * 0.06,
     left: 0,
     right: 0,
-    padding: 15,
-    maxHeight: "100%",
+    bottom: 20,
+    padding: SCREEN_WIDTH * 0.04,
+
+    justifyContent: "flex-start",
   },
   greeting: {
     fontSize: 24,
@@ -551,9 +566,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     backgroundColor: "rgba(255, 255, 255, 0.9)",
-    padding: 10,
+    padding: SCREEN_WIDTH * 0.025,
     borderRadius: 8,
-    marginBottom: 15,
+    marginBottom: SCREEN_HEIGHT * 0.015,
   },
   address: {
     fontSize: 14,
@@ -564,8 +579,8 @@ const styles = StyleSheet.create({
   },
   toggleContainer: {
     alignItems: "center",
-    marginTop: 10,
-    marginBottom: 10,
+    marginTop: SCREEN_HEIGHT * 0.01,
+    marginBottom: SCREEN_HEIGHT * 0.01,
   },
   centerButtonContainer: {
     position: "absolute",

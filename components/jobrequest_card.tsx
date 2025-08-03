@@ -16,6 +16,8 @@ interface JobRequestCardProps {
   serviceImage?: any;
   onAccept?: () => void;
   onDecline?: () => void;
+  maxHeight?: number;
+  screenWidth?: number;
 }
 
 const JobRequestCard: React.FC<JobRequestCardProps> = ({
@@ -29,7 +31,141 @@ const JobRequestCard: React.FC<JobRequestCardProps> = ({
   serviceImage,
   onAccept = () => {},
   onDecline = () => {},
+  maxHeight = 400,
+  screenWidth = 375,
 }) => {
+  const styles = StyleSheet.create({
+    container: {
+      borderRadius: 16,
+      padding: screenWidth * 0.04,
+      backgroundColor: "#F0F8FF",
+      borderWidth: 1,
+      borderColor: "#4169E1",
+      margin: screenWidth * 0.04,
+      maxHeight: maxHeight,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    header: {
+      fontSize: screenWidth * 0.038,
+      fontFamily: FONTS.semiBold,
+      color: "#333",
+      marginBottom: screenWidth * 0.04,
+      textAlign: "left",
+    },
+    serviceIconContainer: {
+      width: screenWidth * 0.12,
+      height: screenWidth * 0.16,
+      borderRadius: 8,
+      backgroundColor: Colors.white,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 12,
+    },
+    locationContainer: {
+      backgroundColor: "white",
+      borderRadius: 12,
+      padding: screenWidth * 0.04,
+      marginBottom: screenWidth * 0.04,
+      maxHeight: maxHeight * 0.4, // 40% of available card height
+    },
+    infoRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 16,
+    },
+    serviceCard: {
+      backgroundColor: "#4169E1",
+      borderRadius: 12,
+      padding: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      flex: 1,
+      marginRight: 8,
+    },
+
+    serviceIcon: {
+      width: 36,
+      height: 36,
+    },
+    serviceDetails: {
+      flex: 1,
+    },
+    serviceTitle: {
+      color: Colors.white,
+      fontFamily: FONTS.semiBold,
+      fontSize: 13,
+      marginBottom: 4,
+    },
+    packageTitle: {
+      color: Colors.white,
+      fontSize: 11,
+      fontFamily: FONTS.regular,
+    },
+    mapContainer: {
+      borderWidth: 1,
+      borderColor: "#DDD",
+      borderRadius: 12,
+      overflow: "hidden",
+      width: 120,
+    },
+    mapImage: {
+      width: "100%",
+      height: 80,
+    },
+    mapInfoRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      padding: 4,
+    },
+    infoChip: {
+      backgroundColor: "white",
+      borderWidth: 1,
+      borderColor: "#DDD",
+      borderRadius: 16,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    infoText: {
+      fontSize: 12,
+      color: "#333",
+      fontFamily: FONTS.regular,
+    },
+
+    locationRow: {
+      flexDirection: "row",
+      marginVertical: 8,
+    },
+    markerContainer: {
+      marginRight: 12,
+    },
+    locationDetails: {
+      flex: 1,
+    },
+    locationLabel: {
+      color: Colors.secondary300,
+      fontSize: 12,
+      marginBottom: 4,
+      fontFamily: FONTS.regular,
+    },
+    locationAddress: {
+      color: Colors.secondary,
+      fontSize: 14,
+      fontFamily: FONTS.semiBold,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: "#EEE",
+      marginVertical: 8,
+    },
+    actionRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+  });
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -123,134 +259,5 @@ const JobRequestCard: React.FC<JobRequestCardProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    borderRadius: 16,
-    padding: 16,
-    backgroundColor: "#F0F8FF",
-    borderWidth: 1,
-    borderColor: "#4169E1",
-    margin: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  header: {
-    fontSize: 15,
-    fontFamily: FONTS.semiBold,
-    color: "#333",
-    marginBottom: 16,
-    textAlign: "left",
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  serviceCard: {
-    backgroundColor: "#4169E1",
-    borderRadius: 12,
-    padding: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    marginRight: 8,
-  },
-  serviceIconContainer: {
-    width: 48,
-    height: 68,
-    borderRadius: 8,
-    backgroundColor: Colors.white,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  serviceIcon: {
-    width: 36,
-    height: 36,
-  },
-  serviceDetails: {
-    flex: 1,
-  },
-  serviceTitle: {
-    color: Colors.white,
-    fontFamily: FONTS.semiBold,
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  packageTitle: {
-    color: Colors.white,
-    fontSize: 11,
-    fontFamily: FONTS.regular,
-  },
-  mapContainer: {
-    borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 12,
-    overflow: "hidden",
-    width: 120,
-  },
-  mapImage: {
-    width: "100%",
-    height: 80,
-  },
-  mapInfoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 4,
-  },
-  infoChip: {
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#DDD",
-    borderRadius: 16,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  infoText: {
-    fontSize: 12,
-    color: "#333",
-    fontFamily: FONTS.regular,
-  },
-  locationContainer: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  locationRow: {
-    flexDirection: "row",
-    marginVertical: 8,
-  },
-  markerContainer: {
-    marginRight: 12,
-  },
-  locationDetails: {
-    flex: 1,
-  },
-  locationLabel: {
-    color: Colors.secondary300,
-    fontSize: 12,
-    marginBottom: 4,
-    fontFamily: FONTS.regular,
-  },
-  locationAddress: {
-    color: Colors.secondary,
-    fontSize: 14,
-    fontFamily: FONTS.semiBold,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#EEE",
-    marginVertical: 8,
-  },
-  actionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-});
 
 export default JobRequestCard;

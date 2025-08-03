@@ -31,6 +31,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DropDownPicker from "react-native-dropdown-picker";
 import { FONTS } from "~/constants/Fonts";
+import CustomInputField from "~/components/CustomInputField";
 
 type Employee = {
   name: string;
@@ -460,7 +461,18 @@ const AddEmployee = () => {
           error={errors.email}
           required
         />
-        <Inputfield
+        <CustomInputField
+          label="Date of Birth"
+          placeholder="YYYY-MM-DD"
+          IconComponent={<DOB />}
+          value={employee.dob}
+          onChangeText={(text) => handleInputChange("dob", text)}
+          fieldName="dob"
+          error={errors.dob}
+          dateFormat={true}
+          required
+        />
+        {/* <Inputfield
           label="Date Of Birth"
           placeholder="YYYY-MM-DD"
           IconComponent={<DOB />}
@@ -468,7 +480,7 @@ const AddEmployee = () => {
           onChangeText={(text) => handleInputChange("dob", text)}
           error={errors.dob}
           required
-        />
+        /> */}
         <Inputfield
           label="Iqama ID"
           placeholder="Enter your KSA iqama ID /number"

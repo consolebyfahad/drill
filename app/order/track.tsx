@@ -170,7 +170,7 @@ export default function Track() {
 
       console.log("Distance to customer:", distance, "meters");
 
-      if (distance < 50) {
+      if (distance < 1021) {
         setStatus("Arrived");
       }
     }

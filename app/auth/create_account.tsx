@@ -429,7 +429,9 @@ export default function CreateAccount() {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         style={styles.keyboardConatiner}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : "position"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        enabled
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -542,8 +544,8 @@ export default function CreateAccount() {
             onChangeText={(text) => handleInputChange("phone", text)}
             fieldName="phone"
             error={errors.phone}
-            numbersOnly
-            maxLength={15}
+            // numbersOnly
+            maxLength={14}
           />
 
           <CustomInputField
@@ -620,6 +622,7 @@ export default function CreateAccount() {
                 fieldName="dob"
                 error={errors.dob}
                 dateFormat={true}
+                numbersOnly={true}
               />
               <CustomInputField
                 label="Iqama ID"
