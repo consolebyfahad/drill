@@ -17,7 +17,7 @@ interface LanguageOptionProps {
   onPress: () => void;
 }
 
-const Language: React.FC = () => {
+export default function language() {
   const { t, i18n } = useTranslation();
 
   const languages: Language[] = [
@@ -52,43 +52,43 @@ const Language: React.FC = () => {
     }
   };
 
-  const LanguageOption: React.FC<LanguageOptionProps> = ({
-    language,
-    isSelected,
-    onPress,
-  }) => (
-    <TouchableOpacity
-      style={[styles.languageOption, isSelected && styles.selectedOption]}
-      onPress={onPress}
-      activeOpacity={0.7}
-      accessibilityRole="button"
-      accessibilityLabel={`Select ${language.name} language`}
-      accessibilityState={{ selected: isSelected }}
-    >
-      <View style={styles.languageContent}>
-        <Text style={styles.flag} accessibilityLabel={`${language.name} flag`}>
-          {language.flag}
-        </Text>
-        <View style={styles.languageText}>
-          <Text
-            style={[styles.languageName, isSelected && styles.selectedText]}
-          >
-            {language.name}
-          </Text>
-          <Text style={[styles.nativeName, isSelected && styles.selectedText]}>
-            {language.nativeName}
-          </Text>
-        </View>
-      </View>
-      {isSelected && (
-        <View style={styles.checkmark}>
-          <Text style={styles.checkmarkIcon} accessibilityLabel="Selected">
-            ✓
-          </Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
+  // const LanguageOption: React.FC<LanguageOptionProps> = ({
+  //   language,
+  //   isSelected,
+  //   onPress,
+  // }) => (
+  //   <TouchableOpacity
+  //     style={[styles.languageOption, isSelected && styles.selectedOption]}
+  //     onPress={onPress}
+  //     activeOpacity={0.7}
+  //     accessibilityRole="button"
+  //     accessibilityLabel={`Select ${language.name} language`}
+  //     accessibilityState={{ selected: isSelected }}
+  //   >
+  //     <View style={styles.languageContent}>
+  //       <Text style={styles.flag} accessibilityLabel={`${language.name} flag`}>
+  //         {language.flag}
+  //       </Text>
+  //       <View style={styles.languageText}>
+  //         <Text
+  //           style={[styles.languageName, isSelected && styles.selectedText]}
+  //         >
+  //           {language.name}
+  //         </Text>
+  //         <Text style={[styles.nativeName, isSelected && styles.selectedText]}>
+  //           {language.nativeName}
+  //         </Text>
+  //       </View>
+  //     </View>
+  //     {isSelected && (
+  //       <View style={styles.checkmark}>
+  //         <Text style={styles.checkmarkIcon} accessibilityLabel="Selected">
+  //           ✓
+  //         </Text>
+  //       </View>
+  //     )}
+  //   </TouchableOpacity>
+  // );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -98,14 +98,14 @@ const Language: React.FC = () => {
           {t("language.selectLanguage") || "Select your preferred language"}
         </Text>
         <View style={styles.languageList}>
-          {languages.map((language: Language) => (
+          {/* {languages.map((language: Language) => (
             <LanguageOption
               key={language.code}
               language={language}
               isSelected={i18n.language === language.code}
               onPress={() => changeLanguage(language.code)}
             />
-          ))}
+          ))} */}
         </View>
         <Text style={styles.note}>
           {t("language.languageNote") ||
@@ -114,7 +114,7 @@ const Language: React.FC = () => {
       </View>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -213,5 +213,3 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
 });
-
-export default Language;

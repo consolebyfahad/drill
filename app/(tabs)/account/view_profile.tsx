@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import React, { useCallback, useState } from "react";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import ServiceDetailsCard from "@/components/service_details_card";
 import { useFocusEffect, useNavigation, useRouter } from "expo-router";
 import Header from "@/components/header";

@@ -2,26 +2,18 @@ import Arrow from "@/assets/svgs/arrowLeft.svg";
 import Button from "@/components/button";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { useEffect, useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { OtpInput } from "react-native-otp-entry";
 import { Colors } from "~/constants/Colors";
 import { FONTS } from "~/constants/Fonts";
 import { apiCall } from "~/utils/api";
 
-type InputRef = TextInput | null;
-
 export default function Verify() {
   const router = useRouter();
-  const [code, setCode] = useState<string[]>(["", "", "", ""]);
+  const [code, setCode] = useState<string>("");
   const [error, setError] = useState<string>("");
-  const inputs = useRef<InputRef[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [newUser, setNewUser] = useState<boolean | null>(null);
   // Get user ID from AsyncStorage
@@ -40,34 +32,10 @@ export default function Verify() {
     fetchUserId();
   }, []);
 
-  const handleChangeText = (text: string, index: number) => {
-    const newCode = [...code];
-    newCode[index] = text;
-    setCode(newCode);
-
+  const handleChangeText = (text: string) => {
+    setCode(text);
     // Clear error when user types
     if (error) setError("");
-
-    if (text && index < 3) {
-      inputs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyPress = (
-    e: { nativeEvent: { key: string } },
-    index: number
-  ) => {
-    if (e.nativeEvent.key === "Backspace") {
-      const newCode = [...code];
-      if (!code[index] && index > 0) {
-        newCode[index - 1] = "";
-        setCode(newCode);
-        inputs.current[index - 1]?.focus();
-      } else {
-        newCode[index] = "";
-        setCode(newCode);
-      }
-    }
   };
 
   const handleVerify = async () => {
@@ -76,7 +44,7 @@ export default function Verify() {
       return;
     }
 
-    if (code.join("").length !== 4) {
+    if (code.length !== 4) {
       setError("Please enter a valid 4-digit code.");
       return;
     }
@@ -84,7 +52,7 @@ export default function Verify() {
     try {
       const formData = new FormData();
       formData.append("type", "verify_otp");
-      formData.append("code", code.join(""));
+      formData.append("code", code);
       formData.append("user_id", userId);
       const response = await apiCall(formData);
 
@@ -131,22 +99,19 @@ export default function Verify() {
       <View
         style={[styles.otpContainer, error ? styles.otpContainerError : null]}
       >
-        <View style={styles.otpInputs}>
-          {code.map((digit, index) => (
-            <TextInput
-              key={index}
-              ref={(el) => {
-                inputs.current[index] = el;
-              }}
-              style={[styles.otpInput, error ? styles.otpInputError : null]}
-              keyboardType="numeric"
-              maxLength={1}
-              onChangeText={(text) => handleChangeText(text, index)}
-              onKeyPress={(e) => handleKeyPress(e, index)}
-              value={digit}
-            />
-          ))}
-        </View>
+        <OtpInput
+          numberOfDigits={4}
+          onTextChange={handleChangeText}
+          theme={{
+            containerStyle: styles.otpInputs,
+            pinCodeContainerStyle: error
+              ? StyleSheet.flatten([styles.otpInput, styles.otpInputError])
+              : styles.otpInput,
+            pinCodeTextStyle: styles.otpInputText,
+            focusStickStyle: styles.focusStick,
+            focusedPinCodeContainerStyle: styles.focusedOtpInput,
+          }}
+        />
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
         <TouchableOpacity>
           <Text style={styles.resendText}>
@@ -206,7 +171,8 @@ const styles = StyleSheet.create({
   },
   otpInputs: {
     flexDirection: "row",
-    gap: 12,
+    width: "70%",
+    // gap: 12,
     marginBottom: 18,
   },
   otpInput: {
@@ -215,12 +181,20 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     borderColor: Colors.gray200,
-    textAlign: "center",
+  },
+  otpInputText: {
     fontSize: 20,
     fontFamily: FONTS.medium,
+    color: Colors.secondary,
   },
   otpInputError: {
     borderColor: "red",
+  },
+  focusStick: {
+    backgroundColor: Colors.primary,
+  },
+  focusedOtpInput: {
+    borderColor: Colors.primary,
   },
   errorText: {
     color: "red",

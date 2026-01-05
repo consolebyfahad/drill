@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary300,
     padding: 14,
     borderRadius: 12,
-    gap: 8,
+    gap: 2,
   },
   input: {
     flex: 1,

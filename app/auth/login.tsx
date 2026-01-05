@@ -16,6 +16,7 @@ import { Colors } from "~/constants/Colors";
 import { apiCall } from "~/utils/api";
 import Flag from "@/assets/svgs/flag.svg";
 import { FONTS } from "~/constants/Fonts";
+import { scale, verticalScale } from "react-native-size-matters";
 type CountryCode = {
   key: number;
   label: string;
@@ -168,7 +169,7 @@ const styles = StyleSheet.create({
     height: 32,
   },
   countryText: {
-    fontSize: 18,
+    fontSize: verticalScale(12),
     color: Colors.secondary,
     fontFamily: FONTS.medium,
   },

@@ -361,6 +361,8 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   profileHeader: {
+    flex: 1,
+    width: "100%",
     backgroundColor: "#002f9c",
     borderRadius: 20,
     padding: 24,
@@ -390,7 +392,7 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
   },
   profileInfo: {
-    flex: 1,
+    width: "70%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -407,12 +409,14 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
   },
   copiedText: {
+    width: "70%",
     color: "#4CAF50",
     fontSize: 14,
     fontStyle: "italic",
     fontFamily: FONTS.regular,
   },
   copy: {
+    width: "20%",
     backgroundColor: "#3359b0",
     paddingHorizontal: 12,
     paddingVertical: 6,

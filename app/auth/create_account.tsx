@@ -36,6 +36,7 @@ import {
 } from "~/utils/uploadData";
 import { FONTS } from "~/constants/Fonts";
 import DropDownPicker from "react-native-dropdown-picker";
+import Header from "~/components/header";
 
 // Suppress the specific warning about MediaTypeOptions
 LogBox.ignoreLogs(["[expo-image-picker] `ImagePicker.MediaTypeOptions`"]);
@@ -427,25 +428,15 @@ export default function CreateAccount() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        style={styles.keyboardConatiner}
-        behavior={Platform.OS === "ios" ? "padding" : "position"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-        enabled
-      >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Header */}
+      <KeyboardAvoidingView behavior="padding" style={styles.keyboardConatiner}>
+        <ScrollView showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.push("/auth/login")}>
               <Arrow />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Create Account</Text>
-            <View style={{ width: 24 }} />
+            <Text></Text>
           </View>
-
           {/* Title & Subtitle */}
           <Text style={styles.title}>Verify Your {"\n"}Identity!</Text>
           <Text style={styles.subtitle}>
@@ -808,15 +799,12 @@ export default function CreateAccount() {
               )}
             </View>
           )}
-
-          {/* <View style={{ height: 80 }} /> */}
+          <Button
+            title={isLoading ? "Please wait..." : "Submit"}
+            onPress={handleFormSubmit}
+            disabled={isLoading}
+          />
         </ScrollView>
-        {/* Fixed Button at Bottom */}
-        <Button
-          title={isLoading ? "Please wait..." : "Submit"}
-          onPress={handleFormSubmit}
-          disabled={isLoading}
-        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -933,6 +921,7 @@ const styles = StyleSheet.create({
   },
   documentSection: {
     marginTop: 16,
+    marginBottom: 16,
   },
   separatorContainer: {
     flexDirection: "row",
