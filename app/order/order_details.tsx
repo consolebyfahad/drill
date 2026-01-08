@@ -6,6 +6,7 @@ import {
   StyleSheet,
 } from "react-native";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import ServiceDetailsCard from "../../components/service_details_card";
 import { Colors } from "../../constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +16,7 @@ import OrderDetailsSection from "~/components/order_details";
 import { FONTS } from "~/constants/Fonts";
 
 export default function OrderDetails({ order }: OrderType) {
+  const { t } = useTranslation();
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   console.log("order", order);
   return (
@@ -28,7 +30,7 @@ export default function OrderDetails({ order }: OrderType) {
           style={styles.orderHeader}
           onPress={() => setShowOrderDetails(!showOrderDetails)}
         >
-          <Text style={styles.sectionTitle}>Order Details</Text>
+          <Text style={styles.sectionTitle}>{t("order.orderDetails")}</Text>
           <Ionicons
             name={showOrderDetails ? "chevron-down" : "chevron-up"}
             size={20}
@@ -38,7 +40,7 @@ export default function OrderDetails({ order }: OrderType) {
         {showOrderDetails && <OrderDetailsSection order={order} />}
       </View>
       <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>
-        About Customer
+        {t("order.aboutCustomer")}
       </Text>
       <ProviderCard order={order} />
     </ScrollView>

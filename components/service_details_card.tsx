@@ -1,4 +1,5 @@
 import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+import { useTranslation } from "react-i18next";
 import DashedSeprator from "./dashed_seprator";
 import { Colors } from "../constants/Colors";
 import { FONTS } from "~/constants/Fonts";
@@ -30,6 +31,8 @@ export default function ServiceDetailsCard({
   order,
   onPress,
 }: ServiceDetailsCardProps) {
+  const { t } = useTranslation();
+  
   // Function to get different status styles based on status
   const getStatusStyle = (status: string | undefined) => {
     switch (status?.toLowerCase()) {
@@ -63,7 +66,7 @@ export default function ServiceDetailsCard({
         <View style={styles.orderInfo}>
           <View style={styles.orderHeader}>
             <Text style={styles.title}>
-              {order?.category?.name || "Service Order"}
+              {order?.category?.name || t("serviceCard.serviceOrder")}
             </Text>
             <View
               style={[
@@ -77,12 +80,12 @@ export default function ServiceDetailsCard({
             </View>
           </View>
           <Text style={styles.orderId}>
-            Order ID: <Text style={styles.orderIdValue}>{order.order_no}</Text>
+            {t("serviceCard.orderID")} <Text style={styles.orderIdValue}>{order.order_no}</Text>
           </Text>
           <Text style={styles.amount}>
-            SAR {order.amount || "0.00 "}
+            {t("serviceCard.sar")} {order.amount || "0.00 "}
             {order.discount && parseInt(order.discount) > 0 && (
-              <Text style={styles.discount}>({order.discount}% off)</Text>
+              <Text style={styles.discount}>({order.discount}% {t("serviceCard.off")})</Text>
             )}
           </Text>
         </View>
@@ -91,20 +94,20 @@ export default function ServiceDetailsCard({
       {/* Order Details Section */}
       <View style={styles.detailsContainer}>
         <View style={styles.detailsRow}>
-          <Text style={styles.label}>Date & Time</Text>
+          <Text style={styles.label}>{t("serviceCard.dateTime")}</Text>
           <Text style={styles.value}>{order.timestamp || "N/A"}</Text>
         </View>
         <DashedSeprator />
 
         <View style={styles.detailsRow}>
-          <Text style={styles.label}>Customer</Text>
+          <Text style={styles.label}>{t("serviceCard.customer")}</Text>
           <Text style={styles.value}>
-            {order?.user?.name || "Not assigned yet"}
+            {order?.user?.name || t("serviceCard.notAssigned")}
           </Text>
         </View>
         <DashedSeprator />
         <View style={styles.detailsRow}>
-          <Text style={styles.label}>Order Status</Text>
+          <Text style={styles.label}>{t("serviceCard.orderStatus")}</Text>
           <Text style={[styles.value, { color: statusStyle.color }]}>
             {order.status}
           </Text>
@@ -112,16 +115,16 @@ export default function ServiceDetailsCard({
         <DashedSeprator />
 
         <View style={styles.detailsRow}>
-          <Text style={styles.label}>Payment Status</Text>
+          <Text style={styles.label}>{t("serviceCard.paymentStatus")}</Text>
           <Text style={styles.paymentStatus}>
-            {order?.payment_status || "Pending"}
+            {order?.payment_status || t("serviceCard.pending")}
           </Text>
         </View>
         {order.status === "completed" && (
           <>
             <DashedSeprator />
             <View style={styles.detailsRow}>
-              <Text style={styles.label}>Rating</Text>
+              <Text style={styles.label}>{t("serviceCard.rating")}</Text>
               <View style={styles.ratingContainer}>
                 <Text style={styles.starIcon}>★</Text>
                 <Text style={styles.value}>{order.rating || "0"}</Text>
@@ -129,8 +132,8 @@ export default function ServiceDetailsCard({
             </View>
             <DashedSeprator />
             <View style={styles.detailsRow}>
-              <Text style={styles.label}>Tipped</Text>
-              <Text style={styles.tip}>SAR {order.tip || "0.00"}</Text>
+              <Text style={styles.label}>{t("serviceCard.tipped")}</Text>
+              <Text style={styles.tip}>{t("serviceCard.sar")} {order.tip || "0.00"}</Text>
             </View>
           </>
         )}

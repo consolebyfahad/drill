@@ -1,11 +1,22 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  I18nManager,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "~/components/header";
+import { Colors } from "~/constants/Colors";
+
+type LanguageCode = "en" | "ar";
 
 interface Language {
-  code: string;
+  code: LanguageCode;
   name: string;
   nativeName: string;
   flag: string;
@@ -17,8 +28,22 @@ interface LanguageOptionProps {
   onPress: () => void;
 }
 
-export default function language() {
+export default function Language() {
   const { t, i18n } = useTranslation();
+  const [currentLang, setCurrentLang] = useState(i18n.language);
+
+  // Update local state when i18n language changes
+  useEffect(() => {
+    const handleLanguageChange = (lng: string) => {
+      setCurrentLang(lng);
+    };
+
+    i18n.on("languageChanged", handleLanguageChange);
+
+    return () => {
+      i18n.off("languageChanged", handleLanguageChange);
+    };
+  }, [i18n]);
 
   const languages: Language[] = [
     {
@@ -35,13 +60,72 @@ export default function language() {
     },
   ];
 
-  const changeLanguage = async (languageCode: string): Promise<void> => {
+  const changeLanguage = async (languageCode: LanguageCode): Promise<void> => {
     if (i18n.language === languageCode) {
       return;
     }
 
     try {
+      // Determine if RTL change is needed
+      const newIsRTL = languageCode === "ar";
+      const currentIsRTL = I18nManager.isRTL;
+      const needsDirectionChange = currentIsRTL !== newIsRTL;
+
+      console.log("🔄 Language change requested:", {
+        from: i18n.language,
+        to: languageCode,
+        currentIsRTL,
+        newIsRTL,
+        needsDirectionChange,
+      });
+
+      // IMPORTANT: Save language preference FIRST
+      await AsyncStorage.setItem("user-language", languageCode);
+      console.log(
+        "💾 Saved language preference to AsyncStorage:",
+        languageCode
+      );
+
+      // Then change the language
       await i18n.changeLanguage(languageCode);
+      console.log("✅ Changed i18n language to:", languageCode);
+
+      if (needsDirectionChange) {
+        // Force RTL/LTR based on language
+        I18nManager.forceRTL(newIsRTL);
+        I18nManager.allowRTL(newIsRTL);
+
+        console.log("Direction changed:", {
+          newIsRTL,
+          afterChange: I18nManager.isRTL,
+          note: "RTL change only takes effect after complete app restart (kill + relaunch)",
+        });
+
+        // Alert user about app reload requirement with clear instructions
+        Alert.alert(
+          newIsRTL ? "اللغة" : "Language",
+          newIsRTL
+            ? "تم حفظ اللغة!\n\nلتطبيق تغيير الاتجاه:\n1. أغلق التطبيق تماماً (اسحبه من قائمة التطبيقات الأخيرة)\n2. أعد فتح التطبيق\n\nسيظهر التطبيق بالاتجاه الصحيح."
+            : "Language saved!\n\nTo apply layout direction change:\n1. COMPLETELY close the app (swipe it away from recent apps)\n2. Reopen the app\n\nThe app will then show in the correct direction.",
+          [
+            {
+              text: newIsRTL ? "فهمت" : "Got it",
+              onPress: () => {
+                console.log(
+                  "User needs to restart app for RTL/LTR to take effect"
+                );
+              },
+            },
+          ]
+        );
+      } else {
+        // Language changed without direction change
+        Alert.alert(
+          t("success") || "Success",
+          t("language.languageChanged") || "Language changed successfully!",
+          [{ text: t("ok") || "OK" }]
+        );
+      }
     } catch (error) {
       console.error("Failed to change language:", error);
       Alert.alert(
@@ -52,43 +136,50 @@ export default function language() {
     }
   };
 
-  // const LanguageOption: React.FC<LanguageOptionProps> = ({
-  //   language,
-  //   isSelected,
-  //   onPress,
-  // }) => (
-  //   <TouchableOpacity
-  //     style={[styles.languageOption, isSelected && styles.selectedOption]}
-  //     onPress={onPress}
-  //     activeOpacity={0.7}
-  //     accessibilityRole="button"
-  //     accessibilityLabel={`Select ${language.name} language`}
-  //     accessibilityState={{ selected: isSelected }}
-  //   >
-  //     <View style={styles.languageContent}>
-  //       <Text style={styles.flag} accessibilityLabel={`${language.name} flag`}>
-  //         {language.flag}
-  //       </Text>
-  //       <View style={styles.languageText}>
-  //         <Text
-  //           style={[styles.languageName, isSelected && styles.selectedText]}
-  //         >
-  //           {language.name}
-  //         </Text>
-  //         <Text style={[styles.nativeName, isSelected && styles.selectedText]}>
-  //           {language.nativeName}
-  //         </Text>
-  //       </View>
-  //     </View>
-  //     {isSelected && (
-  //       <View style={styles.checkmark}>
-  //         <Text style={styles.checkmarkIcon} accessibilityLabel="Selected">
-  //           ✓
-  //         </Text>
-  //       </View>
-  //     )}
-  //   </TouchableOpacity>
-  // );
+  function LanguageOption({
+    language,
+    isSelected,
+    onPress,
+  }: LanguageOptionProps) {
+    return (
+      <TouchableOpacity
+        style={[styles.languageOption, isSelected && styles.selectedOption]}
+        onPress={onPress}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={`Select ${language.name} language`}
+        accessibilityState={{ selected: isSelected }}
+      >
+        <View style={styles.languageContent}>
+          <Text
+            style={styles.flag}
+            accessibilityLabel={`${language.name} flag`}
+          >
+            {language.flag}
+          </Text>
+          <View style={styles.languageText}>
+            <Text
+              style={[styles.languageName, isSelected && styles.selectedText]}
+            >
+              {language.name}
+            </Text>
+            <Text
+              style={[styles.nativeName, isSelected && styles.selectedText]}
+            >
+              {language.nativeName}
+            </Text>
+          </View>
+        </View>
+        {isSelected && (
+          <View style={styles.checkmark}>
+            <Text style={styles.checkmarkIcon} accessibilityLabel="Selected">
+              ✓
+            </Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -98,18 +189,17 @@ export default function language() {
           {t("language.selectLanguage") || "Select your preferred language"}
         </Text>
         <View style={styles.languageList}>
-          {/* {languages.map((language: Language) => (
+          {languages.map((language) => (
             <LanguageOption
               key={language.code}
               language={language}
-              isSelected={i18n.language === language.code}
+              isSelected={currentLang === language.code}
               onPress={() => changeLanguage(language.code)}
             />
-          ))} */}
+          ))}
         </View>
         <Text style={styles.note}>
-          {t("language.languageNote") ||
-            "The app will restart to apply language changes"}
+          {t("language.languageChanged") || "Language will change immediately!"}
         </Text>
       </View>
     </SafeAreaView>
@@ -119,8 +209,7 @@ export default function language() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 12,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#fff",
   },
   content: {
     flex: 1,

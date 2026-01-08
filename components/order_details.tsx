@@ -1,22 +1,25 @@
 import { Image, StyleSheet, Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import DashedSeparator from "./dashed_seprator";
 import { Colors } from "~/constants/Colors";
 import { OrderType } from "~/types/dataTypes";
 
 const OrderDetailsSection = ({ order }: OrderType) => {
+  const { t } = useTranslation();
+  
   return (
     <View style={styles.orderDetails}>
       <View style={styles.rowBetween}>
-        <Text style={styles.boldText}>Package</Text>
+        <Text style={styles.boldText}>{t("orderDetailsComponent.package")}</Text>
         <Text style={styles.blueText}>
-          {order.package?.name || "Express Service"}
+          {order.package?.name || t("orderDetailsComponent.expressService")}
         </Text>
       </View>
 
       <DashedSeparator />
 
       <View style={styles.rowBetween}>
-        <Text style={styles.boldText}>Problem Image</Text>
+        <Text style={styles.boldText}>{t("orderDetailsComponent.problemImage")}</Text>
         {order.images ? (
           <Image
             source={{ uri: `${order.image_url}${order.images}` }}
@@ -26,10 +29,10 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       </View>
 
       <Text style={[styles.boldText, { marginBottom: 4 }]}>
-        Detail About Problem
+        {t("orderDetailsComponent.detailAboutProblem")}
       </Text>
       <Text style={styles.grayText}>
-        {order.description || "No description provided."}
+        {order.description || t("orderDetailsComponent.noDescription")}
       </Text>
 
       <DashedSeparator />
@@ -37,7 +40,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.created_at && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Order Placed:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.orderPlaced")}</Text>
             <Text style={styles.grayText}>{order.created_at}</Text>
           </View>
           <DashedSeparator />
@@ -47,7 +50,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.timestamp && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Order Accepted:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.orderAccepted")}</Text>
             <Text style={styles.grayText}>{order.timestamp}</Text>
           </View>
           <DashedSeparator />
@@ -57,7 +60,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.arrived_at_location && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Arrived At Location:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.arrivedAtLocation")}</Text>
             <Text style={styles.grayText}>{order.arrived_at_location}</Text>
           </View>
           <DashedSeparator />
@@ -67,7 +70,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.arrival_confirm && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Arrival Confirm:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.arrivalConfirm")}</Text>
             <Text style={styles.grayText}>{order.arrival_confirm}</Text>
           </View>
           <DashedSeparator />
@@ -77,7 +80,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.work_started && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Work Started:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.workStarted")}</Text>
             <Text style={styles.grayText}>{order.work_started}</Text>
           </View>
           <DashedSeparator />
@@ -87,7 +90,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.extra_added && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Extra Added:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.extraAdded")}</Text>
             <Text style={styles.grayText}>{order.extra_added}</Text>
           </View>
           <DashedSeparator />
@@ -97,7 +100,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.final_images && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Insulation Sheet:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.insulationSheet")}</Text>
             <Text style={styles.grayText}>{order.insulation_sheet}</Text>
           </View>
           <DashedSeparator />
@@ -107,7 +110,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.item_image && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Item Image:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.itemImage")}</Text>
             <Image
               source={{ uri: `${order.image_url}${order.item_image}` }}
               style={styles.problemImage}
@@ -120,7 +123,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.bill_image && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Bill Image:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.billImage")}</Text>
             <Image
               source={{ uri: `${order.image_url}${order.bill_image}` }}
               style={styles.problemImage}
@@ -133,7 +136,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.paid_by && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Extra Paid By:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.extraPaidBy")}</Text>
             <Text style={styles.grayText}>{order.paid_by}</Text>
           </View>
           <DashedSeparator />
@@ -143,7 +146,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.extra_accepted && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Extra Accepted:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.extraAccepted")}</Text>
             <Text style={styles.grayText}>{order.extra_accepted}</Text>
           </View>
           <DashedSeparator />
@@ -153,7 +156,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.job_time_finished && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Job Time Finished:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.jobTimeFinished")}</Text>
             <Text style={styles.grayText}>{order.job_time_finished}</Text>
           </View>
           <DashedSeparator />
@@ -163,7 +166,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.bonus_time_started && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Bonus Time Started:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.bonusTimeStarted")}</Text>
             <Text style={styles.grayText}>{order.bonus_time_started}</Text>
           </View>
           <DashedSeparator />
@@ -173,7 +176,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.bonus_time_ended && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Bonus Time Ended:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.bonusTimeEnded")}</Text>
             <Text style={styles.grayText}>{order.bonus_time_ended}</Text>
           </View>
           <DashedSeparator />
@@ -183,7 +186,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.order_completed && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Order Completed:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.orderCompleted")}</Text>
             <Text style={styles.grayText}>{order.order_completed}</Text>
           </View>
           <DashedSeparator />
@@ -193,7 +196,7 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       {order.payment_method && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>Payment Method:</Text>
+            <Text style={styles.grayText}>{t("orderDetailsComponent.paymentMethod")}</Text>
             <Text style={styles.grayText}>{order.payment_method}</Text>
           </View>
           <DashedSeparator />
@@ -201,8 +204,8 @@ const OrderDetailsSection = ({ order }: OrderType) => {
       )}
 
       <View style={styles.rowBetween}>
-        <Text style={styles.grayText}>Payment Status:</Text>
-        <Text style={styles.grayText}>{order.payment_status || "Pending"}</Text>
+        <Text style={styles.grayText}>{t("orderDetailsComponent.paymentStatus")}</Text>
+        <Text style={styles.grayText}>{order.payment_status || t("orderDetailsComponent.pending")}</Text>
       </View>
     </View>
   );

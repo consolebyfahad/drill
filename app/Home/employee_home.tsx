@@ -1,8 +1,11 @@
+import OfflineIcon from "@/assets/svgs/offline.svg";
+import OnlineIcon from "@/assets/svgs/online.svg";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import { router } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -15,15 +18,13 @@ import MapView from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import JobRequestCard from "~/components/jobrequest_card";
 import ToggleJob from "~/components/toggle_job";
+import { FONTS } from "~/constants/Fonts";
 import { apiCall } from "~/utils/api";
 import {
   getFCMToken,
   requestFCMPermission,
   setupNotificationListeners,
 } from "~/utils/notification";
-import OnlineIcon from "@/assets/svgs/online.svg";
-import OfflineIcon from "@/assets/svgs/offline.svg";
-import { FONTS } from "~/constants/Fonts";
 
 // Define provider type
 interface Provider {
@@ -94,6 +95,7 @@ interface LocationState {
 }
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const EmployeeHome = () => {
+  const { t } = useTranslation();
   const HEADER_HEIGHT = SCREEN_HEIGHT * 0.12; // 12% of screen height
   const OVERLAY_MAX_HEIGHT = SCREEN_HEIGHT * 0.85; // 85% of screen height
   const CARD_MAX_HEIGHT = SCREEN_HEIGHT * 0.65; // 65% of screen height for job card
@@ -101,14 +103,14 @@ const EmployeeHome = () => {
   const mapRef = useRef<MapView | null>(null);
 
   // State variables
-  const [greeting, setGreeting] = useState("Good Afternoon!");
+  const [greeting, setGreeting] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isOn, setIsOn] = useState(true);
   const [location, setLocation] = useState<LocationState>({
-    latitude: 37.7749,
-    longitude: -122.4194,
-    address: "Loading address...",
+    latitude: 24.7136, // Riyadh, Saudi Arabia default
+    longitude: 46.6753,
+    address: t("loadingAddress") || "Loading address...",
   });
   const [jobRequests, setJobRequests] = useState<OrderDetails[]>([]);
   const [mapReady, setMapReady] = useState(false);
@@ -117,13 +119,13 @@ const EmployeeHome = () => {
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) {
-      setGreeting("Good Morning!");
+      setGreeting(t("goodMorning") || "Good Morning!");
     } else if (hour >= 12 && hour < 18) {
-      setGreeting("Good Afternoon!");
+      setGreeting(t("goodAfternoon") || "Good Afternoon!");
     } else {
-      setGreeting("Good Evening!");
+      setGreeting(t("goodEvening") || "Good Evening!");
     }
-  }, []);
+  }, [t]);
 
   // Get order details function
   const getOrderDetails = useCallback(async (orderId: string) => {
@@ -183,6 +185,10 @@ const EmployeeHome = () => {
     return () => unsubscribe(); // Clean up listeners
   }, [getOrderDetails, isOn]);
 
+  const locationSubscriptionRef = useRef<Location.LocationSubscription | null>(
+    null
+  );
+
   useEffect(() => {
     let isMounted = true;
 
@@ -213,14 +219,59 @@ const EmployeeHome = () => {
 
         const { latitude, longitude } = currentLocation.coords;
 
+        // Save provider location to AsyncStorage with correct keys
         await AsyncStorage.setItem("latitude", latitude.toString());
         await AsyncStorage.setItem("longitude", longitude.toString());
+
+        console.log("📍 Provider Initial Location:", {
+          latitude: latitude.toString(),
+          longitude: longitude.toString(),
+          timestamp: new Date().toISOString(),
+        });
 
         setLocation((prev) => ({
           ...prev,
           latitude,
           longitude,
         }));
+
+        // Start continuous location tracking when online
+        if (isOn) {
+          console.log(
+            "🔄 Starting continuous location tracking for provider..."
+          );
+          const subscription = await Location.watchPositionAsync(
+            {
+              accuracy: Location.Accuracy.BestForNavigation,
+              distanceInterval: 10, // Update every 10 meters
+              timeInterval: 10000, // Or every 10 seconds
+            },
+            async (newLocation) => {
+              if (isMounted) {
+                const newLat = newLocation.coords.latitude.toString();
+                const newLng = newLocation.coords.longitude.toString();
+
+                // Update AsyncStorage with latest location
+                await AsyncStorage.setItem("latitude", newLat);
+                await AsyncStorage.setItem("longitude", newLng);
+
+                console.log("📍 Provider Location Updated (Continuous):", {
+                  latitude: newLat,
+                  longitude: newLng,
+                  timestamp: new Date().toISOString(),
+                });
+
+                setLocation((prev) => ({
+                  ...prev,
+                  latitude: newLocation.coords.latitude,
+                  longitude: newLocation.coords.longitude,
+                }));
+              }
+            }
+          );
+
+          locationSubscriptionRef.current = subscription;
+        }
 
         try {
           const geocode = await Location.reverseGeocodeAsync({
@@ -294,8 +345,14 @@ const EmployeeHome = () => {
     return () => {
       isMounted = false;
       clearTimeout(timer);
+      // Clean up location subscription
+      if (locationSubscriptionRef.current) {
+        locationSubscriptionRef.current.remove();
+        locationSubscriptionRef.current = null;
+        console.log("🛑 Stopped continuous location tracking");
+      }
     };
-  }, []);
+  }, [isOn]);
 
   const handleAcceptJob = async (order: OrderDetails) => {
     if (!order?.id) {
@@ -307,11 +364,49 @@ const EmployeeHome = () => {
 
     try {
       const userId = await AsyncStorage.getItem("user_id");
-      const userLat = await AsyncStorage.getItem("user_lat");
-      const userLng = await AsyncStorage.getItem("user_lng");
+
+      // Get provider's current location - use correct AsyncStorage keys
+      let providerLat = await AsyncStorage.getItem("latitude");
+      let providerLng = await AsyncStorage.getItem("longitude");
+
+      // If not found, try to get current location
+      if (!providerLat || !providerLng) {
+        console.log(
+          "📍 Provider location not in AsyncStorage, getting current location..."
+        );
+        try {
+          const currentLocation = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          providerLat = currentLocation.coords.latitude.toString();
+          providerLng = currentLocation.coords.longitude.toString();
+
+          // Save to AsyncStorage for future use
+          await AsyncStorage.setItem("latitude", providerLat);
+          await AsyncStorage.setItem("longitude", providerLng);
+          console.log("📍 Provider location saved:", {
+            lat: providerLat,
+            lng: providerLng,
+          });
+        } catch (error) {
+          console.error("❌ Error getting provider location:", error);
+          Alert.alert(
+            "Error",
+            "Could not get your location. Please enable location services."
+          );
+          setIsLoading(false);
+          return;
+        }
+      }
 
       if (!userId) {
         Alert.alert("Error", "User information not found");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!providerLat || !providerLng) {
+        Alert.alert("Error", "Location information not found");
         setIsLoading(false);
         return;
       }
@@ -321,11 +416,17 @@ const EmployeeHome = () => {
       formData.append("table_name", "order_history");
       formData.append("order_id", order.id);
       formData.append("user_id", userId);
-      formData.append("lat", userLat || "");
-      formData.append("lng", userLng || "");
+      formData.append("lat", providerLat);
+      formData.append("lng", providerLng);
       formData.append("status", "accepted");
 
-      console.log("Accepting order:", formData);
+      console.log("✅ Provider Accepting Order:", {
+        order_id: order.id,
+        user_id: userId,
+        provider_lat: providerLat,
+        provider_lng: providerLng,
+        status: "accepted",
+      });
 
       const response = await apiCall(formData);
 
@@ -352,7 +453,7 @@ const EmployeeHome = () => {
 
   const handleHideJob = async (orderId: string) => {
     if (!orderId) {
-      Alert.alert("Error", "Cannot accept job: order details not available");
+      Alert.alert("Error", "Cannot decline job: order details not available");
       return;
     }
 
@@ -360,8 +461,8 @@ const EmployeeHome = () => {
 
     try {
       const userId = await AsyncStorage.getItem("user_id");
-      const userLat = await AsyncStorage.getItem("user_lat");
-      const userLng = await AsyncStorage.getItem("user_lng");
+      const providerLat = await AsyncStorage.getItem("latitude");
+      const providerLng = await AsyncStorage.getItem("longitude");
 
       if (!userId) {
         Alert.alert("Error", "User information not found");
@@ -374,11 +475,17 @@ const EmployeeHome = () => {
       formData.append("table_name", "order_history");
       formData.append("order_id", orderId);
       formData.append("user_id", userId);
-      formData.append("lat", userLat || "");
-      formData.append("lng", userLng || "");
+      formData.append("lat", providerLat || "");
+      formData.append("lng", providerLng || "");
       formData.append("status", "reject");
 
-      console.log("Accepting order:", formData);
+      console.log("❌ Provider Declining Order:", {
+        order_id: orderId,
+        user_id: userId,
+        provider_lat: providerLat,
+        provider_lng: providerLng,
+        status: "reject",
+      });
 
       const response = await apiCall(formData);
 

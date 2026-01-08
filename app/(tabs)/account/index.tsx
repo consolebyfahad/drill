@@ -11,6 +11,7 @@ import {
   Platform,
 } from "react-native";
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import Header from "@/components/header";
@@ -68,6 +69,7 @@ type User = {
 };
 
 export default function Account() {
+  const { t } = useTranslation();
   // const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [accountType, setAccountType] = useState("");
   const router = useRouter();
@@ -254,15 +256,15 @@ export default function Account() {
     }
   };
 
-  const handleNavigation = (title: string) => {
-    switch (title) {
-      case "Employees":
+  const handleNavigation = (key: string) => {
+    switch (key) {
+      case "employees":
         router.push("/account/employee");
         break;
-      case "Wallet":
+      case "wallet":
         router.push("/account/wallet");
         break;
-      case "Rate Us":
+      case "rateUs":
         // Handle rate us functionality (e.g., open app store)
         if (Platform.OS === "ios") {
           Linking.openURL("https://apps.apple.com/app/YOUR_APP_ID");
@@ -272,16 +274,16 @@ export default function Account() {
           );
         }
         break;
-      case "About App":
+      case "aboutApp":
         router.push("/account/about");
         break;
-      case "Language":
+      case "language":
         router.push("/account/language");
         break;
-      case "Support":
+      case "support":
         router.push("/account/support");
         break;
-      case "Logout":
+      case "logout":
         handleLogout();
         break;
       default:
@@ -290,26 +292,33 @@ export default function Account() {
   };
 
   const handleLogout = async () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await AsyncStorage.clear();
-            // Navigate to login screen
-            router.replace("/welcome");
-          } catch (error) {
-            console.error("Error during logout:", error);
-            Alert.alert("Error", "Failed to logout. Please try again.");
-          }
+    Alert.alert(
+      t("account.logout") || "Logout",
+      t("account.logoutConfirmation") || "Are you sure you want to logout?",
+      [
+        {
+          text: t("cancel") || "Cancel",
+          style: "cancel",
         },
-      },
-    ]);
+        {
+          text: t("account.logout") || "Logout",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await AsyncStorage.clear();
+              // Navigate to login screen
+              router.replace("/welcome");
+            } catch (error) {
+              console.error("Error during logout:", error);
+              Alert.alert(
+                t("error") || "Error",
+                "Failed to logout. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleProfile = () => {
@@ -333,67 +342,100 @@ export default function Account() {
 
   // Update the icon map to include all necessary icons
   const iconMap: { [key: string]: JSX.Element } = {
-    Account: <AccountStatus />,
-    Employee: <Employee />,
-    Wallet: <Wallet />,
+    accountStatus: <AccountStatus />,
+    employees: <Employee />,
+    wallet: <Wallet />,
     // Notification: renderNotificationIcon(),
-    "Rate Us": <Rating />,
-    "About App": <About />,
-    Language: <Language />,
-    Support: <Support />,
-    Logout: <Logout />,
+    rateUs: <Rating />,
+    aboutApp: <About />,
+    language: <Language />,
+    support: <Support />,
+    logout: <Logout />,
+  };
+
+  // Get verification status text
+  const getVerificationStatus = () => {
+    if (accountType === "company") {
+      return user.platform_status === "1"
+        ? t("account.verified")
+        : t("account.unverified");
+    } else if (accountType === "employee") {
+      if (user.platform_status === "1" && user.company_verified === "1") {
+        return t("account.verified");
+      } else if (user.platform_status === "1" || user.company_verified === "1") {
+        return t("account.halfVerified");
+      }
+      return t("account.unverified");
+    }
+    return t("account.unverified");
   };
 
   // Create the menu items
   const getMenuItems = () => {
     const baseMenuItems = [
       {
-        icon: "Account",
-        title: "Account Status",
-        right:
-          accountType === "company"
-            ? user.platform_status === "1"
-              ? "Verified"
-              : "Unverified"
-            : accountType === "employee"
-            ? user.platform_status === "1" && user.company_verified === "1"
-              ? "Verified"
-              : user.platform_status === "1" || user.company_verified === "1"
-              ? "1/2 Verified"
-              : "Unverified"
-            : "Unverified",
+        icon: "accountStatus",
+        key: "accountStatus",
+        title: t("account.accountStatus"),
+        right: getVerificationStatus(),
         rightColor:
           user.platform_status === "1" ? Colors.success : Colors.danger,
       },
       ...(accountType === "company"
         ? [
             {
-              icon: "Wallet",
-              title: "Wallet",
+              icon: "wallet",
+              key: "wallet",
+              title: t("account.wallet"),
               extraRight: "chevron-forward",
             },
           ]
         : []),
-      ,
     ];
 
     // Only show Employees for company accounts
     if (accountType === "company") {
       baseMenuItems.push({
-        icon: "Employee",
-        title: "Employees",
+        icon: "employees",
+        key: "employees",
+        title: t("account.employees"),
         extraRight: "chevron-forward",
       });
     }
 
     // Add the rest of the menu items
     baseMenuItems.push(
-      // { icon: "Notification", title: "Notification", right: "toggle" },
-      { icon: "Rate Us", title: "Rate Us", extraRight: "chevron-forward" },
-      { icon: "About App", title: "About App", extraRight: "chevron-forward" },
-      { icon: "Language", title: "Language", extraRight: "chevron-forward" },
-      { icon: "Support", title: "Support", extraRight: "chevron-forward" },
-      { icon: "Logout", title: "Logout", extraRight: "chevron-forward" }
+      // { icon: "Notification", key: "notification", title: t("notifications"), right: "toggle" },
+      {
+        icon: "rateUs",
+        key: "rateUs",
+        title: t("account.rateUs"),
+        extraRight: "chevron-forward",
+      },
+      {
+        icon: "aboutApp",
+        key: "aboutApp",
+        title: t("account.aboutApp"),
+        extraRight: "chevron-forward",
+      },
+      {
+        icon: "language",
+        key: "language",
+        title: t("account.language"),
+        extraRight: "chevron-forward",
+      },
+      {
+        icon: "support",
+        key: "support",
+        title: t("account.support"),
+        extraRight: "chevron-forward",
+      },
+      {
+        icon: "logout",
+        key: "logout",
+        title: t("account.logout"),
+        extraRight: "chevron-forward",
+      }
     );
 
     return baseMenuItems;
@@ -408,7 +450,11 @@ export default function Account() {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
-        <Header title="Account" homeScreen={false} icon={false} />
+        <Header
+          title={t("account.title") || "Account"}
+          homeScreen={false}
+          icon={false}
+        />
         {/* Profile Section */}
         <View style={styles.profileContainer}>
           <View style={styles.imageWrapper}>
@@ -434,24 +480,28 @@ export default function Account() {
           {accountType === "employee" ? (
             <Text style={styles.userEmail}>{user.email}</Text>
           ) : (
-            <Text style={styles.userEmail}>Balance: SAR {user.balance}</Text>
+            <Text style={styles.userEmail}>
+              {t("account.balance")}
+              {user.balance}
+            </Text>
           )}
           {accountType === "company" && user.company_code && (
             <Text style={styles.companyCode}>
-              Company#: {user.company_code}
+              {t("account.companyNumber")}
+              {user.company_code}
             </Text>
           )}
         </View>
         {/* Buttons */}
         <View style={styles.buttonRow}>
           <Button
-            title="View Profile"
+            title={t("account.viewProfile") || "View Profile"}
             width="48%"
             fullWidth={false}
             onPress={handleProfile}
           />
           <Button
-            title="Edit Profile"
+            title={t("account.editProfile") || "Edit Profile"}
             width="48%"
             fullWidth={false}
             variant="secondary"
@@ -478,7 +528,7 @@ export default function Account() {
               </View>
             ) : ( */}
             <TouchableOpacity
-              onPress={() => handleNavigation(item.title)}
+              onPress={() => handleNavigation(item.key)}
               activeOpacity={0.7}
             >
               <View style={styles.row}>

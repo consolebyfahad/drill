@@ -3,6 +3,7 @@ import Button from "@/components/button";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { OtpInput } from "react-native-otp-entry";
@@ -11,6 +12,7 @@ import { FONTS } from "~/constants/Fonts";
 import { apiCall } from "~/utils/api";
 
 export default function Verify() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [code, setCode] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -40,12 +42,15 @@ export default function Verify() {
 
   const handleVerify = async () => {
     if (!userId) {
-      setError("User not found. Please try logging in again.");
+      setError(
+        t("verify.userNotFound") ||
+          "User not found. Please try logging in again."
+      );
       return;
     }
 
     if (code.length !== 4) {
-      setError("Please enter a valid 4-digit code.");
+      setError(t("verify.invalidCode") || "Please enter a valid 4-digit code.");
       return;
     }
 
@@ -70,11 +75,13 @@ export default function Verify() {
           setTimeout(() => router.push("/auth/verified"), 800);
         }
       } else {
-        setError("Verification Failed");
+        setError(t("verify.verificationFailed") || "Verification Failed");
       }
     } catch (error) {
       console.error("Verification Error:", error);
-      setError("Something went wrong. Please try again.");
+      setError(
+        t("verify.errorFallback") || "Something went wrong. Please try again."
+      );
     }
   };
 
@@ -85,14 +92,19 @@ export default function Verify() {
         <TouchableOpacity onPress={() => router.push("/auth/login")}>
           <Arrow />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>OTP Verification</Text>
+        <Text style={styles.headerTitle}>
+          {t("verify.headerTitle") || "OTP Verification"}
+        </Text>
         <Text></Text>
       </View>
 
       {/* Title & Subtitle */}
-      <Text style={styles.title}>Enter Your 4 digit {"\n"}Code</Text>
+      <Text style={styles.title}>
+        {t("verify.title") || "Enter Your 4 digit \nCode"}
+      </Text>
       <Text style={styles.subtitle}>
-        Please check your email and enter the 4-digit code.
+        {t("verify.subtitle") ||
+          "Please check your email and enter the 4-digit code."}
       </Text>
 
       {/* OTP Input */}
@@ -115,14 +127,16 @@ export default function Verify() {
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
         <TouchableOpacity>
           <Text style={styles.resendText}>
-            Didn&apos;t receive the code?{" "}
-            <Text style={styles.resendLink}>Resend</Text>
+            {t("verify.resendPrefix") || "Didn't receive the code?"}{" "}
+            <Text style={styles.resendLink}>
+              {t("verify.resendLink") || "Resend"}
+            </Text>
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Verify Button */}
-      <Button title="Verify" onPress={handleVerify} />
+      <Button title={t("verify.button") || "Verify"} onPress={handleVerify} />
     </SafeAreaView>
   );
 }

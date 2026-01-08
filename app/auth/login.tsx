@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   StyleSheet,
   Text,
@@ -28,6 +29,7 @@ const countryCodes: CountryCode[] = [
 ];
 
 export default function Login() {
+  const { t } = useTranslation();
   const [countryCode, setCountryCode] = useState<CountryCode>(countryCodes[0]);
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -37,7 +39,7 @@ export default function Login() {
     const cleanedNumber = phoneNumber.replace(/\D/g, "");
 
     if (cleanedNumber.length < 9 || cleanedNumber.length > 10) {
-      setError("Please enter a valid phone number.");
+      setError(t("login.invalidPhone") || "Please enter a valid phone number.");
       return;
     }
     setError("");
@@ -79,9 +81,9 @@ export default function Login() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Welcome</Text>
+      <Text style={styles.title}>{t("login.title") || "Welcome"}</Text>
       <Text style={styles.subtitle}>
-        Enter your phone {"\n"}number to get started.
+        {t("login.subtitle") || "Enter your phone \nnumber to get started."}
       </Text>
 
       <View
@@ -112,7 +114,7 @@ export default function Login() {
           style={styles.input}
           keyboardType="numeric"
           placeholderTextColor={Colors.secondary300}
-          placeholder="Phone number"
+          placeholder={t("login.phonePlaceholder") || "Phone number"}
           value={phoneNumber}
           maxLength={10}
           onChangeText={(text) => {
@@ -124,10 +126,12 @@ export default function Login() {
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <TouchableOpacity>
-        <Text style={styles.privacyText}>Privacy & Agreements</Text>
+        <Text style={styles.privacyText}>
+          {t("login.privacy") || "Privacy & Agreements"}
+        </Text>
       </TouchableOpacity>
 
-      <Button title="Continue" onPress={handleContinue} />
+      <Button title={t("continue") || "Continue"} onPress={handleContinue} />
     </SafeAreaView>
   );
 }

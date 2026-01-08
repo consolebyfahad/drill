@@ -8,6 +8,7 @@ import {
   Alert,
 } from "react-native";
 import React, { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import ServiceDetailsCard from "@/components/service_details_card";
 import { useFocusEffect, useNavigation, useRouter } from "expo-router";
@@ -90,6 +91,7 @@ type User = {
 };
 
 export default function ViewProfile() {
+  const { t } = useTranslation();
   const [showAllOrders, setShowAllOrders] = useState<boolean>(true);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -219,7 +221,7 @@ export default function ViewProfile() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
       >
-        <Header title="View Profile" backBtn={true} />
+        <Header title={t("profile.viewProfile")} backBtn={true} />
 
         <View style={styles.profileContainer}>
           <View style={styles.imageWrapper}>
@@ -247,21 +249,21 @@ export default function ViewProfile() {
           <View style={styles.ratingContainer}>
             <Star />
             <Text style={styles.ratingText}>4.8</Text>
-            <Text style={styles.reviewCount}>(120+ reviews)</Text>
+            <Text style={styles.reviewCount}>(120+ {t("profile.reviews")})</Text>
           </View>
           <Text style={styles.userEmail}>
-            Total Earning: SAR {user.balance}
+            {t("profile.totalEarning")}{user.balance}
           </Text>
           <Text style={styles.userEmail}>{user.email}</Text>
           {accountType === "employee" && (
             <View style={styles.verification}>
-              <Text style={styles.userEmail}>Company Verification:</Text>
+              <Text style={styles.userEmail}>{t("profile.companyVerification")}</Text>
               <Verify />
             </View>
           )}
           {user.platform_status === "1" && (
             <View style={styles.verification}>
-              <Text style={styles.userEmail}>Platform Verification:</Text>
+              <Text style={styles.userEmail}>{t("profile.platformVerification")}</Text>
               <Verify />
             </View>
           )}
@@ -275,7 +277,7 @@ export default function ViewProfile() {
 
         <Button
           variant="secondary"
-          title="Edit Profile"
+          title={t("profile.editProfile")}
           onPress={handleEditProfile}
         />
 
@@ -286,7 +288,7 @@ export default function ViewProfile() {
           style={styles.orderToggle}
         >
           <Text style={styles.orderTitle}>
-            Completed Orders{" "}
+            {t("profile.completedOrders")}{" "}
             <Text style={styles.orderCount}>({orders.length})</Text>
           </Text>
           <Ionicons
@@ -297,7 +299,7 @@ export default function ViewProfile() {
         </TouchableOpacity>
 
         {isLoading ? (
-          <Text style={styles.loadingText}>Loading orders...</Text>
+          <Text style={styles.loadingText}>{t("profile.loadingOrders")}</Text>
         ) : (
           showAllOrders &&
           (orders.length > 0 ? (
@@ -305,7 +307,7 @@ export default function ViewProfile() {
               <ServiceDetailsCard key={index} order={order} />
             ))
           ) : (
-            <Text style={styles.noOrdersText}>No orders found</Text>
+            <Text style={styles.noOrdersText}>{t("profile.noOrdersFound")}</Text>
           ))
         )}
       </ScrollView>

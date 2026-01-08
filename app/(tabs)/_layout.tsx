@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import { View, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import { Colors } from "@/constants/Colors";
 import Home from "@/assets/svgs/home.svg";
 import HomeFill from "@/assets/svgs/homeFill.svg";
@@ -14,6 +15,7 @@ import { FONTS } from "~/constants/Fonts";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -43,7 +45,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: t("home") || "Home",
           tabBarIcon: ({ focused }) => (
             <View style={iconContainerStyle(focused)}>
               {focused ? <HomeFill /> : <Home />}
@@ -54,7 +56,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="orders"
         options={{
-          title: "Orders",
+          title: t("orders") || "Orders",
           tabBarIcon: ({ focused }) => (
             <View style={iconContainerStyle(focused)}>
               {focused ? <OrdersFill /> : <Orders />}
@@ -65,7 +67,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="notification"
         options={{
-          title: "Notification",
+          title: t("notifications") || "Notification",
           tabBarIcon: ({ focused }) => (
             <View style={iconContainerStyle(focused)}>
               {focused ? <NotificationFill /> : <Notification />}
@@ -76,7 +78,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="account"
         options={{
-          title: "Account",
+          title: t("account.title") || "Account",
           tabBarIcon: ({ focused }) => (
             <View style={iconContainerStyle(focused)}>
               {focused ? <ProfileFill /> : <Profile />}

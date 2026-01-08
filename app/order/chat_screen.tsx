@@ -12,6 +12,7 @@ import {
   Platform,
 } from "react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Colors } from "~/constants/Colors";
 import Add from "@/assets/svgs/plus.svg";
 import Smile from "@/assets/svgs/smile.svg";
@@ -107,6 +108,7 @@ interface Message {
 }
 
 export default function ChatScreen() {
+  const { t } = useTranslation();
   const toId = "";
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -221,7 +223,10 @@ export default function ChatScreen() {
         throw new Error(response.message || "Upload failed");
       }
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Something went wrong with upload");
+      Alert.alert(
+        t("error"),
+        err.message || t("order.somethingWentWrongUpload")
+      );
       return null;
     }
   };
@@ -273,7 +278,7 @@ export default function ChatScreen() {
       }
     } catch (error) {
       console.error("Failed to send message", error);
-      Alert.alert("Error", "Failed to send message. Please try again.");
+      Alert.alert(t("error"), t("order.failedToSendMsg"));
     } finally {
       setIsLoading(false);
     }
@@ -282,18 +287,14 @@ export default function ChatScreen() {
   const confirmDeleteMessage = (messageId: string) => {
     if (!userId) return;
 
-    Alert.alert(
-      "Delete Message",
-      "Are you sure you want to delete this message?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => deleteMessage(messageId, userId),
-        },
-      ]
-    );
+    Alert.alert(t("order.deleteMessage"), t("order.deleteConfirm"), [
+      { text: t("cancel"), style: "cancel" },
+      {
+        text: t("logout"),
+        style: "destructive",
+        onPress: () => deleteMessage(messageId, userId),
+      },
+    ]);
   };
 
   const deleteMessage = async (messageId: string, userIdParam: string) => {
@@ -318,10 +319,7 @@ export default function ChatScreen() {
     if (source === "camera") {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permission needed",
-          "We need camera permissions to take pictures!"
-        );
+        Alert.alert(t("order.permissionNeeded"), t("order.cameraPermission"));
         return;
       }
       result = await ImagePicker.launchCameraAsync({
@@ -333,10 +331,7 @@ export default function ChatScreen() {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(
-          "Permission needed",
-          "We need gallery permissions to access your photos!"
-        );
+        Alert.alert(t("order.permissionNeeded"), t("order.galleryPermission"));
         return;
       }
       result = await ImagePicker.launchImageLibraryAsync({
@@ -421,7 +416,9 @@ export default function ChatScreen() {
               ))
             : !isLoading && (
                 <View style={styles.noMessagesContainer}>
-                  <Text style={styles.noMessagesText}>No messages yet</Text>
+                  <Text style={styles.noMessagesText}>
+                    {t("order.noMessagesYet")}
+                  </Text>
                 </View>
               )}
         </ScrollView>
@@ -438,7 +435,7 @@ export default function ChatScreen() {
                 value={inputMessage}
                 onChangeText={(text) => setInputMessage(text)}
                 placeholder={
-                  attachment ? "Send with image..." : "Type a message..."
+                  attachment ? t("order.sendWithImage") : t("order.typeMessage")
                 }
                 multiline
               />
@@ -487,9 +484,11 @@ export default function ChatScreen() {
         >
           <View style={styles.modalContainer}>
             <View style={styles.emojiPickerHeader}>
-              <Text style={styles.emojiPickerTitle}>Select Emoji</Text>
+              <Text style={styles.emojiPickerTitle}>
+                {t("order.selectEmoji")}
+              </Text>
               <TouchableOpacity onPress={() => setIsEmojiPickerVisible(false)}>
-                <Text style={styles.closeButton}>Close</Text>
+                <Text style={styles.closeButton}>{t("order.close")}</Text>
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.emojiScrollView}>
@@ -524,21 +523,25 @@ export default function ChatScreen() {
                 style={styles.mediaOption}
                 onPress={() => pickImage("camera")}
               >
-                <Text style={styles.mediaOptionText}>Take Photo</Text>
+                <Text style={styles.mediaOptionText}>
+                  {t("order.takePhoto")}
+                </Text>
               </TouchableOpacity>
               <View style={styles.mediaDivider} />
               <TouchableOpacity
                 style={styles.mediaOption}
                 onPress={() => pickImage("gallery")}
               >
-                <Text style={styles.mediaOptionText}>Choose from Gallery</Text>
+                <Text style={styles.mediaOptionText}>
+                  {t("order.chooseFromGallery")}
+                </Text>
               </TouchableOpacity>
               <View style={styles.mediaDivider} />
               <TouchableOpacity
                 style={[styles.mediaOption, styles.cancelButton]}
                 onPress={() => setIsMediaPickerVisible(false)}
               >
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={styles.cancelText}>{t("cancel")}</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>

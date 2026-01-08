@@ -11,6 +11,7 @@ import {
   Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { Colors } from "@/constants/Colors";
@@ -74,6 +75,7 @@ type FieldError = {
 };
 
 export default function EditProfile() {
+  const { t } = useTranslation();
   const [user, setUser] = useState<User>({
     name: "",
     email: "",
@@ -215,8 +217,8 @@ export default function EditProfile() {
 
       if (permissionStatus.status !== "granted") {
         Alert.alert(
-          "Permission Denied",
-          "Camera or Gallery access is required."
+          t("profile.permissionDenied"),
+          t("profile.cameraGalleryRequired")
         );
         return;
       }
@@ -249,15 +251,15 @@ export default function EditProfile() {
     } catch (error) {
       console.error("Image picker error:", error);
       Alert.alert(
-        "Image Picker Error",
-        "Something went wrong while picking the image."
+        t("profile.imagePickerError"),
+        t("profile.imagePickerErrorMsg")
       );
     }
   };
 
   const handleImageUpdate = async (imageUri: string) => {
     if (!userId) {
-      Alert.alert("Error", "User ID not found.");
+      Alert.alert(t("error"), t("profile.userIdNotFound"));
       return;
     }
 
@@ -282,12 +284,12 @@ export default function EditProfile() {
           ...prevUser,
           image: response.file_name,
         }));
-        Alert.alert("Success", "Profile image updated successfully!");
+        Alert.alert(t("success"), t("profile.profileImageUpdated"));
       } else {
         throw new Error(response.message || "Failed to upload image.");
       }
     } catch (err: any) {
-      Alert.alert("Upload Error", err.message || "Something went wrong.");
+      Alert.alert(t("profile.uploadError"), err.message || "Something went wrong.");
     } finally {
       setUploading(false);
     }
@@ -295,7 +297,7 @@ export default function EditProfile() {
 
   const handleDocumentUpload = async (imageUri: string, field: string) => {
     if (!userId) {
-      Alert.alert("Error", "User ID not found.");
+      Alert.alert(t("error"), t("profile.userIdNotFound"));
       return;
     }
 
@@ -354,13 +356,13 @@ export default function EditProfile() {
           documents: updatedDocuments,
         }));
 
-        Alert.alert("Success", "Document uploaded successfully!");
+        Alert.alert(t("success"), t("profile.documentUploaded"));
       } else {
         throw new Error(response.message || "Failed to upload document.");
       }
     } catch (err: any) {
       console.error("Document upload error:", err);
-      Alert.alert("Upload Error", err.message || "Something went wrong.");
+      Alert.alert(t("profile.uploadError"), err.message || "Something went wrong.");
     } finally {
       setUploading(false);
       setUploadingField(null);
@@ -368,10 +370,10 @@ export default function EditProfile() {
   };
 
   const openImagePicker = (field: string = "profile") => {
-    Alert.alert("Select Option", "Choose an option:", [
-      { text: "Camera", onPress: () => pickImage("camera", field) },
-      { text: "Gallery", onPress: () => pickImage("gallery", field) },
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("profile.selectOption"), t("profile.chooseOption"), [
+      { text: t("profile.camera"), onPress: () => pickImage("camera", field) },
+      { text: t("profile.gallery"), onPress: () => pickImage("gallery", field) },
+      { text: t("cancel"), style: "cancel" },
     ]);
   };
 
@@ -408,70 +410,70 @@ export default function EditProfile() {
     // Common validation for both individual and company
     if (!user.name.trim()) {
       newErrors.name = isCompanyAccount
-        ? "Company name is required"
-        : "Full name is required";
+        ? t("profile.companyNameRequired")
+        : t("profile.fullNameRequired");
       isValid = false;
     }
 
     if (!user.email.trim()) {
-      newErrors.email = "Email is required";
+      newErrors.email = t("profile.emailRequired");
       isValid = false;
     } else if (!validateEmail(user.email)) {
-      newErrors.email = "Please enter a valid email address";
+      newErrors.email = t("profile.validEmail");
       isValid = false;
     }
 
     if (!user.phone.trim()) {
-      newErrors.phone = "Phone number is required";
+      newErrors.phone = t("profile.phoneRequired");
       isValid = false;
     } else if (!validatePhoneNumber(user.phone)) {
-      newErrors.phone = "Please enter a valid phone number";
+      newErrors.phone = t("profile.validPhone");
       isValid = false;
     }
 
     if (!user.address.trim()) {
-      newErrors.address = "Address is required";
+      newErrors.address = t("profile.addressRequired");
       isValid = false;
     }
 
     if (!user.city.trim()) {
-      newErrors.city = "City is required";
+      newErrors.city = t("profile.cityRequired");
       isValid = false;
     }
 
     if (!user.zip.trim()) {
-      newErrors.zip = "Zip code is required";
+      newErrors.zip = t("profile.zipRequired");
       isValid = false;
     } else if (!validateZipCode(user.zip)) {
-      newErrors.zip = "Please enter a valid zip code";
+      newErrors.zip = t("profile.validZip");
       isValid = false;
     }
 
     // Individual specific validation
     if (!isCompanyAccount) {
       if (user.dob && !/^\d{4}-\d{2}-\d{2}$/.test(user.dob)) {
-        newErrors.dob = "Date format should be YYYY-MM-DD";
+        newErrors.dob = t("profile.dateFormat");
         isValid = false;
       }
 
       if (!user.iqamaId?.trim()) {
-        newErrors.iqamaId = "Iqama ID is required";
+        newErrors.iqamaId = t("profile.iqamaRequired");
         isValid = false;
       }
     } else {
       // Company specific validation
       if (!user.companyNumber?.trim()) {
-        newErrors.companyNumber = "Company number is required";
+        newErrors.companyNumber = t("profile.companyNumberRequired");
         isValid = false;
       }
 
       if (!user.companyCategory?.trim()) {
-        newErrors.companyCategory = "Company category is required";
+        newErrors.companyCategory = t("profile.companyCategoryRequired");
         isValid = false;
       }
 
       if (user.secondaryEmail && !validateEmail(user.secondaryEmail)) {
-        newErrors.secondaryEmail = "Please enter a valid email address";
+        newErrors.secondaryEmail = t("profile.validEmail");
         isValid = false;
       }
     }
@@ -544,8 +546,8 @@ export default function EditProfile() {
 
       if (response.result) {
         await AsyncStorage.setItem("user_name", user.name);
-        Alert.alert("Success", "Profile updated successfully!", [
-          { text: "OK", onPress: () => router.push("/(tabs)/account") },
+        Alert.alert(t("success"), t("profile.profileUpdated"), [
+          { text: t("ok"), onPress: () => router.push("/(tabs)/account") },
         ]);
       } else {
         throw new Error(response.message || "Failed to update profile.");
@@ -575,7 +577,7 @@ export default function EditProfile() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 25}
       >
-        <Header title="Edit Profile" backBtn={true} />
+        <Header title={t("profile.editProfile")} backBtn={true} />
         {loading ? (
           <View style={styles.loadingScreen}>
             <ActivityIndicator size="large" color={Colors.primary} />
@@ -617,8 +619,8 @@ export default function EditProfile() {
 
               {/* Company number (for both) */}
               <Inputfield
-                label="Company Number"
-                placeholder="Enter company number"
+                label={t("profile.companyNumber")}
+                placeholder={t("profile.enterCompanyNumber")}
                 IconComponent={<Building />}
                 value={user.companyNumber}
                 onChangeText={(text) =>
@@ -629,9 +631,9 @@ export default function EditProfile() {
 
               {/* User Name Field (different label based on type) */}
               <Inputfield
-                label={isCompanyAccount ? "Company Name" : "Full Name"}
+                label={isCompanyAccount ? t("profile.companyName") : t("account.fullname")}
                 placeholder={
-                  isCompanyAccount ? "Enter company name" : "Enter your name"
+                  isCompanyAccount ? t("profile.enterCompanyName") : t("profile.enterYourName")
                 }
                 IconComponent={<Profile />}
                 value={user.name}
@@ -650,8 +652,8 @@ export default function EditProfile() {
               /> */}
 
               <CustomInputField
-                label="Phone Number"
-                placeholder="Enter your phone number"
+                label={t("account.phonenumber")}
+                placeholder={t("profile.enterYourPhone")}
                 IconComponent={<Phone />}
                 value={user.phone}
                 keyboardType="phone-pad"
@@ -663,8 +665,8 @@ export default function EditProfile() {
               />
 
               <Inputfield
-                label="Address"
-                placeholder="Enter your address"
+                label={t("account.address")}
+                placeholder={t("profile.enterYourAddress")}
                 IconComponent={<Address />}
                 value={user.address}
                 onChangeText={(text) => handleInputChange("address", text)}
@@ -674,8 +676,8 @@ export default function EditProfile() {
               <View style={styles.rowContainer}>
                 <View style={styles.flexItem}>
                   <Inputfield
-                    label="City"
-                    placeholder="Enter city"
+                    label={t("account.city")}
+                    placeholder={t("profile.enterCity")}
                     IconComponent={<City />}
                     value={user.city}
                     onChangeText={(text) => handleInputChange("city", text)}
@@ -684,8 +686,8 @@ export default function EditProfile() {
                 </View>
                 <View style={styles.flexItem}>
                   <Inputfield
-                    label="Zip Code"
-                    placeholder="Enter zip code"
+                    label={t("account.zipcode")}
+                    placeholder={t("profile.enterZipCode")}
                     IconComponent={<Zip />}
                     value={user.zip}
                     onChangeText={(text) => handleInputChange("zip", text)}
@@ -696,8 +698,8 @@ export default function EditProfile() {
 
               {/* Common fields */}
               <Inputfield
-                label="Email Address"
-                placeholder="Enter your email"
+                label={t("account.emailaddress")}
+                placeholder={t("profile.enterYourEmail")}
                 IconComponent={<Email />}
                 value={user.email}
                 onChangeText={(text) => handleInputChange("email", text)}
@@ -708,8 +710,8 @@ export default function EditProfile() {
               {/* Secondary email for company */}
               {isCompanyAccount && (
                 <Inputfield
-                  label="Secondary Email"
-                  placeholder="Enter secondary email (Optional)"
+                  label={t("profile.secondaryEmail")}
+                  placeholder={t("profile.enterSecondaryEmail")}
                   IconComponent={<Email />}
                   value={user.secondaryEmail}
                   onChangeText={(text) =>
@@ -734,7 +736,7 @@ export default function EditProfile() {
                   dateFormat={true}
                 /> */}
                   <CustomInputField
-                    label="Date of Birth"
+                    label={t("profile.dateOfBirth")}
                     placeholder="YYYY-MM-DD"
                     IconComponent={<DOB />}
                     value={user.dob}
@@ -744,8 +746,8 @@ export default function EditProfile() {
                     dateFormat={true}
                   />
                   <Inputfield
-                    label="Iqama ID"
-                    placeholder="Enter your KSA iqama ID/number"
+                    label={t("profile.iqamaId")}
+                    placeholder={t("profile.enterIqamaId")}
                     IconComponent={<DOB />}
                     value={user.iqamaId}
                     onChangeText={(text) => handleInputChange("iqamaId", text)}
@@ -758,8 +760,8 @@ export default function EditProfile() {
               {isCompanyAccount && (
                 <>
                   <Inputfield
-                    label="Tax Number"
-                    placeholder="Enter tax number (Optional)"
+                    label={t("profile.taxNumber")}
+                    placeholder={t("profile.enterTaxNumber")}
                     IconComponent={<Tax />}
                     value={user.taxNumber}
                     onChangeText={(text) =>
@@ -769,8 +771,8 @@ export default function EditProfile() {
                     error={errors.taxNumber}
                   />
                   <Inputfield
-                    label="Company Category"
-                    placeholder="Enter company category"
+                    label={t("profile.companyCategory")}
+                    placeholder={t("profile.enterCompanyCategory")}
                     IconComponent={<Building />}
                     value={user.companyCategory}
                     onChangeText={(text) =>
@@ -786,13 +788,13 @@ export default function EditProfile() {
                 <View style={styles.documentSection}>
                   <View style={styles.separatorContainer}>
                     <View style={styles.separator} />
-                    <Text style={styles.separatorText}>Upload Document</Text>
+                    <Text style={styles.separatorText}>{t("profile.uploadDocument")}</Text>
                     <View style={styles.separator} />
                   </View>
 
-                  <Text style={styles.sectionLabel}>Select Document type</Text>
+                  <Text style={styles.sectionLabel}>{t("profile.selectDocumentType")}</Text>
                   <RadioButton
-                    options={["Passport", "Driving licence"]}
+                    options={[t("profile.passport"), t("profile.drivingLicence")]}
                     selectedOption={user.documentType}
                     onSelect={(option) =>
                       setUser({ ...user, documentType: option })
@@ -800,7 +802,7 @@ export default function EditProfile() {
                   />
 
                   <Text style={styles.sectionLabel}>
-                    Front Side of Card<Text style={{ color: "red" }}>*</Text>
+                    {t("profile.frontSideOfCard")}<Text style={{ color: "red" }}>*</Text>
                   </Text>
                   <TouchableOpacity
                     style={[
@@ -831,11 +833,11 @@ export default function EditProfile() {
                           <Gallery />
                         </View>
                         <Text style={styles.uploadText}>
-                          Click to Upload Front Side of Card
+                          {t("profile.clickToUploadFront")}
                         </Text>
                         <Text style={{ fontSize: 12 }}>
                           {" "}
-                          (Max. File size: 25 MB)
+                          {t("profile.maxFileSize")}
                         </Text>
                       </View>
                     )}
@@ -845,7 +847,7 @@ export default function EditProfile() {
                   )}
 
                   <Text style={styles.sectionLabel}>
-                    Back Side of Card<Text style={{ color: "red" }}>*</Text>
+                    {t("profile.backSideOfCard")}<Text style={{ color: "red" }}>*</Text>
                   </Text>
                   <TouchableOpacity
                     style={[
@@ -876,11 +878,11 @@ export default function EditProfile() {
                           <Gallery />
                         </View>
                         <Text style={styles.uploadText}>
-                          Click to Upload Back Side of Card
+                          {t("profile.clickToUploadBack")}
                         </Text>
                         <Text style={{ fontSize: 12 }}>
                           {" "}
-                          (Max. File size: 25 MB)
+                          {t("profile.maxFileSize")}
                         </Text>
                       </View>
                     )}
@@ -895,7 +897,7 @@ export default function EditProfile() {
               <View style={styles.buttonContainer}>
                 <Button
                   onPress={handleUpdate}
-                  title="Update"
+                  title={t("account.update")}
                   loading={uploading}
                 />
               </View>

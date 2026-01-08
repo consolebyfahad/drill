@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import * as Notifications from "expo-notifications";
+import { useTranslation } from "react-i18next";
 import NotificationCard from "@/components/notification_card";
 import Header from "@/components/header";
 import AccountIcon from "@/assets/svgs/profileIcon.svg";
@@ -22,6 +23,8 @@ type Notification = {
 };
 
 const NotificationScreen: React.FC = () => {
+  const { t } = useTranslation();
+  
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: "1",
@@ -58,7 +61,7 @@ const NotificationScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Header title="Notifications" />
+        <Header title={t("notifications")} />
 
         <View style={styles.notificationList}>
           {notifications.map((notification) => (
@@ -92,5 +95,4 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
 });
-
 export default NotificationScreen;

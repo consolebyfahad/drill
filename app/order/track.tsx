@@ -14,6 +14,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, router } from "expo-router";
 import Header from "~/components/header";
 import ProviderCard from "~/components/provider_card";
@@ -57,7 +58,79 @@ const DEFAULT_LOCATION = {
   longitude: -122.4324,
 };
 
+// Google Maps API Key (from app.json)
+const GOOGLE_MAPS_API_KEY = "AIzaSyAQiilQ_i4LRPFyMhfLB5ZT3UGMTIxqL0Y";
+
+// Function to decode polyline from Google Directions API
+const decodePolyline = (
+  encoded: string
+): Array<{ latitude: number; longitude: number }> => {
+  let poly = [];
+  let index = 0;
+  const len = encoded.length;
+  let lat = 0;
+  let lng = 0;
+
+  while (index < len) {
+    let b;
+    let shift = 0;
+    let result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlat = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlng = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
+    lng += dlng;
+
+    poly.push({
+      latitude: lat * 1e-5,
+      longitude: lng * 1e-5,
+    });
+  }
+  return poly;
+};
+
+// Function to fetch route from Google Directions API
+const fetchRoute = async (
+  origin: { latitude: number; longitude: number },
+  destination: { latitude: number; longitude: number }
+): Promise<Array<{ latitude: number; longitude: number }> | null> => {
+  try {
+    const originStr = `${origin.latitude},${origin.longitude}`;
+    const destinationStr = `${destination.latitude},${destination.longitude}`;
+
+    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destinationStr}&key=${GOOGLE_MAPS_API_KEY}&mode=driving`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.status === "OK" && data.routes && data.routes.length > 0) {
+      const route = data.routes[0];
+      const points = route.overview_polyline.points;
+      return decodePolyline(points);
+    } else {
+      console.error("Directions API error:", data.status, data.error_message);
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching route:", error);
+    return null;
+  }
+};
+
 export default function Track() {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<string>("OnTheWay");
   const slideAnim = useRef(new Animated.Value(800)).current;
   const [location, setLocation] = useState<LocationStateType | null>(null);
@@ -254,18 +327,37 @@ export default function Track() {
         longitude: location.coords.longitude,
       };
 
-      // Create a simple straight-line route
-      setRouteCoordinates([startPoint, customerLocation]);
+      // Fetch route from Google Directions API to show road-based route
+      const getRoute = async () => {
+        const route = await fetchRoute(startPoint, customerLocation);
+        if (route && route.length > 0) {
+          setRouteCoordinates(route);
 
-      // Fit map to show both points
-      setTimeout(() => {
-        if (mapRef.current) {
-          mapRef.current.fitToCoordinates([startPoint, customerLocation], {
-            edgePadding: { top: 50, right: 50, bottom: 250, left: 50 },
-            animated: true,
-          });
+          // Fit map to show the route
+          setTimeout(() => {
+            if (mapRef.current) {
+              mapRef.current.fitToCoordinates(route, {
+                edgePadding: { top: 50, right: 50, bottom: 250, left: 50 },
+                animated: true,
+              });
+            }
+          }, 500);
+        } else {
+          // Fallback to straight line if API fails
+          setRouteCoordinates([startPoint, customerLocation]);
+
+          setTimeout(() => {
+            if (mapRef.current) {
+              mapRef.current.fitToCoordinates([startPoint, customerLocation], {
+                edgePadding: { top: 50, right: 50, bottom: 250, left: 50 },
+                animated: true,
+              });
+            }
+          }, 500);
         }
-      }, 1000);
+      };
+
+      getRoute();
 
       // Set loading to false since we have both locations
       setIsLoading(false);
@@ -285,7 +377,7 @@ export default function Track() {
     return (
       <View style={styles.fullScreenLoading}>
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Loading order details...</Text>
+        <Text style={styles.loadingText}>{t("order.loadingOrderDetails")}</Text>
       </View>
     );
   }
@@ -296,7 +388,7 @@ export default function Track() {
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>{errorMsg}</Text>
         <Button
-          title="Retry"
+          title={t("order.retry")}
           onPress={() => {
             setErrorMsg(null);
             setIsOrderLoaded(false);
@@ -306,7 +398,7 @@ export default function Track() {
           paddingvertical={12}
         />
         <Button
-          title="Go Back"
+          title={t("order.goBack")}
           onPress={() => router.back()}
           variant="secondary"
           paddingvertical={12}
@@ -317,7 +409,7 @@ export default function Track() {
 
   const handleArrived = async () => {
     if (!order?.id) {
-      Alert.alert("Error", "Cannot accept job: order details not available");
+      Alert.alert(t("error"), t("order.cannotAcceptJob"));
       return;
     }
 
@@ -327,7 +419,7 @@ export default function Track() {
       const userId = await AsyncStorage.getItem("user_id");
 
       if (!userId) {
-        Alert.alert("Error", "User information not found");
+        Alert.alert(t("error"), t("order.userInfoNotFound"));
         setIsLoading(false);
         return;
       }
@@ -347,11 +439,11 @@ export default function Track() {
           params: { orderId: orderId },
         });
       } else {
-        Alert.alert("Error", "Failed to accept job request");
+        Alert.alert(t("error"), t("order.failedToAcceptJob"));
       }
     } catch (error) {
       console.error("Error accepting job request:", error);
-      Alert.alert("Error", "An error occurred while accepting the job request");
+      Alert.alert(t("error"), t("order.errorAcceptingJob"));
     } finally {
       setIsLoading(false);
     }
@@ -359,7 +451,7 @@ export default function Track() {
 
   const handleOnway = async () => {
     if (!order?.id) {
-      Alert.alert("Error", "Cannot accept job: order details not available");
+      Alert.alert(t("error"), t("order.cannotAcceptJob"));
       return;
     }
 
@@ -369,7 +461,7 @@ export default function Track() {
       const userId = await AsyncStorage.getItem("user_id");
 
       if (!userId) {
-        Alert.alert("Error", "User information not found");
+        Alert.alert(t("error"), t("order.userInfoNotFound"));
         setIsLoading(false);
         return;
       }
@@ -389,11 +481,11 @@ export default function Track() {
           params: { orderId: orderId },
         });
       } else {
-        Alert.alert("Error", "Failed to accept job request");
+        Alert.alert(t("error"), t("order.failedToAcceptJob"));
       }
     } catch (error) {
       console.error("Error accepting job request:", error);
-      Alert.alert("Error", "An error occurred while accepting the job request");
+      Alert.alert(t("error"), t("order.errorAcceptingJob"));
     } finally {
       setIsLoading(false);
     }
@@ -431,7 +523,7 @@ export default function Track() {
       {isLoading && !order ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>Getting location...</Text>
+          <Text style={styles.loadingText}>{t("order.gettingLocation")}</Text>
         </View>
       ) : (
         <MapView
@@ -470,7 +562,7 @@ export default function Track() {
       <View style={styles.header}>
         <Header
           backBtn={true}
-          title={"Track Customer"}
+          title={t("order.trackCustomer")}
           icon={true}
           support={true}
         />
@@ -486,29 +578,30 @@ export default function Track() {
         {status === "Arrived" ? (
           <View style={styles.arrived}>
             <ArrivedLocation />
-            <Text style={styles.arrivedTitle}>Arrived At Location</Text>
-            <Text style={styles.arrivedText}>
-              You've arrived. The order will start once approved by the customer
-              or automatically in 5 minutes. Contact support for any issues.
+            <Text style={styles.arrivedTitle}>
+              {t("order.arrivedAtLocation")}
             </Text>
-            <Button title="Continue" onPress={handleArrived} width={"100%"} />
+            <Text style={styles.arrivedText}>{t("order.arrivedMessage")}</Text>
+            <Button
+              title={t("continue")}
+              onPress={handleArrived}
+              width={"100%"}
+            />
           </View>
         ) : (
           <>
             <View style={styles.contentHeader}>
               <Profile />
-              <Text style={styles.title}>
-                You are estimated to arrive at the customers location in 13
-                minutes
-              </Text>
+              <Text style={styles.title}>{t("order.estimatedArrival")}</Text>
             </View>
             <View style={styles.content}>
               {/* Status Tracking */}
               <View style={styles.statusContainer}>
                 <View style={styles.statusItem}>
                   <Accepted width={40} height={40} />
-                  <Text style={styles.statusText}>Order</Text>
-                  <Text style={styles.statusText2}>Accepted</Text>
+                  <Text style={styles.statusText}>
+                    {t("order.orderAccepted")}
+                  </Text>
                 </View>
                 <View style={styles.line} />
                 <View style={styles.statusItem}>
@@ -519,7 +612,7 @@ export default function Track() {
                       status === "OnTheWay" ? styles.activeStatusText : {},
                     ]}
                   >
-                    On the Way
+                    {t("order.onTheWay")}
                   </Text>
                 </View>
                 <View
@@ -538,7 +631,7 @@ export default function Track() {
                         : {},
                     ]}
                   >
-                    Arrived
+                    {t("order.arrived")}
                   </Text>
                 </View>
               </View>
@@ -549,14 +642,17 @@ export default function Track() {
               ) : (
                 <View style={styles.noOrderContainer}>
                   <Text style={styles.noOrderText}>
-                    Order details not available
+                    {t("order.orderDetailsNotAvailable")}
                   </Text>
                 </View>
               )}
 
               {order?.status === "accepted" && (
                 <View>
-                  <Button title="On the way" onPress={handleOnway} />
+                  <Button
+                    title={t("order.onTheWayButton")}
+                    onPress={handleOnway}
+                  />
                 </View>
               )}
             </View>

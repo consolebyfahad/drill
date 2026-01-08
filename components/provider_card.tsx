@@ -74,7 +74,13 @@ export default function ProviderCard({ order }: ProviderCardProps) {
 
   // const handleTrack = () => {
   const handleTrack = () => {
-    if (isOnTrackScreen || order?.status === "completed" || "started") {
+    console.log("order?.status", order?.status, isOnTrackScreen);
+
+    if (
+      isOnTrackScreen ||
+      order?.status === "completed" ||
+      order?.status === "started"
+    ) {
       console.log("Track button clicked, but navigation is disabled.");
       return;
     }

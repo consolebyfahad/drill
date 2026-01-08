@@ -1,16 +1,18 @@
 import Button from "@/components/button";
 import { useRouter } from "expo-router";
-// import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "~/constants/Colors";
 import { FONTS } from "~/constants/Fonts";
+
 export default function Welcome() {
   const router = useRouter();
+  const { t } = useTranslation();
+
   const handleGetStarted = () => {
     router.push("/auth/login");
   };
-  // const { t, i18n } = useTranslation();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -21,15 +23,20 @@ export default function Welcome() {
           resizeMode="cover"
         />
         <View style={styles.textContainer}>
-          <Text style={styles.title}>Welcome!</Text>
-          <Text style={styles.subtitle}>The Service Provider App</Text>
+          <Text style={styles.title}>{t("welcome") || "Welcome!"}</Text>
+          <Text style={styles.subtitle}>
+            {t("tagline") || "The Service Provider App"}
+          </Text>
           <Text style={styles.description}>
-            Application for easily finding a services Jobs!
+            {t("intro") || "Application for easily finding a services Jobs!"}
           </Text>
         </View>
       </View>
       <View style={styles.buttonContainer}>
-        <Button title="Get Started" onPress={handleGetStarted} />
+        <Button
+          title={t("getStarted") || "Get Started"}
+          onPress={handleGetStarted}
+        />
       </View>
     </SafeAreaView>
   );

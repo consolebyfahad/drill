@@ -5,6 +5,7 @@ import TransactionCard from "@/components/transaction_card";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dimensions,
   ScrollView,
@@ -20,6 +21,7 @@ import { FONTS } from "~/constants/Fonts";
 const { width } = Dimensions.get("window");
 
 const Wallet = () => {
+  const { t } = useTranslation();
   const [showTransactions, setShowTransactions] = useState(true);
 
   const transactionsData = [
@@ -71,7 +73,7 @@ const Wallet = () => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Header title="Wallet" backBtn={true} />
+        <Header title={t("account.wallet") || "Wallet"} backBtn={true} />
 
         {/* <View style={styles.chartSection}>
           <View style={styles.rowCenter}>
@@ -103,11 +105,17 @@ const Wallet = () => {
 
         <View style={styles.balanceSection}>
           <View>
-            <Text style={styles.textSecondary}>Withdraw Balance</Text>
+            <Text style={styles.textSecondary}>
+              {t("account.withdrawBalance") || "Withdraw Balance"}
+            </Text>
             <Text style={styles.availableBalance}>SAR 13,455.23</Text>
           </View>
           <View style={{ width: "30%" }}>
-            <Button title="Withdraw" onPress={handleAdd} variant="secondary" />
+            <Button
+              title={t("account.withdraw") || "Withdraw"}
+              onPress={handleAdd}
+              variant="secondary"
+            />
           </View>
         </View>
 
@@ -117,7 +125,9 @@ const Wallet = () => {
           style={styles.transactionHeader}
           onPress={() => setShowTransactions(!showTransactions)}
         >
-          <Text style={styles.transactionTitle}>Transactions History</Text>
+          <Text style={styles.transactionTitle}>
+            {t("account.transactionsHistory") || "Transactions History"}
+          </Text>
           <Ionicons
             name={showTransactions ? "chevron-up" : "chevron-down"}
             size={20}

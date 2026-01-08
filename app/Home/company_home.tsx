@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { Colors } from "~/constants/Colors";
 import { apiCall } from "~/utils/api";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -47,6 +48,7 @@ type Order = {
 };
 
 const CompanyHome = () => {
+  const { t } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -184,23 +186,27 @@ const CompanyHome = () => {
       <View style={styles.orderBreakdownHeader}>
         {/* <MaterialIcons name="inventory" size={24} color={Colors.primary} /> */}
         <Orderbreakdown />
-        <Text style={styles.orderBreakdownTitle}>Orders Breakdown</Text>
+        <Text style={styles.orderBreakdownTitle}>
+          {t("ordersBreakdown") || "Orders Breakdown"}
+        </Text>
       </View>
 
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
           <Text style={styles.statNumber}>{stats.active}</Text>
-          <Text style={styles.statLabel}>Active</Text>
+          <Text style={styles.statLabel}>{t("active") || "Active"}</Text>
         </View>
 
         <View style={styles.statItem}>
           <Text style={styles.statNumber}>{stats.completed}</Text>
-          <Text style={styles.statLabel}>Completed</Text>
+          <Text style={styles.statLabel}>
+            {t("status_completed") || "Completed"}
+          </Text>
         </View>
 
         <View style={styles.statItem}>
           <Text style={styles.statNumber}>{stats.cancelled}</Text>
-          <Text style={styles.statLabel}>Cancelled</Text>
+          <Text style={styles.statLabel}>{t("cancelled") || "Cancelled"}</Text>
         </View>
       </View>
     </View>
@@ -221,8 +227,12 @@ const CompanyHome = () => {
       </View>
 
       <View style={styles.orderDetails}>
-        <Text style={styles.orderNumber}>Order# {order.orderNo}</Text>
-        <Text style={styles.employeeName}>Provider: {order.provider}</Text>
+        <Text style={styles.orderNumber}>
+          {t("orderNumber") || "Order#"} {order.orderNo}
+        </Text>
+        <Text style={styles.employeeName}>
+          {t("provider") || "Provider"}: {order.provider}
+        </Text>
       </View>
 
       <View style={styles.packageContainer}>
@@ -279,16 +289,19 @@ const CompanyHome = () => {
               <View style={styles.profileInfo}>
                 <View>
                   <Text style={styles.companyName}>
-                    {user?.name || "Your Company"}
+                    {user?.name || t("yourCompany") || "Your Company"}
                   </Text>
 
                   <Text style={styles.companyNumberLabel}>
-                    Company# {user?.company_code || "N/A"}
+                    {t("account.companyNumber") || "Company#"}{" "}
+                    {user?.company_code || "N/A"}
                   </Text>
                 </View>
 
                 {copied ? (
-                  <Text style={styles.copiedText}>Copied!</Text>
+                  <Text style={styles.copiedText}>
+                    {t("copied") || "Copied!"}
+                  </Text>
                 ) : (
                   <TouchableOpacity
                     onPress={copyCompanyNumber}
@@ -308,7 +321,9 @@ const CompanyHome = () => {
             {/* Ratings */}
             <View style={styles.ratingsContainer}>
               <Ionicons name="star" size={22} color="#ffff" />
-              <Text style={styles.ratingsText}>4.9 (120+ review)</Text>
+              <Text style={styles.ratingsText}>
+                4.9 (120+ {t("review") || "review"})
+              </Text>
             </View>
           </View>
 
@@ -317,7 +332,7 @@ const CompanyHome = () => {
 
           {/* Recent Orders */}
           <View style={styles.recentOrdersHeader}>
-            <Text style={styles.recentOrdersTitle}>Recent Orders</Text>
+            <Text style={styles.recentOrdersTitle}>{t("recentOrders")}</Text>
             <TouchableOpacity style={styles.viewAllButton}>
               <Ionicons name="arrow-forward" size={22} color={Colors.primary} />
             </TouchableOpacity>
@@ -330,7 +345,7 @@ const CompanyHome = () => {
             ))
           ) : (
             <View style={styles.noOrdersContainer}>
-              <Text style={styles.noOrdersText}>No recent orders found</Text>
+              <Text style={styles.noOrdersText}>{t("noRecentOrders")}</Text>
             </View>
           )}
         </ScrollView>

@@ -12,6 +12,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import DropDownPicker from "react-native-dropdown-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FONTS } from "~/constants/Fonts";
@@ -70,17 +71,18 @@ export type Order = {
 };
 
 export default function Orders() {
+  const { t } = useTranslation();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const [open, setOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState("All");
   const [items, setItems] = useState([
-    { label: "All", value: "All" },
-    { label: "Pending", value: "pending" },
-    { label: "Completed", value: "completed" },
-    { label: "Accepted", value: "accepted" },
-    { label: "Cancelled", value: "cancelled" },
+    { label: t("status_all"), value: "All" },
+    { label: t("status_pending"), value: "pending" },
+    { label: t("status_completed"), value: "completed" },
+    { label: t("status_accepted"), value: "accepted" },
+    { label: t("status_cancelled"), value: "cancelled" },
   ]);
 
   useFocusEffect(
@@ -115,7 +117,7 @@ export default function Orders() {
       }
     } catch (error) {
       console.error("Failed to fetch orders", error);
-      Alert.alert("Error", "Failed to load orders");
+      Alert.alert(t("error"), t("errorLoadOrders"));
     } finally {
       setIsLoading(false);
     }
@@ -141,7 +143,7 @@ export default function Orders() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.innerContainer}>
-        <Header title="Orders" />
+        <Header title={t("orders")} />
 
         {/* Dropdown Picker */}
         <View style={styles.dropdownContainer}>
@@ -156,7 +158,7 @@ export default function Orders() {
             textStyle={styles.dropdownText}
             dropDownContainerStyle={styles.dropdownList}
             listItemContainerStyle={styles.dropdownItem}
-            placeholder="Filter by status"
+            placeholder={t("filterByStatus")}
             zIndex={3000}
             zIndexInverse={1000}
           />
@@ -173,7 +175,7 @@ export default function Orders() {
             {isLoading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={Colors.primary} />
-                <Text style={styles.loadingText}>Loading orders...</Text>
+                <Text style={styles.loadingText}>{t("loadingOrders")}</Text>
               </View>
             ) : filteredOrders.length > 0 ? (
               filteredOrders.map((order, index) => (
@@ -186,7 +188,7 @@ export default function Orders() {
               ))
             ) : (
               <View style={styles.noOrdersContainer}>
-                <Text style={styles.noOrdersText}>No orders found</Text>
+                <Text style={styles.noOrdersText}>{t("noOrdersFound")}</Text>
               </View>
             )}
           </View>

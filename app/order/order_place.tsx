@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import Header from "@/components/header";
 import OrderDetails from "./order_details";
 import ChatScreen from "./chat_screen";
@@ -27,6 +28,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useToast } from "~/components/ToastProvider";
 import { FONTS } from "~/constants/Fonts";
+import * as Location from "expo-location";
 
 type PopupType = "timeup" | "tipup" | "orderComplete" | "review";
 
@@ -43,6 +45,7 @@ interface UserLocationData {
 }
 
 const OrderPlace: React.FC = () => {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const { orderId, tab } = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState<string>(
@@ -57,6 +60,11 @@ const OrderPlace: React.FC = () => {
     latitude: null,
     longitude: null,
   });
+  const locationSubscriptionRef = useRef<Location.LocationSubscription | null>(
+    null
+  );
+  const hasShownReviewPopupRef = useRef<boolean>(false); // Track if review popup was already shown
+  const hasShownTipPopupRef = useRef<boolean>(false); // Track if tip popup was already shown
 
   const showPopup = popupType !== null;
 
@@ -69,29 +77,65 @@ const OrderPlace: React.FC = () => {
         const token = await getFCMToken();
         console.log("📲 Provider OrderPlace - User FCM Token:", token);
 
-        // Get all required data from AsyncStorage
+        // Get all required data from AsyncStorage - use correct keys
         const [storedUserId, storedLatitude, storedLongitude] =
           await Promise.all([
             AsyncStorage.getItem("user_id"),
-            AsyncStorage.getItem("latitide"), // Note: keeping original typo to match existing code
+            AsyncStorage.getItem("latitude"), // Fixed: was "latitide" (typo)
             AsyncStorage.getItem("longitude"),
           ]);
+
+        // If location not in AsyncStorage, get current location
+        let providerLat = storedLatitude;
+        let providerLng = storedLongitude;
+
+        if (!providerLat || !providerLng) {
+          console.log(
+            "📍 Provider location not in AsyncStorage, getting current location..."
+          );
+          try {
+            const { status } =
+              await Location.requestForegroundPermissionsAsync();
+            if (status === "granted") {
+              const currentLocation = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.Balanced,
+              });
+              providerLat = currentLocation.coords.latitude.toString();
+              providerLng = currentLocation.coords.longitude.toString();
+
+              // Save to AsyncStorage
+              await AsyncStorage.setItem("latitude", providerLat);
+              await AsyncStorage.setItem("longitude", providerLng);
+              console.log("📍 Provider location saved:", {
+                lat: providerLat,
+                lng: providerLng,
+              });
+            }
+          } catch (error) {
+            console.error("❌ Error getting provider location:", error);
+          }
+        }
 
         // Set user location data
         setUserLocationData({
           userId: storedUserId,
-          latitude: storedLatitude,
-          longitude: storedLongitude,
+          latitude: providerLat,
+          longitude: providerLng,
         });
 
-        console.log("📍 User Data:", {
+        console.log("📍 Provider OrderPlace - User Data:", {
           userId: storedUserId,
-          latitude: storedLatitude,
-          longitude: storedLongitude,
+          latitude: providerLat,
+          longitude: providerLng,
         });
+
+        // Start continuous location tracking for active order
+        if (orderId && storedUserId) {
+          startLocationTracking();
+        }
       } catch (error) {
         console.error("Error initializing app data:", error);
-        showToast("Failed to initialize application data", "error");
+        showToast(t("order.failedToInitialize"), "error");
       }
     };
 
@@ -110,21 +154,26 @@ const OrderPlace: React.FC = () => {
         // Handle different status notifications
         if (data?.status === "tipped" && data.message) {
           const tipMatch = data.message.match(/\$(\d+(\.\d+)?)/);
-          if (tipMatch) {
+          if (tipMatch && !hasShownTipPopupRef.current) {
             setTipAmount(tipMatch[1]);
             setPopupType("tipup");
+            hasShownTipPopupRef.current = true;
             showToast(`You received a tip of $${tipMatch[1]}!`, "success");
           }
         } else if (data?.status === "completed") {
-          setPopupType("review");
-          showToast("Order has been completed by customer", "success");
+          // Only show review popup if it hasn't been shown yet
+          if (!hasShownReviewPopupRef.current) {
+            setPopupType("review");
+            hasShownReviewPopupRef.current = true;
+          }
+          showToast(t("order.orderCompletedByCustomer"), "success");
         } else if (data?.status === "time_exceeded") {
           setPopupType("timeup");
-          showToast("Time limit exceeded for this order", "warning");
+          showToast(t("order.timeLimitExceeded"), "warning");
         } else if (data?.status === "started") {
-          showToast("Customer has started the service", "info");
+          showToast(t("order.customerStarted"), "info");
         } else if (data?.status === "cancelled") {
-          showToast("Order has been cancelled by customer", "warning");
+          showToast(t("order.orderCancelledByCustomer"), "warning");
         }
       }
     };
@@ -134,8 +183,68 @@ const OrderPlace: React.FC = () => {
 
     return () => {
       unsubscribe();
+      stopLocationTracking();
     };
   }, [orderId, showToast]);
+
+  // Start continuous location tracking for provider
+  const startLocationTracking = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        console.log("📍 Location permission not granted for tracking");
+        return;
+      }
+
+      // Stop any existing tracking
+      stopLocationTracking();
+
+      console.log("🔄 Starting continuous location tracking for provider...");
+
+      const subscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.BestForNavigation,
+          distanceInterval: 10, // Update every 10 meters
+          timeInterval: 10000, // Or every 10 seconds
+        },
+        async (newLocation) => {
+          const newLat = newLocation.coords.latitude.toString();
+          const newLng = newLocation.coords.longitude.toString();
+
+          // Update AsyncStorage
+          await AsyncStorage.setItem("latitude", newLat);
+          await AsyncStorage.setItem("longitude", newLng);
+
+          // Update state
+          setUserLocationData((prev) => ({
+            ...prev,
+            latitude: newLat,
+            longitude: newLng,
+          }));
+
+          console.log("📍 Provider Location Updated (Active Order):", {
+            latitude: newLat,
+            longitude: newLng,
+            order_id: orderId,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      );
+
+      locationSubscriptionRef.current = subscription;
+    } catch (error) {
+      console.error("❌ Error starting location tracking:", error);
+    }
+  };
+
+  // Stop location tracking
+  const stopLocationTracking = () => {
+    if (locationSubscriptionRef.current) {
+      locationSubscriptionRef.current.remove();
+      locationSubscriptionRef.current = null;
+      console.log("🛑 Stopped provider location tracking");
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -158,21 +267,45 @@ const OrderPlace: React.FC = () => {
 
     try {
       const response = await apiCall(formData);
+      console.log("📦 Provider - Order Details Response:", {
+        order_id: orderId,
+        has_data: !!response?.data,
+        data_length: response?.data?.length || 0,
+      });
+
       if (response && response.data && response.data.length > 0) {
         const orderData = response.data[0];
+
+        console.log("📦 Provider - Order Data:", {
+          id: orderData.id,
+          status: orderData.status,
+          customer_lat: orderData.lat,
+          customer_lng: orderData.lng,
+          provider_id: orderData.provider?.id,
+        });
 
         if (order && order.status !== orderData.status) {
           handleOrderStatusChange(order.status, orderData.status);
         }
 
         setOrder(orderData);
+
+        // Continue location tracking if order is active
+        if (
+          orderData.status !== "completed" &&
+          orderData.status !== "cancelled"
+        ) {
+          startLocationTracking();
+        } else {
+          stopLocationTracking();
+        }
       } else {
-        showToast("No order details found", "error");
+        showToast(t("order.noOrderDetailsFound"), "error");
         setOrder(null);
       }
     } catch (error) {
       console.error("Failed to fetch order details", error);
-      showToast("Failed to fetch order details", "error");
+      showToast(t("order.failedToFetchDetails"), "error");
       setOrder(null);
     } finally {
       setIsLoading(false);
@@ -184,34 +317,41 @@ const OrderPlace: React.FC = () => {
 
     // Show appropriate notifications based on status changes
     if (newStatus === "started") {
-      showToast("Customer has started the service", "info");
+      showToast(t("order.customerStarted"), "info");
     } else if (newStatus === "completed") {
-      setPopupType("review");
-      showToast("Order has been completed", "success");
+      // Only show review popup if it hasn't been shown yet (and not triggered by provider)
+      if (!hasShownReviewPopupRef.current) {
+        setPopupType("review");
+        hasShownReviewPopupRef.current = true;
+        showToast(t("order.orderCompleted"), "success");
+      }
     } else if (newStatus === "tipped") {
-      // If tip amount is available in the order data, use it
-      const tipValue = order?.tip_amount || "0";
-      setTipAmount(tipValue);
-      setPopupType("tipup");
-      showToast(`You received a tip of $${tipValue}!`, "success");
+      // Only show tip popup if it hasn't been shown yet
+      if (!hasShownTipPopupRef.current) {
+        const tipValue = order?.tip_amount || "0";
+        setTipAmount(tipValue);
+        setPopupType("tipup");
+        hasShownTipPopupRef.current = true;
+        showToast(t("order.orderTipped", { amount: tipValue }), "success");
+      }
     } else if (newStatus === "cancelled") {
-      showToast("Order has been cancelled", "warning");
+      showToast(t("order.orderCancelled"), "warning");
     }
   };
 
   const handleCancel = async () => {
     if (!userLocationData.userId) {
-      showToast("User information not available", "error");
+      showToast(t("order.userInfoNotAvailable"), "error");
       return;
     }
 
-    Alert.alert("Cancel Order", "Are you sure you want to cancel this order?", [
+    Alert.alert(t("order.cancelOrder"), t("order.cancelConfirm"), [
       {
-        text: "No",
+        text: t("order.no"),
         style: "cancel",
       },
       {
-        text: "Yes",
+        text: t("order.yes"),
         onPress: async () => {
           if (orderId) {
             setIsLoading(true);
@@ -228,17 +368,14 @@ const OrderPlace: React.FC = () => {
             try {
               const response = await apiCall(formData);
               if (response && response.result === true) {
-                showToast("Order has been cancelled", "success");
+                showToast(t("order.orderCancelledSuccess"), "success");
                 router.replace("/(tabs)");
               } else {
-                showToast("Failed to cancel order", "error");
+                showToast(t("order.failedToCancelOrder"), "error");
               }
             } catch (error) {
               console.error("Error cancelling order:", error);
-              showToast(
-                "An error occurred while cancelling the order",
-                "error"
-              );
+              showToast(t("order.errorCancellingOrder"), "error");
             } finally {
               setIsLoading(false);
             }
@@ -250,8 +387,37 @@ const OrderPlace: React.FC = () => {
 
   const handleAlert = async () => {
     if (!orderId || !userLocationData.userId) {
-      showToast("Required information not available", "error");
+      showToast(t("order.requiredInfoNotAvailable"), "error");
       return;
+    }
+
+    // Get latest location before sending alert
+    let providerLat = userLocationData.latitude;
+    let providerLng = userLocationData.longitude;
+
+    try {
+      const currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      providerLat = currentLocation.coords.latitude.toString();
+      providerLng = currentLocation.coords.longitude.toString();
+
+      // Update AsyncStorage and state
+      await AsyncStorage.setItem("latitude", providerLat);
+      await AsyncStorage.setItem("longitude", providerLng);
+      setUserLocationData((prev) => ({
+        ...prev,
+        latitude: providerLat,
+        longitude: providerLng,
+      }));
+
+      console.log("📍 Provider - Updated location before sending alert:", {
+        lat: providerLat,
+        lng: providerLng,
+      });
+    } catch (error) {
+      console.error("❌ Error getting current location:", error);
+      // Continue with stored location if current location fails
     }
 
     setIsLoading(true);
@@ -259,28 +425,29 @@ const OrderPlace: React.FC = () => {
     formData.append("type", "add_data");
     formData.append("table_name", "order_history");
     formData.append("order_id", String(orderId));
-    formData.append("lat", userLocationData.latitude || "");
-    formData.append("lng", userLocationData.longitude || "");
+    formData.append("lat", providerLat || "");
+    formData.append("lng", providerLng || "");
     formData.append("user_id", userLocationData.userId);
     formData.append("status", "arrived");
 
-    console.log("Alert FormData:", {
+    console.log("✅ Provider - Sending Arrived Alert:", {
       orderId: String(orderId),
-      lat: userLocationData.latitude,
-      lng: userLocationData.longitude,
+      lat: providerLat,
+      lng: providerLng,
       userId: userLocationData.userId,
+      status: "arrived",
     });
 
     try {
       const response = await apiCall(formData);
       if (response && response.result === true) {
-        showToast("Alert sent to customer", "success");
+        showToast(t("order.alertSentSuccess"), "success");
       } else {
-        showToast("Failed to send alert", "error");
+        showToast(t("order.failedToSendAlert"), "error");
       }
     } catch (error) {
       console.error("Error sending alert:", error);
-      showToast("An error occurred while sending alert", "error");
+      showToast(t("order.errorSendingAlert"), "error");
     } finally {
       setIsLoading(false);
     }
@@ -288,8 +455,37 @@ const OrderPlace: React.FC = () => {
 
   const handleComplete = async () => {
     if (!orderId || !userLocationData.userId) {
-      showToast("Required information not available", "error");
+      showToast(t("order.requiredInfoNotAvailable"), "error");
       return;
+    }
+
+    // Get latest location before completing
+    let providerLat = userLocationData.latitude;
+    let providerLng = userLocationData.longitude;
+
+    try {
+      const currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      providerLat = currentLocation.coords.latitude.toString();
+      providerLng = currentLocation.coords.longitude.toString();
+
+      // Update AsyncStorage and state
+      await AsyncStorage.setItem("latitude", providerLat);
+      await AsyncStorage.setItem("longitude", providerLng);
+      setUserLocationData((prev) => ({
+        ...prev,
+        latitude: providerLat,
+        longitude: providerLng,
+      }));
+
+      console.log("📍 Provider - Updated location before completing:", {
+        lat: providerLat,
+        lng: providerLng,
+      });
+    } catch (error) {
+      console.error("❌ Error getting current location:", error);
+      // Continue with stored location if current location fails
     }
 
     setIsLoading(true);
@@ -299,22 +495,41 @@ const OrderPlace: React.FC = () => {
     formData.append("type", "add_data");
     formData.append("table_name", "order_history");
     formData.append("order_id", String(orderId));
-    formData.append("lat", userLocationData.latitude || "");
-    formData.append("lng", userLocationData.longitude || "");
+    formData.append("lat", providerLat || "");
+    formData.append("lng", providerLng || "");
     formData.append("user_id", userLocationData.userId);
     formData.append("status", "completed");
+
+    console.log("✅ Provider - Completing Order:", {
+      orderId: String(orderId),
+      lat: providerLat,
+      lng: providerLng,
+      userId: userLocationData.userId,
+      status: "completed",
+    });
 
     try {
       const response = await apiCall(formData);
       if (response && response.result === true) {
-        // After marking as complete, show review popup
-        setPopupType("review");
+        console.log("✅ Provider - Order completed successfully");
+        stopLocationTracking(); // Stop tracking when order is completed
+
+        // Show review popup only once (provider-triggered completion)
+        if (!hasShownReviewPopupRef.current) {
+          setPopupType("review");
+          hasShownReviewPopupRef.current = true;
+          showToast(t("order.orderCompleted"), "success");
+        }
+
+        // Refresh order details to get updated status
+        await getOrderDetails();
       } else {
-        showToast("Failed to complete order", "error");
+        console.error("❌ Provider - Failed to complete order:", response);
+        showToast(t("order.orderCompletedError"), "error");
       }
     } catch (error) {
-      console.error("Error completing order:", error);
-      showToast("An error occurred while completing the order", "error");
+      console.error("❌ Error completing order:", error);
+      showToast(t("order.errorCompletingOrder"), "error");
     } finally {
       setIsLoading(false);
     }
@@ -325,6 +540,9 @@ const OrderPlace: React.FC = () => {
   };
 
   const handleOrderCompleted = () => {
+    // Reset the popup flags for future orders
+    hasShownReviewPopupRef.current = false;
+    hasShownTipPopupRef.current = false;
     // Navigate back to tabs after order completion
     router.replace("/(tabs)");
   };
@@ -335,13 +553,15 @@ const OrderPlace: React.FC = () => {
         <View style={styles.content}>
           <Header
             backBtn={true}
-            title="Loading..."
+            title={t("order.loading")}
             icon={true}
             support={true}
           />
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.loadingText}>Loading order details...</Text>
+            <Text style={styles.loadingText}>
+              {t("order.loadingOrderDetails")}
+            </Text>
           </View>
         </View>
       </SafeAreaView>
@@ -354,13 +574,13 @@ const OrderPlace: React.FC = () => {
         <View style={styles.content}>
           <Header
             backBtn={true}
-            title="Order Details"
+            title={t("order.orderDetails")}
             icon={true}
             support={true}
             backAddress={"/(tabs)"}
           />
           <View style={styles.loadingContainer}>
-            <Text style={styles.errorText}>No order details available</Text>
+            <Text style={styles.errorText}>{t("order.noOrderDetails")}</Text>
           </View>
         </View>
       </SafeAreaView>
@@ -374,7 +594,7 @@ const OrderPlace: React.FC = () => {
       <View style={styles.content}>
         <Header
           backBtn={true}
-          title={`Request #${order.order_no}`}
+          title={`${t("order.request")}${order.order_no}`}
           icon={true}
           support={true}
         />
@@ -392,7 +612,7 @@ const OrderPlace: React.FC = () => {
                   : styles.inactiveTabText
               }
             >
-              Detail
+              {t("order.detail")}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -406,7 +626,7 @@ const OrderPlace: React.FC = () => {
                   : styles.inactiveTabText
               }
             >
-              Chat
+              {t("order.chat")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -430,7 +650,11 @@ const OrderPlace: React.FC = () => {
                 onPress={handleCancel}
               /> */}
               <Button
-                title={order.status === "arrived" ? "Send Alert" : "Complete"}
+                title={
+                  order.status === "arrived"
+                    ? t("order.sendAlert")
+                    : t("order.complete")
+                }
                 variant="primary"
                 // fullWidth={false}
                 // width="48%"
@@ -441,7 +665,7 @@ const OrderPlace: React.FC = () => {
             </View>
           ) : (
             <Button
-              title="Cancel Order"
+              title={t("order.cancelOrder")}
               variant="primary"
               fullWidth={false}
               width="100%"
