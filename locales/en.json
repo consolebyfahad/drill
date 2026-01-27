@@ -358,7 +358,8 @@
     "orderCompleted": "Order Completed:",
     "paymentMethod": "Payment Method:",
     "paymentStatus": "Payment Status:",
-    "pending": "Pending"
+    "pending": "Pending",
+    "me": "Me"
   },
   "serviceCard": {
     "serviceOrder": "Service Order",

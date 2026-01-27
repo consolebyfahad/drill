@@ -39,12 +39,25 @@ const HandIcon = () => (
 );
 
 export default function AddExtra() {
-  const { orderId } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  // Ensure orderId is a string (handle array case)
+  const orderId = Array.isArray(params.orderId)
+    ? params.orderId[0]
+    : params.orderId;
+
   const [description, setDescription] = useState("");
   const [totalPrice, setTotalPrice] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("me");
   const [uploadedImages, setUploadedImages] = useState(null);
   const [imagesUploaded, setImagesUploaded] = useState(false);
+
+  // Debug log to check orderId
+  useEffect(() => {
+    console.log("AddExtra - orderId:", orderId);
+    if (!orderId) {
+      console.error("AddExtra - orderId is undefined!");
+    }
+  }, [orderId]);
 
   // Check for uploaded images when the component mounts or is focused
   useFocusEffect(
@@ -73,13 +86,24 @@ export default function AddExtra() {
   );
 
   const handleUploadPress = () => {
+    if (!orderId) {
+      Alert.alert("Error", "Order ID is missing");
+      return;
+    }
     router.push({
       pathname: "/order/uplaod_image",
-      params: { orderId: orderId },
+      params: { orderId: String(orderId) },
     });
   };
 
   const handleNextPress = async () => {
+    // Validate orderId first
+    if (!orderId) {
+      Alert.alert("Error", "Order ID is missing. Please try again.");
+      console.error("Order ID is undefined in handleNextPress");
+      return;
+    }
+
     // Validate inputs
     if (!description.trim()) {
       Alert.alert("Missing Information", "Please enter a description");
@@ -99,6 +123,8 @@ export default function AddExtra() {
       return;
     }
 
+    console.log("Submitting extra with orderId:", orderId);
+
     try {
       // Prepare the final images object
       const finalImages = {
@@ -109,14 +135,23 @@ export default function AddExtra() {
       const formData = new FormData();
       formData.append("type", "update_data");
       formData.append("table_name", "orders");
-      formData.append("id", orderId);
+      formData.append("id", String(orderId));
       formData.append("final_images", JSON.stringify(finalImages));
       formData.append("extra_detail", description);
       formData.append("extra_amount", totalPrice);
       formData.append("paid_by", paymentMethod);
 
-      const response = await apiCall(formData);
+      console.log("FormData prepared:", {
+        order_id: String(orderId),
+        final_images: finalImages,
+        extra_detail: description,
+        extra_amount: totalPrice,
+        paid_by: paymentMethod,
+      });
+      console.log(formData);
 
+      const response = await apiCall(formData);
+      console.log(response);
       if (response && response.result === true) {
         // Clear the stored images after successful submission
         await AsyncStorage.removeItem(`order_${orderId}_images`);

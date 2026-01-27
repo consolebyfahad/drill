@@ -6,113 +6,165 @@ import { OrderType } from "~/types/dataTypes";
 
 const OrderDetailsSection = ({ order }: OrderType) => {
   const { t } = useTranslation();
-  
+
+  // Parse final_images JSON if it exists
+  let parsedFinalImages: { itemImage?: string; recipeImage?: string } = {};
+  if (order.final_images) {
+    try {
+      parsedFinalImages =
+        typeof order.final_images === "string"
+          ? JSON.parse(order.final_images)
+          : order.final_images;
+    } catch (e) {
+      // If parsing fails, treat as empty
+      parsedFinalImages = {};
+    }
+  }
+
+  // Extract item_image and bill_image from parsed final_images or direct properties
+  const itemImage = parsedFinalImages.itemImage || order.item_image;
+  const billImage = parsedFinalImages.recipeImage || order.bill_image;
+
+  // Helper function to check if a value exists and is not empty
+  const hasValue = (value: any): boolean => {
+    return (
+      value !== null && value !== undefined && value !== "" && value !== "0"
+    );
+  };
+console.log("order123", order);
   return (
     <View style={styles.orderDetails}>
-      <View style={styles.rowBetween}>
-        <Text style={styles.boldText}>{t("orderDetailsComponent.package")}</Text>
-        <Text style={styles.blueText}>
-          {order.package?.name || t("orderDetailsComponent.expressService")}
-        </Text>
-      </View>
-
-      <DashedSeparator />
-
-      <View style={styles.rowBetween}>
-        <Text style={styles.boldText}>{t("orderDetailsComponent.problemImage")}</Text>
-        {order.images ? (
-          <Image
-            source={{ uri: `${order.image_url}${order.images}` }}
-            style={styles.problemImage}
-          />
-        ) : null}
-      </View>
-
-      <Text style={[styles.boldText, { marginBottom: 4 }]}>
-        {t("orderDetailsComponent.detailAboutProblem")}
-      </Text>
-      <Text style={styles.grayText}>
-        {order.description || t("orderDetailsComponent.noDescription")}
-      </Text>
-
-      <DashedSeparator />
-
-      {order.created_at && (
+      {order.package?.name && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.orderPlaced")}</Text>
+            <Text style={styles.boldText}>
+              {t("orderDetailsComponent.package")}
+            </Text>
+            <Text style={styles.blueText}>{order.package.name}</Text>
+          </View>
+          <DashedSeparator />
+        </>
+      )}
+
+      {order.images && (
+        <>
+          <View style={styles.rowBetween}>
+            <Text style={styles.boldText}>
+              {t("orderDetailsComponent.problemImage")}
+            </Text>
+            <Image
+              source={{ uri: `${order.image_url}${order.images}` }}
+              style={styles.problemImage}
+            />
+          </View>
+          <DashedSeparator />
+        </>
+      )}
+
+      {hasValue(order.description) && (
+        <>
+          <Text style={[styles.boldText, { marginBottom: 4 }]}>
+            {t("orderDetailsComponent.detailAboutProblem")}
+          </Text>
+          <Text style={styles.grayText}>{order.description}</Text>
+          <DashedSeparator />
+        </>
+      )}
+
+      {hasValue(order.created_at) && (
+        <>
+          <View style={styles.rowBetween}>
+            <Text style={styles.grayText}>
+              {t("orderDetailsComponent.orderPlaced")}
+            </Text>
             <Text style={styles.grayText}>{order.created_at}</Text>
           </View>
           <DashedSeparator />
         </>
       )}
 
-      {order.timestamp && (
+      {hasValue(order.timestamp) && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.orderAccepted")}</Text>
+            <Text style={styles.grayText}>
+              {t("orderDetailsComponent.orderAccepted")}
+            </Text>
             <Text style={styles.grayText}>{order.timestamp}</Text>
           </View>
           <DashedSeparator />
         </>
       )}
 
-      {order.arrived_at_location && (
+      {hasValue(order.arrived_at_location) && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.arrivedAtLocation")}</Text>
+            <Text style={styles.grayText}>
+              {t("orderDetailsComponent.arrivedAtLocation")}
+            </Text>
             <Text style={styles.grayText}>{order.arrived_at_location}</Text>
           </View>
           <DashedSeparator />
         </>
       )}
 
-      {order.arrival_confirm && (
+      {hasValue(order.arrival_confirm) && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.arrivalConfirm")}</Text>
+            <Text style={styles.grayText}>
+              {t("orderDetailsComponent.arrivalConfirm")}
+            </Text>
             <Text style={styles.grayText}>{order.arrival_confirm}</Text>
           </View>
           <DashedSeparator />
         </>
       )}
 
-      {order.work_started && (
+      {hasValue(order.work_started) && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.workStarted")}</Text>
+            <Text style={styles.grayText}>
+              {t("orderDetailsComponent.workStarted")}
+            </Text>
             <Text style={styles.grayText}>{order.work_started}</Text>
           </View>
           <DashedSeparator />
         </>
       )}
 
-      {order.extra_added && (
+      {hasValue(order.extra_amount) && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.extraAdded")}</Text>
-            <Text style={styles.grayText}>{order.extra_added}</Text>
+            <Text style={styles.grayText}>
+              {t("orderDetailsComponent.extraAdded")}
+            </Text>
+            <Text style={styles.grayText}>{order.extra_amount}</Text>
           </View>
           <DashedSeparator />
         </>
       )}
 
-      {order.final_images && (
+      {(hasValue(order.extra_detail) || hasValue(order.insulation_sheet)) && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.insulationSheet")}</Text>
-            <Text style={styles.grayText}>{order.insulation_sheet}</Text>
+            <Text style={styles.grayText}>
+              {t("orderDetailsComponent.insulationSheet")}
+            </Text>
+            <Text style={styles.grayText}>
+              {order.insulation_sheet || order.extra_detail}
+            </Text>
           </View>
           <DashedSeparator />
         </>
       )}
 
-      {order.item_image && (
+      {itemImage && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.itemImage")}</Text>
+            <Text style={styles.grayText}>
+              {t("orderDetailsComponent.itemImage")}
+            </Text>
             <Image
-              source={{ uri: `${order.image_url}${order.item_image}` }}
+              source={{ uri: `${order.image_url}${itemImage}` }}
               style={styles.problemImage}
             />
           </View>
@@ -120,12 +172,14 @@ const OrderDetailsSection = ({ order }: OrderType) => {
         </>
       )}
 
-      {order.bill_image && (
+      {billImage && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.billImage")}</Text>
+            <Text style={styles.grayText}>
+              {t("orderDetailsComponent.billImage")}
+            </Text>
             <Image
-              source={{ uri: `${order.image_url}${order.bill_image}` }}
+              source={{ uri: `${order.image_url}${billImage}` }}
               style={styles.problemImage}
             />
           </View>
@@ -133,80 +187,112 @@ const OrderDetailsSection = ({ order }: OrderType) => {
         </>
       )}
 
-      {order.paid_by && (
-        <>
-          <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.extraPaidBy")}</Text>
-            <Text style={styles.grayText}>{order.paid_by}</Text>
-          </View>
-          <DashedSeparator />
-        </>
-      )}
+      {order.paid_by !== null &&
+        order.paid_by !== undefined &&
+        order.paid_by !== "" && (
+          <>
+            <View style={styles.rowBetween}>
+              <Text style={styles.grayText}>
+                {t("orderDetailsComponent.extraPaidBy")}
+              </Text>
+              <Text style={styles.grayText}>
+                {order.paid_by === "0" || order.paid_by === 0
+                  ? t("orderDetailsComponent.me") || "Me"
+                  : order.paid_by}
+              </Text>
+            </View>
+            <DashedSeparator />
+          </>
+        )}
 
-      {order.extra_accepted && (
+      {hasValue(order.extra_accepted) && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.extraAccepted")}</Text>
+            <Text style={styles.grayText}>
+              {t("orderDetailsComponent.extraAccepted")}
+            </Text>
             <Text style={styles.grayText}>{order.extra_accepted}</Text>
           </View>
           <DashedSeparator />
         </>
       )}
 
-      {order.job_time_finished && (
+      {hasValue(order.job_time_finished) && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.jobTimeFinished")}</Text>
-            <Text style={styles.grayText}>{order.job_time_finished}</Text>
+            <Text style={styles.grayText}>
+              {t("orderDetailsComponent.jobTimeFinished")}
+            </Text>
+            <Text style={[styles.grayText, styles.greenText]}>
+              {order.job_time_finished}
+            </Text>
           </View>
           <DashedSeparator />
         </>
       )}
 
-      {order.bonus_time_started && (
+      {hasValue(order.bonus_time_started) && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.bonusTimeStarted")}</Text>
-            <Text style={styles.grayText}>{order.bonus_time_started}</Text>
+            <Text style={styles.grayText}>
+              {t("orderDetailsComponent.bonusTimeStarted")}
+            </Text>
+            <Text style={[styles.grayText, styles.greenText]}>
+              {order.bonus_time_started}
+            </Text>
           </View>
           <DashedSeparator />
         </>
       )}
 
-      {order.bonus_time_ended && (
+      {hasValue(order.bonus_time_ended) && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.bonusTimeEnded")}</Text>
-            <Text style={styles.grayText}>{order.bonus_time_ended}</Text>
+            <Text style={styles.grayText}>
+              {t("orderDetailsComponent.bonusTimeEnded")}
+            </Text>
+            <Text style={[styles.grayText, styles.greenText]}>
+              {order.bonus_time_ended}
+            </Text>
           </View>
           <DashedSeparator />
         </>
       )}
 
-      {order.order_completed && (
+      {hasValue(order.order_completed) && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.orderCompleted")}</Text>
-            <Text style={styles.grayText}>{order.order_completed}</Text>
+            <Text style={styles.grayText}>
+              {t("orderDetailsComponent.orderCompleted")}
+            </Text>
+            <Text style={[styles.grayText, styles.greenText]}>
+              {order.order_completed}
+            </Text>
           </View>
           <DashedSeparator />
         </>
       )}
 
-      {order.payment_method && (
+      {hasValue(order.payment_method) && (
         <>
           <View style={styles.rowBetween}>
-            <Text style={styles.grayText}>{t("orderDetailsComponent.paymentMethod")}</Text>
+            <Text style={styles.grayText}>
+              {t("orderDetailsComponent.paymentMethod")}
+            </Text>
             <Text style={styles.grayText}>{order.payment_method}</Text>
           </View>
           <DashedSeparator />
         </>
       )}
 
-      <View style={styles.rowBetween}>
-        <Text style={styles.grayText}>{t("orderDetailsComponent.paymentStatus")}</Text>
-        <Text style={styles.grayText}>{order.payment_status || t("orderDetailsComponent.pending")}</Text>
-      </View>
+      {hasValue(order.payment_status) && (
+        <View style={styles.rowBetween}>
+          <Text style={styles.grayText}>
+            {t("orderDetailsComponent.paymentStatus")}
+          </Text>
+          <Text style={styles.grayText}>{order.payment_status}</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -241,5 +327,8 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 8,
+  },
+  greenText: {
+    color: Colors.success,
   },
 });

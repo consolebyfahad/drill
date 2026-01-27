@@ -356,7 +356,8 @@
     "orderCompleted": "اكتمل الطلب:",
     "paymentMethod": "طريقة الدفع:",
     "paymentStatus": "حالة الدفع:",
-    "pending": "قيد الانتظار"
+    "pending": "قيد الانتظار",
+    "me": "أنا"
   },
   "serviceCard": {
     "serviceOrder": "طلب خدمة",

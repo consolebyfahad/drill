@@ -13,9 +13,10 @@ import {
   StyleSheet,
   Text,
   View,
+  ScrollView,
 } from "react-native";
 import MapView from "react-native-maps";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import JobRequestCard from "~/components/jobrequest_card";
 import ToggleJob from "~/components/toggle_job";
 import { FONTS } from "~/constants/Fonts";
@@ -93,12 +94,17 @@ interface LocationState {
   longitude: number;
   address: string;
 }
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const TAB_BAR_HEIGHT = 60;
+
 const EmployeeHome = () => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const HEADER_HEIGHT = SCREEN_HEIGHT * 0.12; // 12% of screen height
   const OVERLAY_MAX_HEIGHT = SCREEN_HEIGHT * 0.85; // 85% of screen height
   const CARD_MAX_HEIGHT = SCREEN_HEIGHT * 0.65; // 65% of screen height for job card
+  const overlayBottom = TAB_BAR_HEIGHT + insets.bottom;
   // Refs
   const mapRef = useRef<MapView | null>(null);
 
@@ -578,7 +584,7 @@ const EmployeeHome = () => {
         </>
       )}
 
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, { bottom: overlayBottom }]}>
         <Text style={styles.greeting}>{greeting}</Text>
         <View style={styles.addressContainer}>
           <Ionicons name="location" size={18} color="#000" />
@@ -588,7 +594,7 @@ const EmployeeHome = () => {
           <ToggleJob initialValue={isOn} onToggle={handleToggleChange} />
         </View>
 
-        {/* Job Requests List */}
+        {/* Job Requests – scrollable on small screens so Accept/Decline stay above tab bar */}
         {jobRequests.length > 0 &&
           (() => {
             const item = jobRequests[0];
@@ -599,20 +605,27 @@ const EmployeeHome = () => {
                 : require("@/assets/images/default-profile.png");
 
             return (
-              <JobRequestCard
-                userName={item.provider?.name || "Client"}
-                serviceTitle={item.category?.name || "Service"}
-                packageTitle={item.package_id}
-                distance={`${item.distance || "N/A"}`}
-                duration={item?.reach_time || "N/A"}
-                jobLocation={item?.address || "Address unavailable"}
-                currentLocation={location.address}
-                onDecline={() => handleHideJob(item.id)}
-                onAccept={() => handleAcceptJob(item)}
-                serviceImage={serviceImageUrl}
-                maxHeight={CARD_MAX_HEIGHT}
-                screenWidth={SCREEN_WIDTH}
-              />
+              <ScrollView
+                style={styles.jobCardScrollView}
+                contentContainerStyle={styles.jobCardScrollContent}
+                showsVerticalScrollIndicator={true}
+                keyboardShouldPersistTaps="handled"
+              >
+                <JobRequestCard
+                  userName={item.provider?.name || "Client"}
+                  serviceTitle={item.category?.name || "Service"}
+                  packageTitle={item.package_id}
+                  distance={`${item.distance || "N/A"}`}
+                  duration={item?.reach_time || "N/A"}
+                  jobLocation={item?.address || "Address unavailable"}
+                  currentLocation={location.address}
+                  onDecline={() => handleHideJob(item.id)}
+                  onAccept={() => handleAcceptJob(item)}
+                  serviceImage={serviceImageUrl}
+                  maxHeight={CARD_MAX_HEIGHT}
+                  screenWidth={SCREEN_WIDTH}
+                />
+              </ScrollView>
             );
           })()}
       </View>
@@ -660,8 +673,14 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 20,
     padding: SCREEN_WIDTH * 0.04,
-
     justifyContent: "flex-start",
+  },
+  jobCardScrollView: {
+    flex: 1,
+    marginTop: 8,
+  },
+  jobCardScrollContent: {
+    paddingBottom: 24,
   },
   greeting: {
     fontSize: 24,

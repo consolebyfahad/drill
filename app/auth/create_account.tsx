@@ -10,6 +10,8 @@ import Profile from "@/assets/svgs/profileIcon.svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import Zip from "@/assets/svgs/profile/zip.svg";
+import City from "@/assets/svgs/profile/Global.svg";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -554,7 +556,7 @@ export default function CreateAccount() {
               <CustomInputField
                 label="City"
                 placeholder="Enter city"
-                IconComponent={<Profile />}
+                IconComponent={<City />}
                 value={user.city}
                 onChangeText={(text) => handleInputChange("city", text)}
                 fieldName="city"
@@ -565,7 +567,7 @@ export default function CreateAccount() {
               <CustomInputField
                 label="Zip Code"
                 placeholder="Enter zip code"
-                IconComponent={<Profile />}
+                IconComponent={<Zip />}
                 value={user.zip}
                 onChangeText={(text) => handleInputChange("zip", text)}
                 fieldName="zip"

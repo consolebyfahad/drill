@@ -1,27 +1,32 @@
-import {
-  View,
-  Text,
-  ScrollView,
-  TextInput,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  Alert,
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import Add from "@/assets/svgs/plus.svg";
+import Send from "@/assets/svgs/send.svg";
+import Smile from "@/assets/svgs/smile.svg";
+import Extra from "@/assets/svgs/extra.svg";
+import Camera from "@/assets/svgs/cam.svg";
+import Document from "@/assets/svgs/file.svg";
+import Images from "@/assets/svgs/image.svg";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
+import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  Alert,
+  Dimensions,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Colors } from "~/constants/Colors";
-import Add from "@/assets/svgs/plus.svg";
-import Smile from "@/assets/svgs/smile.svg";
-import Send from "@/assets/svgs/send.svg";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { apiCall } from "~/utils/api";
-import { useFocusEffect } from "expo-router";
-import * as ImagePicker from "expo-image-picker";
 import { FONTS } from "~/constants/Fonts";
+import { apiCall } from "~/utils/api";
 
 // Define a simpler emoji picker array instead of using the library
 const EMOJI_LIST = [
@@ -100,16 +105,30 @@ const EMOJI_LIST = [
 interface Message {
   id: string;
   text: string;
-  sender: "user" | "provider";
+  sender: "user" | "provider" | "support_agent" | "system";
   timestamp: number;
   attachment?: string;
   msgType?: string;
   userId?: any;
+  senderName?: string;
+  senderImage?: string;
 }
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const MEDIA_PICKER_BREAKPOINT = 400;
+const MEDIA_CONTAINER_MARGIN = 20;
+const MEDIA_OPTION_GAP = 12;
 
 export default function ChatScreen() {
   const { t } = useTranslation();
   const toId = "";
+  const isNarrow = SCREEN_WIDTH < MEDIA_PICKER_BREAKPOINT;
+  const mediaContainerWidth = SCREEN_WIDTH - MEDIA_CONTAINER_MARGIN * 2;
+  const mediaColumns = isNarrow ? 2 : 4;
+  const containerPadding = 20;
+  const mediaOptionSize =
+    (mediaContainerWidth - containerPadding * 2 - (mediaColumns - 1) * MEDIA_OPTION_GAP) /
+    mediaColumns;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -120,8 +139,14 @@ export default function ChatScreen() {
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userInfo, setUserInfo] = useState<any>(null);
+  const [providerInfo, setProviderInfo] = useState<any>(null);
+  const [supportRequired, setSupportRequired] = useState<boolean>(false);
+  const [hasShownSupportMessage, setHasShownSupportMessage] = useState<boolean>(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const scrollViewRef = React.useRef<ScrollView>(null);
+  const isSendingRef = useRef<boolean>(false);
+  const IMAGE_BASE_URL = "https://7tracking.com/saudiservices/images/";
 
   useFocusEffect(
     useCallback(() => {
@@ -131,6 +156,7 @@ export default function ChatScreen() {
         setOrderId(storedOrderId);
         setUserId(userId);
         if (storedOrderId && userId) {
+          fetchOrderDetails(storedOrderId);
           fetchChatHistory(storedOrderId, userId);
 
           // Set up interval to fetch new messages every few seconds
@@ -140,6 +166,7 @@ export default function ChatScreen() {
 
           intervalRef.current = setInterval(() => {
             if (storedOrderId && userId) {
+              fetchOrderDetails(storedOrderId);
               fetchChatHistory(storedOrderId, userId, false); // Pass false to not show loading indicator
             }
           }, 10000);
@@ -156,6 +183,30 @@ export default function ChatScreen() {
       };
     }, [])
   );
+
+  const fetchOrderDetails = async (orderIdParam: string) => {
+    try {
+      const formData = new FormData();
+      formData.append("type", "get_data");
+      formData.append("table_name", "orders");
+      formData.append("id", orderIdParam);
+
+      const response = await apiCall(formData);
+      if (response && response.data && response.data.length > 0) {
+        const orderData = response.data[0];
+        const isSupportRequired = orderData.support_required === "1" || orderData.support_required === 1;
+        
+        // If support was just requested (changed from false to true), show the message
+        if (isSupportRequired && !supportRequired) {
+          setHasShownSupportMessage(true);
+        }
+        
+        setSupportRequired(isSupportRequired);
+      }
+    } catch (error) {
+      console.error("Failed to fetch order details", error);
+    }
+  };
 
   const fetchChatHistory = async (
     orderIdParam: string,
@@ -174,17 +225,79 @@ export default function ChatScreen() {
 
     try {
       const response = await apiCall(formData);
+      console.log(response);
       if (response && response.chat) {
         const fromId = response.user.id;
-        const formattedMessages = response.chat.map((msg: any) => ({
-          id: msg.id,
-          text: msg.msg,
-          sender: msg.from_id === fromId ? "user" : "provider",
-          timestamp: Number(msg.datetime),
-          msgType: msg.msg_type === "file" ? "file" : "msg",
-        }));
+        
+        // Store user and provider info
+        if (response.user) {
+          setUserInfo(response.user);
+        }
+        if (response.provider) {
+          setProviderInfo(response.provider);
+        }
+        
+        const formattedMessages = response.chat.map((msg: any) => {
+          const isUser = msg.from_id === fromId;
+          // Check if message is from support agent (usually identified by user_type or role)
+          const isSupportAgent = msg.user_type === "support_agent" || 
+                                 msg.role === "support_agent" ||
+                                 msg.from_id !== fromId && msg.from_id !== response.provider?.id;
+          
+          let sender: "user" | "provider" | "support_agent" = "provider";
+          let senderInfo = response.provider;
+          
+          if (isUser) {
+            sender = "user";
+            senderInfo = response.user;
+          } else if (isSupportAgent || msg.sender_name?.toLowerCase().includes("support")) {
+            sender = "support_agent";
+            senderInfo = { name: "Support Agent", image: null };
+          }
+          
+          return {
+            id: msg.id,
+            text: msg.msg,
+            sender: sender,
+            timestamp: Number(msg.datetime),
+            msgType: msg.msg_type === "file" ? "file" : "msg",
+            senderName: senderInfo?.name || (isUser ? "You" : sender === "support_agent" ? "Support Agent" : "Provider"),
+            senderImage: senderInfo?.image || null,
+          };
+        });
 
-        setMessages(formattedMessages.reverse());
+        // Add support agent added system message if support is required
+        let finalMessages = formattedMessages.reverse();
+        if (supportRequired && hasShownSupportMessage) {
+          const supportMessageExists = finalMessages.some(
+            (msg: Message) => msg.sender === "system" && msg.text.includes("Support Agent Added")
+          );
+          
+          if (!supportMessageExists) {
+            // Find the position to insert the system message (after user messages requesting support)
+            const insertIndex = finalMessages.findIndex(
+              (msg: Message) => msg.sender === "user" && msg.timestamp > 0
+            );
+            
+            const systemMessage = {
+              id: `support-added-${Date.now()}`,
+              text: "Support Agent Added",
+              sender: "system" as const,
+              timestamp: Date.now(),
+              msgType: "msg" as const,
+              senderName: "",
+              senderImage: null,
+            };
+            
+            if (insertIndex >= 0) {
+              finalMessages.splice(insertIndex + 1, 0, systemMessage);
+            } else {
+              finalMessages = [systemMessage, ...finalMessages];
+            }
+          }
+        }
+
+        setMessages(finalMessages);
       } else {
         // Handle case where chat is undefined
         setMessages([]);
@@ -220,21 +333,25 @@ export default function ChatScreen() {
         setUploadedFileName(response.file_name);
         return response.file_name;
       } else {
-        throw new Error(response.message || "Upload failed");
+        throw new Error(response.message || t("order.errorWithUpload"));
       }
     } catch (err: any) {
-      Alert.alert(
-        t("error"),
-        err.message || t("order.somethingWentWrongUpload")
-      );
+      Alert.alert(t("error"), err.message || t("order.errorWithUpload"));
       return null;
     }
   };
 
   const sendMessage = async () => {
-    if (!orderId || (inputMessage.trim() === "" && !attachment)) return;
+    // Prevent multiple simultaneous sends
+    if (isSendingRef.current) {
+      console.log("Message already being sent, ignoring duplicate send");
+      return;
+    }
+
+    if (!orderId || !userId || (inputMessage.trim() === "" && !attachment)) return;
 
     try {
+      isSendingRef.current = true;
       setIsLoading(true);
 
       // If there's an attachment but no uploaded filename yet, upload it first
@@ -242,6 +359,7 @@ export default function ChatScreen() {
       if (attachment && !uploadedFileName) {
         filename = await uploadImageToServer(attachment);
         if (!filename) {
+          isSendingRef.current = false;
           setIsLoading(false);
           return; // Exit if upload failed
         }
@@ -278,23 +396,28 @@ export default function ChatScreen() {
       }
     } catch (error) {
       console.error("Failed to send message", error);
-      Alert.alert(t("error"), t("order.failedToSendMsg"));
+      Alert.alert(t("error"), t("order.failedToSend"));
     } finally {
       setIsLoading(false);
+      isSendingRef.current = false;
     }
   };
 
   const confirmDeleteMessage = (messageId: string) => {
     if (!userId) return;
 
-    Alert.alert(t("order.deleteMessage"), t("order.deleteConfirm"), [
-      { text: t("cancel"), style: "cancel" },
-      {
-        text: t("logout"),
-        style: "destructive",
-        onPress: () => deleteMessage(messageId, userId),
-      },
-    ]);
+    Alert.alert(
+      t("order.deleteMessage"),
+      t("order.deleteConfirm"),
+      [
+        { text: t("cancel"), style: "cancel" },
+        {
+          text: t("order.deleteMessage"),
+          style: "destructive",
+          onPress: () => deleteMessage(messageId, userId),
+        },
+      ]
+    );
   };
 
   const deleteMessage = async (messageId: string, userIdParam: string) => {
@@ -313,13 +436,16 @@ export default function ChatScreen() {
     }
   };
 
-  const pickImage = async (source: "camera" | "gallery") => {
+  const pickImage = async (source: "camera" | "gallery" | "document") => {
     let result;
 
     if (source === "camera") {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(t("order.permissionNeeded"), t("order.cameraPermission"));
+        Alert.alert(
+          t("order.permissionNeeded"),
+          t("order.cameraPermission")
+        );
         return;
       }
       result = await ImagePicker.launchCameraAsync({
@@ -331,7 +457,10 @@ export default function ChatScreen() {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert(t("order.permissionNeeded"), t("order.galleryPermission"));
+        Alert.alert(
+          t("order.permissionNeeded"),
+          t("order.galleryPermission")
+        );
         return;
       }
       result = await ImagePicker.launchImageLibraryAsync({
@@ -374,7 +503,9 @@ export default function ChatScreen() {
   useEffect(() => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
+
   console.log(messages);
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -389,31 +520,89 @@ export default function ChatScreen() {
             scrollViewRef.current?.scrollToEnd({ animated: true })
           }
           contentContainerStyle={styles.scrollViewContent}
+          keyboardShouldPersistTaps="handled"
         >
           {messages && messages.length > 0
-            ? messages.map((message) => (
-                <TouchableOpacity
-                  onLongPress={() => confirmDeleteMessage(message.id)}
-                  key={message.id}
-                  style={
-                    message.sender === "user"
-                      ? styles.userMessage
-                      : styles.providerMessage
-                  }
-                >
-                  {message.msgType === "file" && (
-                    <Image
-                      source={{ uri: message.text }}
-                      style={styles.messageImage}
-                      resizeMode="cover"
-                    />
-                  )}
+            ? messages.map((message, index) => {
+                // Handle system messages (Support Agent Added)
+                if (message.sender === "system") {
+                  return (
+                    <View key={message.id} style={styles.systemMessageContainer}>
+                      <View style={styles.systemMessageLine} />
+                      <Text style={styles.systemMessageText}>{message.text}</Text>
+                      <View style={styles.systemMessageLine} />
+                    </View>
+                  );
+                }
 
-                  {message.msgType === "msg" && (
-                    <Text style={styles.messageText}>{message.text}</Text>
-                  )}
-                </TouchableOpacity>
-              ))
+                const showProfile = index === 0 || 
+                  messages[index - 1].sender !== message.sender;
+                
+                return (
+                  <View
+                    key={message.id}
+                    style={
+                      message.sender === "user"
+                        ? styles.userMessageContainer
+                        : message.sender === "support_agent"
+                        ? styles.supportAgentMessageContainer
+                        : styles.providerMessageContainer
+                    }
+                  >
+                    {(message.sender === "provider" || message.sender === "support_agent") && (
+                      <View style={styles.providerInfoContainer}>
+                        {showProfile && (
+                          <>
+                            {message.sender === "support_agent" ? (
+                              <View style={styles.supportAgentIcon}>
+                                <Text style={styles.supportAgentIconText}>🎧</Text>
+                              </View>
+                            ) : (
+                              <Image
+                                source={
+                                  message.senderImage
+                                    ? { uri: `${IMAGE_BASE_URL}${message.senderImage}` }
+                                    : require("@/assets/images/default-profile.png")
+                                }
+                                style={styles.profileImage}
+                                resizeMode="cover"
+                              />
+                            )}
+                            <Text style={styles.senderName}>
+                              {message.senderName}
+                            </Text>
+                          </>
+                        )}
+                        {!showProfile && (
+                          <View style={styles.profileImagePlaceholder} />
+                        )}
+                      </View>
+                    )}
+                    <TouchableOpacity
+                      onLongPress={() => confirmDeleteMessage(message.id)}
+                      style={
+                        message.sender === "user"
+                          ? styles.userMessage
+                          : message.sender === "support_agent"
+                          ? styles.supportAgentMessage
+                          : styles.providerMessage
+                      }
+                    >
+                      {message.msgType === "file" && (
+                        <Image
+                          source={{ uri: `${IMAGE_BASE_URL}${message.text}` }}
+                          style={styles.messageImage}
+                          resizeMode="cover"
+                        />
+                      )}
+
+                      {message.msgType === "msg" && (
+                        <Text style={styles.messageText}>{message.text}</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                );
+              })
             : !isLoading && (
                 <View style={styles.noMessagesContainer}>
                   <Text style={styles.noMessagesText}>
@@ -463,10 +652,10 @@ export default function ChatScreen() {
             </View>
             <TouchableOpacity
               onPress={sendMessage}
-              disabled={inputMessage.trim() === "" && !attachment}
+              disabled={(inputMessage.trim() === "" && !attachment) || isLoading || isSendingRef.current}
               style={[
                 styles.sendButton,
-                inputMessage.trim() === "" && !attachment
+                (inputMessage.trim() === "" && !attachment) || isLoading || isSendingRef.current
                   ? styles.disabledSendButton
                   : {},
               ]}
@@ -484,9 +673,7 @@ export default function ChatScreen() {
         >
           <View style={styles.modalContainer}>
             <View style={styles.emojiPickerHeader}>
-              <Text style={styles.emojiPickerTitle}>
-                {t("order.selectEmoji")}
-              </Text>
+              <Text style={styles.emojiPickerTitle}>{t("order.selectEmoji")}</Text>
               <TouchableOpacity onPress={() => setIsEmojiPickerVisible(false)}>
                 <Text style={styles.closeButton}>{t("order.close")}</Text>
               </TouchableOpacity>
@@ -507,7 +694,7 @@ export default function ChatScreen() {
           </View>
         </Modal>
 
-        {/* Media Picker Modal */}
+        {/* Media Picker Modal – responsive: 2x2 on small screens, 4 in a row on large */}
         <Modal
           visible={isMediaPickerVisible}
           transparent={true}
@@ -518,32 +705,65 @@ export default function ChatScreen() {
             onPress={() => setIsMediaPickerVisible(false)}
             activeOpacity={1}
           >
-            <View style={styles.mediaPickerContainer}>
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={() => {}}
+              style={[styles.mediaPickerContainer, { width: mediaContainerWidth }]}
+            >
+              {/* Extra Option */}
               <TouchableOpacity
-                style={styles.mediaOption}
+                style={[styles.mediaOption, { width: mediaOptionSize }]}
+                onPress={() => {
+                  setIsMediaPickerVisible(false);
+                  if (!orderId) {
+                    Alert.alert(t("error"), "Order ID is missing");
+                    return;
+                  }
+                  router.push({
+                    pathname: "/order/add_extra",
+                    params: { orderId: String(orderId) },
+                  });
+                }}
+              >
+                <View style={styles.mediaOptionContent}>
+                  <Extra />
+                  <Text style={styles.mediaOptionText}>Extra</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Camera Option */}
+              <TouchableOpacity
+                style={[styles.mediaOption, { width: mediaOptionSize }]}
                 onPress={() => pickImage("camera")}
               >
-                <Text style={styles.mediaOptionText}>
-                  {t("order.takePhoto")}
-                </Text>
+                <View style={styles.mediaOptionContent}>
+                  <Camera />
+                  <Text style={styles.mediaOptionText}>Camera</Text>
+                </View>
               </TouchableOpacity>
-              <View style={styles.mediaDivider} />
+
+              {/* Document Option */}
               <TouchableOpacity
-                style={styles.mediaOption}
+                style={[styles.mediaOption, { width: mediaOptionSize }]}
+                onPress={() => pickImage("document")}
+              >
+                <View style={styles.mediaOptionContent}>
+                  <Document />
+                  <Text style={styles.mediaOptionText}>Document</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Image Option */}
+              <TouchableOpacity
+                style={[styles.mediaOption, { width: mediaOptionSize }]}
                 onPress={() => pickImage("gallery")}
               >
-                <Text style={styles.mediaOptionText}>
-                  {t("order.chooseFromGallery")}
-                </Text>
+                <View style={styles.mediaOptionContent}>
+                  <Images />
+                  <Text style={styles.mediaOptionText}>Image</Text>
+                </View>
               </TouchableOpacity>
-              <View style={styles.mediaDivider} />
-              <TouchableOpacity
-                style={[styles.mediaOption, styles.cancelButton]}
-                onPress={() => setIsMediaPickerVisible(false)}
-              >
-                <Text style={styles.cancelText}>{t("cancel")}</Text>
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           </TouchableOpacity>
         </Modal>
       </View>
@@ -563,40 +783,99 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     flexGrow: 1,
-    paddingBottom: 10, // Add some padding at bottom
+    paddingBottom: 10,
   },
-  inputWrapper: {
-    backgroundColor: Colors.white,
-    borderTopWidth: 1,
-    borderTopColor: Colors.gray100,
-  },
-  chatInputContainer: {
-    flexDirection: "row",
-    width: "100%",
-    alignItems: "center",
-    padding: 8,
-    paddingHorizontal: 16,
-    backgroundColor: Colors.white,
-  },
-  userMessage: {
+  userMessageContainer: {
     alignSelf: "flex-end",
-    backgroundColor: Colors.success100,
-    padding: 12,
-    borderBottomEndRadius: 14,
-    borderStartStartRadius: 14,
-    borderBottomStartRadius: 14,
-    marginBottom: 16,
+    alignItems: "flex-end",
+    marginBottom: 12,
     maxWidth: "80%",
   },
-  providerMessage: {
+  providerMessageContainer: {
+    flexDirection: "column",
     alignSelf: "flex-start",
+    alignItems: "flex-start",
+    marginBottom: 12,
+    maxWidth: "80%",
+  },
+  supportAgentMessageContainer: {
+    flexDirection: "column",
+    alignSelf: "flex-start",
+    alignItems: "flex-start",
+    marginBottom: 12,
+    maxWidth: "80%",
+  },
+  systemMessageContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 16,
+    width: "100%",
+  },
+  systemMessageLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.gray,
+    marginHorizontal: 8,
+  },
+  systemMessageText: {
+    fontSize: 12,
+    fontFamily: FONTS.medium,
+    color: Colors.secondary300,
+  },
+  supportAgentIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.primary300,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  supportAgentIconText: {
+    fontSize: 20,
+  },
+  supportAgentMessage: {
     backgroundColor: Colors.gray100,
     padding: 12,
-    borderBottomEndRadius: 14,
-    borderStartEndRadius: 14,
-    borderBottomStartRadius: 14,
-    marginBottom: 16,
-    maxWidth: "80%",
+    borderRadius: 14,
+    borderBottomStartRadius: 4,
+    maxWidth: "100%",
+  },
+  providerInfoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+    gap: 8,
+    width: "100%",
+  },
+  profileImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.gray100,
+  },
+  profileImagePlaceholder: {
+    width: 36,
+    height: 36,
+  },
+  senderName: {
+    fontSize: 13,
+    fontFamily: FONTS.medium,
+    color: Colors.secondary,
+  },
+  userMessage: {
+    backgroundColor: Colors.success100,
+    padding: 12,
+    borderRadius: 14,
+    borderBottomEndRadius: 4,
+    maxWidth: "100%",
+  },
+  providerMessage: {
+    backgroundColor: Colors.gray100,
+    padding: 12,
+    borderRadius: 14,
+    borderBottomStartRadius: 4,
+    maxWidth: "100%",
   },
   messageText: {
     color: Colors.secondary,
@@ -608,6 +887,14 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 8,
     marginBottom: 8,
+  },
+  chatInputContainer: {
+    flexDirection: "row",
+    width: "100%",
+    alignItems: "center",
+    padding: 8,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.white,
   },
   inputFieldContainer: {
     flexDirection: "row",
@@ -686,30 +973,32 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   mediaPickerContainer: {
-    backgroundColor: Colors.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 8,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    alignSelf: "center",
+    alignItems: "center",
+    backgroundColor: Colors.primary200,
+    borderRadius: 16,
+    padding: 20,
+    marginHorizontal: 20,
+    marginBottom: 100,
+    gap: 12,
   },
   mediaOption: {
-    padding: 16,
+    borderRadius: 16,
+    padding: 8,
     alignItems: "center",
+    justifyContent: "center",
+    minHeight: 60,
+  },
+  mediaOptionContent: {
+    alignItems: "center",
+    gap: 8,
   },
   mediaOptionText: {
-    fontSize: 18,
-    color: Colors.primary,
-    fontFamily: FONTS.regular,
-  },
-  mediaDivider: {
-    height: 1,
-    backgroundColor: Colors.gray100,
-  },
-  cancelButton: {
-    marginTop: 8,
-  },
-  cancelText: {
-    fontSize: 18,
-    color: "red",
+    fontSize: 14,
+    color: Colors.secondary,
     fontFamily: FONTS.semiBold,
   },
   inlineAttachmentContainer: {

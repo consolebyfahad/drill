@@ -48,8 +48,8 @@ export default function Header({
   const handleSupport = async () => {
     try {
       // Get orderId from AsyncStorage
-      const orderId = await AsyncStorage.getItem("orderId");
-
+      const orderId = await AsyncStorage.getItem("order_id");
+console.log(orderId);
       if (!orderId) {
         Alert.alert("Error", "No active order found");
         return;
@@ -71,10 +71,10 @@ export default function Header({
 
       if (response && response.result) {
         console.log("✅ Support request updated successfully");
-        // Navigate to order screen with Chat tab active
+        // Navigate to order screen with Chat tab active and orderId
         router.push({
           pathname: "/order/order_place",
-          params: { tab: "Chat" },
+          params: { orderId: orderId, tab: "Chat" },
         });
       } else {
         console.error("❌ Failed to update support request:", response);

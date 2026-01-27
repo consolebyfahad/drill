@@ -47,7 +47,12 @@ interface UserLocationData {
 const OrderPlace: React.FC = () => {
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const { orderId, tab } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const orderIdParam = Array.isArray(params.orderId) 
+    ? params.orderId[0] 
+    : params.orderId;
+  const [orderId, setOrderId] = useState<string | null>(orderIdParam || null);
+  const { tab } = params;
   const [activeTab, setActiveTab] = useState<string>(
     tab ? String(tab) : "Details"
   );
@@ -246,6 +251,19 @@ const OrderPlace: React.FC = () => {
     }
   };
 
+  // Get orderId from AsyncStorage if not in params
+  useEffect(() => {
+    const getOrderIdFromStorage = async () => {
+      if (!orderId) {
+        const storedOrderId = await AsyncStorage.getItem("order_id");
+        if (storedOrderId) {
+          setOrderId(storedOrderId);
+        }
+      }
+    };
+    getOrderIdFromStorage();
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       if (orderId) {
@@ -284,8 +302,8 @@ const OrderPlace: React.FC = () => {
           provider_id: orderData.provider?.id,
         });
 
-        if (order && order.status !== orderData.status) {
-          handleOrderStatusChange(order.status, orderData.status);
+        if (order?.status && order.status !== orderData.status) {
+          handleOrderStatusChange(order.status, orderData.status || "");
         }
 
         setOrder(orderData);
@@ -687,7 +705,7 @@ const OrderPlace: React.FC = () => {
               <Popup
                 type={popupType as PopupType}
                 setShowPopup={setPopupType}
-                orderId={orderId}
+                orderId={orderId || undefined}
                 tipAmount={tipAmount}
                 onComplete={handleOrderCompleted}
               />

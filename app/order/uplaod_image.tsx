@@ -39,13 +39,14 @@ export default function UploadImage() {
       quality: 1,
     });
 
-    if (!result.canceled) {
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const imageUri = result.assets[0].uri;
       if (type === "item") {
-        setItemImage(result?.file_name);
-        handleImageUpload(result?.file_name, "item");
+        setItemImage(imageUri);
+        handleImageUpload(imageUri, "item");
       } else {
-        setRecipeImage(result?.file_name);
-        handleImageUpload(result?.file_name, "recipe");
+        setRecipeImage(imageUri);
+        handleImageUpload(imageUri, "recipe");
       }
     }
   };
@@ -58,21 +59,33 @@ export default function UploadImage() {
     }
 
     try {
+      // Check if imageUri is valid
+      if (!imageUri) {
+        throw new Error("Invalid image URI");
+      }
+
       const uriParts = imageUri.split(".");
-      const fileType = uriParts[uriParts.length - 1];
+      const fileType = uriParts[uriParts.length - 1] || "jpg";
 
       const formData = new FormData();
       formData.append("type", "upload_data");
       formData.append("user_id", userId);
       formData.append("file", {
         uri: imageUri,
-        name: `${type}_image.${fileType}`,
+        name: `${type}_image_${Date.now()}.${fileType}`,
         type: `image/${fileType}`,
+      });
+
+      console.log("Uploading image:", {
+        type,
+        uri: imageUri,
+        fileName: `${type}_image_${Date.now()}.${fileType}`,
       });
 
       const response = await apiCall(formData);
 
       if (response.result && response.file_name) {
+        console.log("Upload successful:", response.file_name);
         if (type === "item") {
           setItemImageName(response.file_name);
         } else {
@@ -83,6 +96,7 @@ export default function UploadImage() {
       }
     } catch (err) {
       Alert.alert("Upload Error", err.message || "Something went wrong.");
+      console.error("Upload error:", err);
     }
   };
 
