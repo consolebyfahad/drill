@@ -17,7 +17,7 @@ import { Colors } from "~/constants/Colors";
 import { apiCall } from "~/utils/api";
 import Flag from "@/assets/svgs/flag.svg";
 import { FONTS } from "~/constants/Fonts";
-import { scale, verticalScale } from "react-native-size-matters";
+import { ms, s, vs } from "~/utils/responsive";
 type CountryCode = {
   key: number;
   label: string;
@@ -96,9 +96,9 @@ export default function Login() {
           onPress={() => modalRef.current.open()}
           style={styles.countrySelector}
         >
-          <Flag width={25} height={25} />
+          <Flag width={s(25)} height={s(25)} />
           <Text style={styles.countryText}>{countryCode.label}</Text>
-          <Ionicons name="chevron-down" size={20} />
+          <Ionicons name="chevron-down" size={s(20)} />
         </TouchableOpacity>
 
         <ModalSelector
@@ -125,11 +125,12 @@ export default function Login() {
       </View>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-      <TouchableOpacity>
-        <Text style={styles.privacyText}>
-          {t("login.privacy") || "Privacy & Agreements"}
-        </Text>
-      </TouchableOpacity>
+      <Text
+        style={styles.privacyText}
+        onPress={() => router.push("/auth/privacy")}
+      >
+        {t("login.privacy")}
+      </Text>
 
       <Button title={t("continue") || "Continue"} onPress={handleContinue} />
     </SafeAreaView>
@@ -139,69 +140,70 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 84,
-    paddingHorizontal: 24,
+    paddingTop: vs(60),
+    paddingHorizontal: s(16),
     backgroundColor: Colors.white,
   },
   title: {
-    fontSize: 36,
+    fontSize: ms(32),
     fontFamily: FONTS.bold,
-    marginBottom: 8,
+    marginBottom: vs(6),
     color: Colors.secondary,
   },
   subtitle: {
-    fontSize: 28,
+    fontSize: ms(22),
     color: Colors.secondary100,
-    marginBottom: 32,
+    marginBottom: vs(28),
     fontFamily: FONTS.medium,
   },
   inputContainer: {
     borderWidth: 1,
     borderColor: Colors.gray,
-    borderRadius: 12,
-    marginBottom: 24,
+    borderRadius: ms(12),
+    marginBottom: vs(20),
     overflow: "hidden",
   },
   countrySelector: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
-  },
-  countryFlag: {
-    width: 32,
-    height: 32,
+    paddingHorizontal: s(16),
+    paddingVertical: vs(14),
   },
   countryText: {
-    fontSize: verticalScale(12),
+    flex: 1,
+    marginLeft: s(10),
+    fontSize: ms(15),
     color: Colors.secondary,
-    fontFamily: FONTS.medium,
+    fontFamily: FONTS.regular,
   },
   divider: {
     borderTopWidth: 1,
     borderColor: Colors.gray,
   },
   input: {
-    padding: 16,
-    fontSize: 18,
+    paddingHorizontal: s(16),
+    paddingVertical: vs(14),
+    fontSize: ms(17),
     fontFamily: FONTS.regular,
   },
   privacyText: {
     textAlign: "center",
-    fontSize: 14,
+    fontSize: ms(13),
     fontFamily: FONTS.semiBold,
-    color: Colors.secondary,
-    marginBottom: 24,
+    color: Colors.primary,
+    marginBottom: vs(20),
+    textDecorationLine: "underline",
   },
   inputContainerError: {
     borderColor: "red",
   },
   errorText: {
     color: "red",
-    fontSize: 14,
-    marginTop: -20,
-    marginBottom: 16,
-    paddingLeft: 12,
-    fontFamily: FONTS.semiBold,
+    fontSize: ms(13),
+    marginTop: vs(-14),
+    marginBottom: vs(12),
+    paddingLeft: s(12),
+    fontFamily: FONTS.regular,
   },
 });

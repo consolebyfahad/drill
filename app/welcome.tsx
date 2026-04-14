@@ -1,14 +1,24 @@
 import Button from "@/components/button";
-import { useRouter } from "expo-router";
+import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "~/constants/Colors";
 import { FONTS } from "~/constants/Fonts";
+import { ms, s, vs } from "~/utils/responsive";
 
 export default function Welcome() {
-  const router = useRouter();
-  const { t } = useTranslation();
+  const { t, ready } = useTranslation();
+
+  if (!ready) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const handleGetStarted = () => {
     router.push("/auth/login");
@@ -16,27 +26,26 @@ export default function Welcome() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <View style={styles.topSection}>
         <Image
           source={require("../assets/images/onboarding.png")}
           style={styles.image}
           resizeMode="cover"
         />
         <View style={styles.textContainer}>
-          <Text style={styles.title}>{t("welcome") || "Welcome!"}</Text>
-          <Text style={styles.subtitle}>
-            {t("tagline") || "The Service Provider App"}
-          </Text>
-          <Text style={styles.description}>
-            {t("intro") || "Application for easily finding a services Jobs!"}
-          </Text>
+          <Text style={styles.title}>{t("welcome")}</Text>
+          <Text style={styles.subtitle}>{t("tagline")}</Text>
+          <Text style={styles.description}>{t("intro")}</Text>
         </View>
       </View>
-      <View style={styles.buttonContainer}>
-        <Button
-          title={t("getStarted") || "Get Started"}
-          onPress={handleGetStarted}
-        />
+      <View style={styles.footer}>
+        <Button title={t("getStarted")} onPress={handleGetStarted} />
+        <Text
+          style={styles.privacyLink}
+          onPress={() => router.push("/auth/privacy")}
+        >
+          {t("login.privacy")}
+        </Text>
       </View>
     </SafeAreaView>
   );
@@ -45,42 +54,64 @@ export default function Welcome() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: s(16),
+    paddingBottom: vs(16),
     justifyContent: "space-between",
     backgroundColor: Colors.white,
   },
-  content: {
+  loadingContainer: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    fontSize: ms(18),
+    color: Colors.secondary,
+    fontFamily: FONTS.medium,
+  },
+  topSection: {
+    flex: 1,
+    justifyContent: "center",
   },
   image: {
     width: "100%",
-    marginBottom: 8,
+    height: vs(280),
+    marginBottom: vs(8),
   },
   textContainer: {
     alignItems: "center",
-    width: "80%",
-    marginHorizontal: "auto",
-    paddingHorizontal: 12,
+    paddingHorizontal: s(12),
   },
   title: {
-    fontSize: 32,
-    fontFamily: FONTS.bold,
-    marginBottom: 8,
+    fontSize: ms(32),
+    marginBottom: vs(6),
     color: Colors.secondary,
+    fontFamily: FONTS.bold,
+    textAlign: "center",
   },
   subtitle: {
-    fontSize: 24,
-    fontFamily: FONTS.semiBold,
-    marginBottom: 12,
+    fontSize: ms(20),
+    fontFamily: FONTS.bold,
+    marginBottom: vs(10),
     color: Colors.secondary,
+    textAlign: "center",
   },
   description: {
     textAlign: "center",
-    fontSize: 18,
+    fontSize: ms(16),
     color: Colors.secondary100,
-    fontFamily: FONTS.regular,
+    paddingHorizontal: s(20),
+    fontFamily: FONTS.medium,
   },
-  buttonContainer: {
-    paddingHorizontal: 12,
-    paddingBottom: 16,
+  footer: {
+    alignItems: "center",
+    paddingTop: vs(16),
+  },
+  privacyLink: {
+    marginTop: vs(14),
+    fontSize: ms(13),
+    fontFamily: FONTS.medium,
+    color: Colors.primary,
+    textDecorationLine: "underline",
   },
 });

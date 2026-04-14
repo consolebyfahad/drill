@@ -1,9 +1,12 @@
 import Arrow from "@/assets/svgs/backarrow.svg";
 import Button from "@/components/button";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
+import * as Device from "expo-device";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
+  Alert,
   Image,
   Platform,
   StyleSheet,
@@ -13,36 +16,26 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "~/constants/Colors";
+import { FONTS } from "~/constants/Fonts";
+import { ms, s, vs } from "~/utils/responsive";
 import { apiCall } from "~/utils/api";
-import { getLocationPermission } from "~/utils/location";
+import { fetchAndPersistCoordinates } from "~/utils/location";
 import {
-  requestFCMPermission,
   getFCMToken,
+  requestFCMPermission,
   setupNotificationListeners,
 } from "~/utils/notification";
-import * as Device from "expo-device";
-import { FONTS } from "~/constants/Fonts";
 
 export default function AccessLocation() {
-  const router = useRouter();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
-  const handleBrowse = () => {
-    router.push("/(tabs)");
-  };
-
   const getDeviceInfo = async () => {
-    const keys = await AsyncStorage.getAllKeys();
-    const items = await AsyncStorage.multiGet(keys);
-    const allData = Object.fromEntries(items);
-    console.log("allData", allData);
     try {
-      // Get device model
       let deviceModel = "unknown";
       if (Device.modelName) {
         deviceModel = Device.modelName;
       }
-
       return {
         platform: Platform.OS || "",
         model: deviceModel,
@@ -52,23 +45,17 @@ export default function AccessLocation() {
       return {
         platform: Platform.OS || "",
         model: "unknown",
-        brand: "unknown",
-        osVersion: "unknown",
       };
     }
   };
 
   useEffect(() => {
-    // Fix: Added proper async function implementation
     const setupNotifications = async () => {
       try {
         const userId = await AsyncStorage.getItem("user_id");
         if (!userId) {
-          console.warn("User ID not found in AsyncStorage");
           return;
         }
-
-        // FCM
         const permissionGranted = await requestFCMPermission();
         if (permissionGranted) {
           const token = await getFCMToken();
@@ -77,47 +64,47 @@ export default function AccessLocation() {
           formData.append("type", "update_noti");
           formData.append("user_id", userId);
           formData.append("devicePlatform", deviceInfo.platform);
-          formData.append("deviceRid", token ?? "");
+          formData.append("deviceRid", token || "");
           formData.append("deviceModel", deviceInfo.model);
           try {
-            const response = await apiCall(formData);
-            console.log("FCM registration response:", response);
+            await apiCall(formData);
           } catch (error) {
             console.error("FCM registration failed:", error);
           }
-        } else {
-          console.log("FCM permission not granted");
         }
       } catch (error) {
         console.error("Error setting up notifications:", error);
       }
     };
 
-    const handleNotificationPress = (data: any) => {
-      console.log("🔔 Notification Pressed:", data);
-      // Navigate based on data, e.g.:
-      // if (data.screen) router.push(`/${data.screen}`);
-    };
+    const handleNotificationPress = () => {};
 
     setupNotifications();
-
     const unsubscribe = setupNotificationListeners(handleNotificationPress);
-
     return () => {
       unsubscribe();
     };
   }, []);
 
+  const handleBrowse = () => {
+    router.replace("/(tabs)");
+  };
+
   const handleLocation = async () => {
     setLoading(true);
     try {
-      const location = await getLocationPermission();
-      if (location) {
-        console.log("📍 User location:", location.coords);
-        router.push("/(tabs)");
+      const coords = await fetchAndPersistCoordinates();
+      if (!coords) {
+        Alert.alert(
+          t("accessLocation.permissionDenied"),
+          t("accessLocation.permissionRequired")
+        );
+        return;
       }
+      router.replace("/(tabs)");
     } catch (error) {
-      console.error("Location fetch failed", error);
+      console.error("Error fetching location:", error);
+      Alert.alert(t("accessLocation.error"), t("accessLocation.errorMessage"));
     } finally {
       setLoading(false);
     }
@@ -125,19 +112,14 @@ export default function AccessLocation() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header with Back Button */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.push("/auth/verified")}
-          style={styles.backButton}
-        >
+        <TouchableOpacity onPress={() => router.push("/auth/verified")} accessibilityRole="button">
           <Arrow />
         </TouchableOpacity>
-        <Text style={styles.headerText}>Allow Location Access</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerText}>{t("accessLocation.headerTitle")}</Text>
+        <View style={{ width: s(24) }} />
       </View>
 
-      {/* Image & Text Content */}
       <View style={styles.content}>
         <Image
           source={require("@/assets/images/location.png")}
@@ -146,26 +128,32 @@ export default function AccessLocation() {
         />
 
         <View style={styles.textContainer}>
-          <Text style={styles.title}>Access Location</Text>
-          <Text style={styles.subtitle}>
-            Allow us to access your location to provide better services near
-            you. This helps us show relevant offers and businesses in your area.
-          </Text>
+          <Text style={styles.title}>{t("accessLocation.title")}</Text>
+          <Text style={styles.subtitle}>{t("accessLocation.subtitle")}</Text>
         </View>
+        <Text style={styles.disclosure}>
+          {t("accessLocation.dataDisclosure")}{" "}
+          <Text
+            style={styles.privacyLink}
+            onPress={() => router.push("/auth/privacy")}
+          >
+            {t("accessLocation.privacyPolicy")}
+          </Text>
+        </Text>
       </View>
 
       <View style={styles.buttonContainer}>
-        {/* Allow Location Button */}
         <Button
-          title={loading ? "Processing..." : "Allow Access"}
+          title={
+            loading ? t("accessLocation.loading") : t("continue")
+          }
           onPress={handleLocation}
           disabled={loading}
         />
-        {/* "Do it Later" Option */}
         <View style={styles.laterContainer}>
-          <Text style={styles.laterBaseText}>Do it</Text>
-          <TouchableOpacity onPress={handleBrowse}>
-            <Text style={styles.laterText}> Later</Text>
+          <Text style={styles.laterBaseText}>{t("accessLocation.doIt")}</Text>
+          <TouchableOpacity onPress={handleBrowse} accessibilityRole="button">
+            <Text style={styles.laterText}> {t("accessLocation.later")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -178,7 +166,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+    paddingHorizontal: s(16),
+    paddingVertical: vs(16),
     backgroundColor: Colors.white,
   },
   header: {
@@ -186,65 +175,72 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     width: "100%",
-    marginBottom: 32,
-  },
-  backButton: {
-    padding: 8, // Increased touch target
+    marginBottom: vs(24),
   },
   headerText: {
-    fontSize: 18,
+    fontSize: ms(18),
     fontFamily: FONTS.bold,
     textAlign: "center",
     color: Colors.secondary,
   },
   content: {
     alignItems: "center",
-    marginBottom: 80,
+    flex: 1,
+    justifyContent: "center",
   },
   image: {
-    width: 200,
-    height: 200,
-    marginBottom: 24,
+    width: s(200),
+    height: s(200),
+    marginBottom: vs(16),
   },
   textContainer: {
     alignItems: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: s(24),
   },
   title: {
-    fontSize: 32,
+    fontSize: ms(28),
     fontFamily: FONTS.bold,
-    marginBottom: 16,
+    marginBottom: vs(8),
     color: Colors.secondary,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: ms(15),
     textAlign: "center",
     color: Colors.secondary,
-    marginBottom: 32,
-    lineHeight: 22,
+    marginBottom: vs(14),
     fontFamily: FONTS.medium,
+  },
+  disclosure: {
+    fontSize: ms(12),
+    textAlign: "center",
+    color: Colors.secondary300,
+    paddingHorizontal: s(16),
+    fontFamily: FONTS.regular,
+  },
+  privacyLink: {
+    color: Colors.primary,
+    fontFamily: FONTS.semiBold,
+    textDecorationLine: "underline",
   },
   buttonContainer: {
     width: "100%",
     alignItems: "center",
-    marginBottom: 16,
+    paddingTop: vs(16),
   },
   laterContainer: {
     flexDirection: "row",
-    padding: 16,
+    paddingVertical: vs(16),
     alignItems: "center",
+    justifyContent: "center",
   },
   laterBaseText: {
-    fontSize: 15,
+    fontSize: ms(15),
     fontFamily: FONTS.regular,
     color: Colors.secondary,
   },
   laterText: {
     color: Colors.primary,
     fontFamily: FONTS.semiBold,
-    fontSize: 15,
-  },
-  loader: {
-    marginTop: 8,
+    fontSize: ms(15),
   },
 });
